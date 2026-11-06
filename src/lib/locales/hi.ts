@@ -5,7 +5,7 @@
  * Missing keys fall back to English, so it's safe to add strings gradually.
  * Before launch, have a native speaker review this file.
  */
-export const HI: Record<string, string> = {
+const hi: Record<string, string> = {
   // ---- navigation & shell
   "Home": "होम",
   "Find Jobs": "नौकरी खोजें",
@@ -390,6 +390,7 @@ export const HI: Record<string, string> = {
   // ---- settings
   "Language, alerts and your account.": "भाषा, सूचनाएँ और आपका खाता।",
   "Language": "भाषा",
+  "Choose your language": "अपनी भाषा चुनें",
   "Alerts": "सूचनाएँ",
   "How we tell you about new jobs and replies.": "नई नौकरियों और जवाबों के बारे में हम कैसे बताएँ।",
   "New jobs that match me": "मेरे लायक नई नौकरियाँ",
@@ -434,3 +435,5 @@ export const HI: Record<string, string> = {
   "just now": "अभी",
   "in a moment": "थोड़ी देर में",
 };
+
+export default hi;

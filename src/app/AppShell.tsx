@@ -255,7 +255,7 @@ export function AppShell() {
           <NavLink key={it.to} to={it.to} end={it.end}
             className={({ isActive }) => cn("relative flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-medium transition-colors", isActive ? "text-primary before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-primary" : "text-ink-muted")}>
             <span className="relative"><it.icon className="h-6 w-6" aria-hidden />{it.to.endsWith("/messages") && <NavCount n={unread} className="absolute -right-2.5 -top-1.5" />}</span>
-            {t(it.short ?? it.label)}
+            <span className="block w-full truncate px-0.5 text-center leading-tight">{t(it.short ?? it.label)}</span>
           </NavLink>
         ))}
       </nav>

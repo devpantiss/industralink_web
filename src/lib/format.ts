@@ -22,7 +22,7 @@ export function formatPay(min?: number, max?: number, period: PayPeriod = "month
   return base;
 }
 
-const loc = () => (getLang() === "hi" ? "hi-IN" : "en-IN");
+const loc = () => `${getLang()}-IN`;
 
 export function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(loc(), { day: "numeric", month: "short", year: "numeric" });
@@ -44,11 +44,28 @@ export function timeAgo(iso: string) {
   let unit: Intl.RelativeTimeFormatUnit = "minute";
   let size = 60;
   for (const [u, s] of steps) if (abs >= s) { unit = u; size = s; }
-  return (getLang() === "hi" ? rtfHi : rtf).format(Math.round(diffSec / size), unit);
+  const lang = getLang();
+  const n = Math.round(diffSec / size);
+  // Some phones/browsers have no built-in wording for a language (e.g. Odia), so use our own.
+  if (lang !== "en" && !hasNativeWords(lang)) {
+    if (unit === "day" && n === -1) return t("yesterday");
+    return n < 0 ? t(`{n} ${unit}s ago`, { n: -n }) : t(`in {n} ${unit}s`, { n });
+  }
+  return rtfFor(lang).format(n, unit);
 }
 
-const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-const rtfHi = new Intl.RelativeTimeFormat("hi", { numeric: "auto" });
+const nativeCache = new Map<string, boolean>();
+/** True if the browser really writes "2 days ago" in this language (not just English letters). */
+function hasNativeWords(lang: string) {
+  if (!nativeCache.has(lang)) nativeCache.set(lang, !/[a-z]/i.test(rtfFor(lang).format(-2, "day")));
+  return nativeCache.get(lang)!;
+}
+
+const rtfCache = new Map<string, Intl.RelativeTimeFormat>();
+function rtfFor(lang: string) {
+  if (!rtfCache.has(lang)) rtfCache.set(lang, new Intl.RelativeTimeFormat(lang, { numeric: "auto" }));
+  return rtfCache.get(lang)!;
+}
 
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;

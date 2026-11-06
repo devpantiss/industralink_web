@@ -279,7 +279,7 @@ export interface SupportTicket {
 }
 
 export interface UserSettings {
-  language: "en" | "hi";
+  language: "en" | "hi" | "or" | "bn" | "te" | "ta" | "mr";
   /** New matching jobs (worker) / new applicants (employer). */
   jobAlerts: boolean;
   smsAlerts: boolean;

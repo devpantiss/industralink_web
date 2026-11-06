@@ -6,7 +6,9 @@ import { AuthProvider } from "@/app/AuthContext";
 import { router } from "@/app/router";
 import { ToastProvider } from "@/components/ui/Toast";
 import "@/styles/index.css";
-import { LangProvider } from "@/lib/i18n";
+import { initLang, LangProvider } from "@/lib/i18n";
+
+await initLang();
 import { initPalette } from "@/lib/palette";
 
 initPalette();

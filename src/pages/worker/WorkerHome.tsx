@@ -44,7 +44,7 @@ export default function WorkerHome() {
           ].map((x) => (
             <Link key={x.label} to={x.to} className="rounded-lg bg-white/10 px-3 py-2.5 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15">
               <p className="text-h1 tabular">{x.value ?? "–"}</p>
-              <p className="text-small text-white/75">{x.label}</p>
+              <p className="text-small leading-tight text-white/75 [overflow-wrap:anywhere]">{x.label}</p>
             </Link>
           ))}
         </div>

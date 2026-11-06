@@ -22,7 +22,7 @@ export default {
         danger: { fg: v("danger-fg"), bg: v("danger-bg") },
       },
       fontFamily: {
-        sans: ["Inter", '"Noto Sans Devanagari"', "system-ui", "sans-serif"],
+        sans: ["Inter", '"Noto Sans Devanagari"', '"Noto Sans Oriya"', '"Noto Sans Bengali"', '"Noto Sans Telugu"', '"Noto Sans Tamil"', "system-ui", "sans-serif"],
       },
       fontSize: {
         caption: ["12px", { lineHeight: "16px" }],

@@ -7,7 +7,7 @@ import { accountApi, passwordApi, platformApi } from "@/api/extra";
 import { qk } from "@/api/keys";
 import { errorMessage } from "@/api/client";
 import { useAuth, useUser } from "@/app/AuthContext";
-import { t, useLang } from "@/lib/i18n";
+import { LANGS, t, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/Misc";
@@ -37,12 +37,13 @@ export default function Settings() {
       {q.isLoading || !q.data ? <ListSkeleton count={2} /> : (
         <>
           {worker && (
-            <Section icon={<Languages className="h-5 w-5" />} title={t("Language")} description="भाषा चुनें / Choose your language">
-              <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
-                {([["hi", "हिंदी"], ["en", "English"]] as const).map(([v, label]) => (
-                  <button key={v} onClick={() => { setLang(v); accountApi.updateSettings({ language: v }).catch(() => undefined); }} aria-pressed={lang === v}
-                    className={cn("rounded-lg border px-4 py-3 text-left text-body-lg font-semibold transition-colors", lang === v ? "border-primary bg-primary-soft text-primary" : "border-border hover:border-border-strong")}>
-                    {label}
+            <Section icon={<Languages className="h-5 w-5" />} title={t("Language")} description={lang === "en" ? "Choose your language" : `${t("Choose your language")} / Choose your language`}>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {LANGS.map((l) => (
+                  <button key={l.code} onClick={async () => { await setLang(l.code); accountApi.updateSettings({ language: l.code }).catch(() => undefined); }} aria-pressed={lang === l.code}
+                    className={cn("rounded-lg border px-4 py-3 text-left transition-colors", lang === l.code ? "border-primary bg-primary-soft" : "border-border hover:border-border-strong")}>
+                    <span className={cn("block text-body-lg font-semibold", lang === l.code ? "text-primary" : "text-ink")}>{l.native}</span>
+                    {l.code !== "en" && <span className="block text-caption text-ink-muted">{l.english}</span>}
                   </button>
                 ))}
               </div>
