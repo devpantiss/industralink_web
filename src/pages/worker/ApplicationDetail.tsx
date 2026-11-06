@@ -2,7 +2,7 @@ import { useState } from "react";
 import { t } from "@/lib/i18n";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, CheckCircle2, Lock, MapPin, MessageCircle, PartyPopper, Phone, XCircle } from "lucide-react";
+import { CalendarClock, CheckCircle2, Lock, MapPin, MessageCircle, MessageSquare, PartyPopper, Phone, XCircle } from "lucide-react";
 import { repliesApi } from "@/api/extra";
 import { Field, Textarea } from "@/components/ui/Field";
 import { workerApi } from "@/api/worker";
@@ -44,6 +44,7 @@ export default function ApplicationDetail() {
   const a = q.data;
   const job = a.job;
   const open = !["hired", "rejected", "withdrawn"].includes(a.stage);
+  const canMessage = ["shortlisted", "interview", "offer", "hired"].includes(a.stage);
   const quiet = open && a.stage === "applied" && Date.now() - new Date(a.appliedAt).getTime() > 30 * 86_400_000;
 
   return (
@@ -96,6 +97,12 @@ export default function ApplicationDetail() {
       <Card>
         <CardHeader title={t("Contact the employer")} />
         <CardBody>
+          {canMessage && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary-soft p-3">
+              <p className="text-body text-ink">{t("Ask HR a question about this job.")}</p>
+              <LinkButton to={`/worker/messages?c=${a.id}`} icon={<MessageSquare className="h-4 w-4" />}>{t("Message HR")}</LinkButton>
+            </div>
+          )}
           {a.contact ? (
             <div className="space-y-3">
               <p className="text-body text-ink-secondary">{t("You're shortlisted, so you can now contact HR.")}{a.contact.hours ? <> {t("Call between")} <span className="font-medium text-ink">{a.contact.hours}</span></> : null}</p>

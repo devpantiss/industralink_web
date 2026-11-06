@@ -25,7 +25,7 @@ export default function CompanyPage() {
   useEffect(() => { if (q.data) setC(q.data); }, [q.data]);
 
   const save = useMutation({
-    mutationFn: (resubmit: boolean) => employerApi.updateCompany({ ...c!, resubmit }),
+    mutationFn: (resubmit: boolean) => employerApi.updateCompany({ ...c!, sites: (c!.sites ?? []).map((x) => x.trim()).filter(Boolean), resubmit }),
     onSuccess: (_d, resubmit) => { qc.invalidateQueries({ queryKey: qk.employer.all }); toast.success(resubmit ? "Sent for review again" : "Company profile saved"); setDocName(undefined); },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -57,6 +57,12 @@ export default function CompanyPage() {
           <Field label="Website">{(id) => <Input id={id} value={c.website ?? ""} onChange={(e) => set({ website: e.target.value })} />}</Field>
           <Field label="GST number">{(id) => <Input id={id} value={c.gstNumber ?? ""} maxLength={15} onChange={(e) => set({ gstNumber: e.target.value.toUpperCase() })} />}</Field>
           <Field label="About" className="sm:col-span-2">{(id) => <Textarea id={id} value={c.about ?? ""} onChange={(e) => set({ about: e.target.value })} />}</Field>
+          <Field label="HR contact name" hint="Shown to our team during approval, not to workers.">{(id, d) => <Input id={id} aria-describedby={d} value={c.hrName ?? ""} onChange={(e) => set({ hrName: e.target.value || undefined })} />}</Field>
+          <Field label="Designation">{(id) => <Input id={id} placeholder="e.g. HR Manager" value={c.hrDesignation ?? ""} onChange={(e) => set({ hrDesignation: e.target.value || undefined })} />}</Field>
+          <Field label="Plants / sites" className="sm:col-span-2" hint="One per line. You can pick these when posting a job.">
+            {(id, d) => <Textarea id={id} aria-describedby={d} rows={3} placeholder={"Smelter Plant 2\nPower Plant"} value={(c.sites ?? []).join("\n")}
+              onChange={(e) => set({ sites: e.target.value.split("\n").map((x) => x.trimStart()).filter((x, i, all) => x || i === all.length - 1) })} />}
+          </Field>
         </CardBody>
         <div className="flex justify-end border-t border-border px-5 py-3">
           <Button onClick={() => save.mutate(false)} loading={save.isPending && save.variables === false}>Save changes</Button>

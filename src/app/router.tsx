@@ -27,6 +27,9 @@ const Saved = lazy(() => import("@/pages/worker/Saved"));
 const Profile = lazy(() => import("@/pages/worker/Profile"));
 const Companies = lazy(() => import("@/pages/worker/Companies"));
 const Settings = lazy(() => import("@/pages/shared/Settings"));
+const Messages = lazy(() => import("@/pages/shared/Messages"));
+const FindWorkers = lazy(() => import("@/pages/employer/FindWorkers"));
+const Analytics = lazy(() => import("@/pages/employer/Analytics"));
 
 const EmployerHome = lazy(() => import("@/pages/employer/EmployerHome"));
 const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
@@ -108,6 +111,7 @@ export const router = createBrowserRouter([
           { path: "saved", element: page(<Saved />) },
           { path: "profile", element: page(<Profile />) },
           { path: "companies", element: page(<Companies />) },
+          { path: "messages", element: page(<Messages />) },
           { path: "settings", element: page(<Settings />) },
           { path: "*", element: <NotFound /> },
         ],
@@ -129,6 +133,9 @@ export const router = createBrowserRouter([
           { path: "jobs/:id/edit", element: page(<PostJob />) },
           { path: "candidates", element: page(<Candidates />) },
           { path: "company", element: page(<CompanyPage />) },
+          { path: "messages", element: page(<Messages />) },
+          { path: "find-workers", element: page(<FindWorkers />) },
+          { path: "analytics", element: page(<Analytics />) },
           { path: "settings", element: page(<Settings />) },
           { path: "*", element: <NotFound /> },
         ],

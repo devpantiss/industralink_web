@@ -26,7 +26,7 @@ export default function Settings() {
   const { lang, setLang } = useLang();
   const save = useMutation({
     mutationFn: (c: Partial<UserSettings>) => accountApi.updateSettings(c),
-    onSuccess: (d) => { qc.setQueryData(qk.settings, d); toast.success(t("Saved")); },
+    onSuccess: (d) => { qc.setQueryData(qk.settings, d); toast.success(t("Settings saved")); },
     onError: (e) => toast.error(errorMessage(e)),
   });
   const worker = user.role === "worker";

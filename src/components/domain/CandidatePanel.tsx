@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
-import { CalendarClock, ChevronRight, Download, ExternalLink, FileImage, FileText, MapPin, MessageCircle, Phone, Printer, Star } from "lucide-react";
+import { CalendarClock, ChevronRight, Download, ExternalLink, FileImage, FileText, MapPin, MessageCircle, MessageSquare, Phone, Printer, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { ApplicationStage, Candidate, WorkerDocument } from "@/types";
 import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EMPLOYMENT_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { formatBytes, formatDate, formatDateTime, formatNumber } from "@/lib/format";
@@ -86,6 +87,9 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
         <div className="flex flex-wrap gap-2">
           <a href={`tel:+91${w.phone}`} className={buttonClass("secondary")}><Phone className="h-4 w-4" aria-hidden /> +91 {w.phone}</a>
           <a href={`https://wa.me/91${w.phone}`} target="_blank" rel="noreferrer" className={buttonClass("secondary")}><MessageCircle className="h-4 w-4 text-green-600" aria-hidden /> WhatsApp</a>
+          {["shortlisted", "interview", "offer", "hired"].includes(c.stage) && (
+            <Link to={`/employer/messages?c=${c.id}`} className={buttonClass("secondary")}><MessageSquare className="h-4 w-4 text-primary" aria-hidden /> Message</Link>
+          )}
           <Button variant="ghost" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>Print</Button>
         </div>
 

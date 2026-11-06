@@ -84,3 +84,60 @@ Moving a candidate sends the worker a notification (rejection only if `notify` i
 | GET | `/admin/audit` | | `AuditEntry[]` | |
 
 Every admin decision is written to the audit log.
+
+## Added after the gap review
+
+Shapes are in `src/types/index.ts`. Mock versions are in `src/mocks/handlers.ts`.
+
+### Public (no login)
+
+| Method | Path | Body / query | Returns | Notes |
+|---|---|---|---|---|
+| GET | `/public/jobs/:id` | | `Job` without `hrPhone` | The page a shared WhatsApp link opens. 404 for drafts or blocked companies. |
+| POST | `/support` | `{ topic, message, name?, contact? }` | `{ ok }` | Help request. If logged in, contact comes from the account. |
+| POST | `/auth/password/forgot` | `{ email }` | `{ ok }` | Same reply whether or not the email exists. The real API emails a link valid for 1 hour (the mock returns `demoResetLink`). |
+| POST | `/auth/password/reset` | `{ token, password }` | `{ ok, role }` | 410 `EXPIRED`, 422 |
+
+### Any logged-in user
+
+| Method | Path | Body / query | Returns | Notes |
+|---|---|---|---|---|
+| POST | `/auth/password/change` | `{ current, next }` | `{ ok }` | Employer/admin only. 422 `WRONG_PASSWORD` |
+| GET / PATCH | `/me/settings` | `Partial<UserSettings>` | `UserSettings` | Language, alerts, "let companies find me" |
+| POST | `/me/delete` | `{ confirm: "DELETE" }` | `{ ok }` | Worker: personal data erased, open applications withdrawn. Employer: company hidden, jobs closed. (DPDP Act) |
+| GET | `/messages` | | `MessageThread[]` | One thread per application, from shortlisted onwards |
+| GET | `/messages/:applicationId` | | `{ thread, messages: Message[] }` | Also marks the thread as read |
+| POST | `/messages/:applicationId` | `{ text }` (max 1000) | `Message` | 403 `NOT_ALLOWED` before shortlisting or after closing, 403 `DISABLED` when admin turned messaging off. Admins can't read messages. |
+
+### Worker
+
+| Method | Path | Body / query | Returns | Notes |
+|---|---|---|---|---|
+| POST | `/jobs/:id/report` | `{ reason, details? }` | `{ ok }` | reason: `asks_money \| fake \| wrong_details \| unsafe \| other`. 409 `ALREADY_REPORTED` |
+| POST | `/worker/applications/:id/interview-response` | `{ response: "attending" \| "cant_attend", note? }` | `WorkerApplication` | Tells HR. Rescheduling clears the reply. |
+| POST | `/worker/applications/:id/offer-response` | `{ response: "accepted" \| "declined", note? }` | `WorkerApplication` | Declining sets stage `withdrawn` |
+| GET | `/companies` | query: `q?`, `sector?` | `{ company, openJobs }[]` | Approved companies only |
+
+`WorkerProfile` gained `languages`, `safetyTrainingHours`, `employmentType` and `photoUrl`, all optional.
+
+### Employer
+
+| Method | Path | Body / query | Returns | Notes |
+|---|---|---|---|---|
+| GET | `/employer/talent` | query: `q?`, `trade?`, `experience?`, `city?`, `relocate?` | `TalentProfile[]` | Only workers with `visibleToEmployers`. No phone, email or documents. 403 `NOT_VERIFIED` / `DISABLED` |
+| POST | `/employer/talent/:workerId/invite` | `{ jobId }` | `{ ok }` | Notifies the worker. 409 if already applied or invited |
+| GET | `/employer/analytics` | | `EmployerAnalytics` | |
+
+`Company` gained `hrName`, `hrDesignation` and `sites`. Moving an interview that's already scheduled notifies the worker.
+
+### Admin
+
+| Method | Path | Body / query | Returns | Notes |
+|---|---|---|---|---|
+| GET | `/admin/reports` | query: `status?` (open, dismissed, job_removed, all) | `JobReport[]` + `jobStatus`, `reportsForJob` | |
+| POST | `/admin/reports/:id` | `{ action: "dismiss" \| "remove_job", note? }` | `{ ok }` | Removing closes the job and resolves all its open reports |
+| GET | `/admin/support` | query: `status?` | `SupportTicket[]` | |
+| POST | `/admin/support/:id/close` | | `{ ok }` | Notifies the user |
+| GET / PATCH | `/admin/settings` | `Partial<PlatformSettings>` | `PlatformSettings` | Messaging, Find workers, auto-approve. Logged. |
+
+`AdminSummary` gained `openReports` and `openTickets`.

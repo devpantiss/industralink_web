@@ -1,4 +1,4 @@
-import { BadgeCheck, Flag, Bookmark, Briefcase, Building2, FileText, Home, LayoutGrid, ScrollText, Search, User, UserSearch, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, BarChart3, Flag, MessageSquare, Bookmark, Briefcase, Building2, FileText, Home, LayoutGrid, ScrollText, Search, User, UserSearch, Users, type LucideIcon } from "lucide-react";
 import type { Role } from "@/types";
 
 export interface NavItem {
@@ -13,13 +13,17 @@ export const NAV: Record<Role, NavItem[]> = {
     { label: "Home", to: "/worker", icon: Home, end: true },
     { label: "Find Jobs", short: "Jobs", to: "/worker/jobs", icon: Search },
     { label: "Applications", short: "Applied", to: "/worker/applications", icon: FileText },
-    { label: "Saved", to: "/worker/saved", icon: Bookmark },
+    { label: "Messages", to: "/worker/messages", icon: MessageSquare },
+    { label: "Saved", to: "/worker/saved", icon: Bookmark, mobile: false },
     { label: "Profile", short: "Me", to: "/worker/profile", icon: User },
   ],
   employer: [
     { label: "Home", to: "/employer", icon: Home, end: true },
     { label: "Jobs", to: "/employer/jobs", icon: Briefcase },
-    { label: "Candidates", to: "/employer/candidates", icon: UserSearch },
+    { label: "Candidates", to: "/employer/candidates", icon: Users },
+    { label: "Find workers", short: "Find", to: "/employer/find-workers", icon: UserSearch, mobile: false },
+    { label: "Messages", to: "/employer/messages", icon: MessageSquare },
+    { label: "Analytics", to: "/employer/analytics", icon: BarChart3, mobile: false },
     { label: "Company", to: "/employer/company", icon: Building2 },
   ],
   admin: [

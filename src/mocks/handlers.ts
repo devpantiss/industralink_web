@@ -610,7 +610,8 @@ route("GET", "/admin/verifications", (req): VerificationItem[] => {
       submittedAt: c.createdAt, status: c.verification,
       details: {
         "GST number": c.gstNumber ?? "Not given", "Company size": c.size, Website: c.website ?? "—",
-        "HR contact": hr ? `${hr.name} · ${hr.email}` : "—", About: c.about ?? "—",
+        "HR contact": hr ? `${c.hrName ?? hr.name}${c.hrDesignation ? ` (${c.hrDesignation})` : ""} · ${hr.email}` : "—",
+        "Plants / sites": c.sites?.length ? c.sites.join(", ") : "—", About: c.about ?? "—",
       },
       documents: [],
     };

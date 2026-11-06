@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ChevronsLeft, ChevronsRight, LifeBuoy, LogOut, Plus, RotateCcw, Settings as SettingsIcon, WifiOff } from "lucide-react";
 import { LangToggle, t } from "@/lib/i18n";
+import { messagesApi } from "@/api/extra";
 import { cn } from "@/lib/cn";
 import { timeAgo } from "@/lib/format";
 import { notificationsApi } from "@/api/notifications";
@@ -170,9 +171,21 @@ function ProfileMenu() {
   );
 }
 
+/** Unread message count for the Messages nav item. */
+function useUnread(enabled: boolean) {
+  const q = useQuery({ queryKey: qk.messages.all, queryFn: messagesApi.threads, enabled, refetchInterval: 30_000 });
+  return q.data?.reduce((s, th) => s + th.unread, 0) ?? 0;
+}
+
+function NavCount({ n, className }: { n: number; className?: string }) {
+  if (!n) return null;
+  return <span className={cn("flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-on", className)} aria-label={`${n} unread`}>{n}</span>;
+}
+
 export function AppShell() {
   const user = useUser();
   const items = NAV[user.role];
+  const unread = useUnread(user.role !== "admin");
   const [collapsed, setCollapsed] = useLocalFlag("industrialink.sidebar.collapsed", false);
   const online = useOnline();
   const { pathname } = useLocation();
@@ -200,6 +213,7 @@ export function AppShell() {
                 collapsed ? "justify-center" : "justify-center lg:justify-start")}>
               <it.icon className="h-5 w-5 shrink-0" aria-hidden />
               <span className={cn(collapsed ? "sr-only" : "sr-only lg:not-sr-only")}>{t(it.label)}</span>
+              {it.to.endsWith("/messages") && <NavCount n={unread} className={cn("absolute right-2 top-1.5", !collapsed && "lg:static lg:ml-auto")} />}
             </NavLink>
           ))}
         </nav>
@@ -240,7 +254,7 @@ export function AppShell() {
         {items.filter((it) => it.mobile !== false).map((it) => (
           <NavLink key={it.to} to={it.to} end={it.end}
             className={({ isActive }) => cn("relative flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-medium transition-colors", isActive ? "text-primary before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-primary" : "text-ink-muted")}>
-            <it.icon className="h-6 w-6" aria-hidden />
+            <span className="relative"><it.icon className="h-6 w-6" aria-hidden />{it.to.endsWith("/messages") && <NavCount n={unread} className="absolute -right-2.5 -top-1.5" />}</span>
             {t(it.short ?? it.label)}
           </NavLink>
         ))}

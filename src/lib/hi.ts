@@ -409,6 +409,27 @@ export const HI: Record<string, string> = {
   "This removes your account for ever. To confirm, type DELETE below.": "इससे आपका खाता हमेशा के लिए हट जाएगा। पक्का करने के लिए नीचे DELETE लिखें।",
   "Your account was deleted": "आपका खाता हटा दिया गया",
 
+  // ---- messages
+  "Chat with HR after you're shortlisted.": "शॉर्टलिस्ट होने के बाद HR से बात करें।",
+  "No conversations yet": "अभी कोई बातचीत नहीं",
+  "When a company shortlists you, you can message their HR here.": "जब कोई कंपनी आपको शॉर्टलिस्ट करेगी, आप यहाँ उनके HR को संदेश भेज सकेंगे।",
+  "Choose a conversation": "कोई बातचीत चुनें",
+  "Conversations": "बातचीत",
+  "No messages yet": "अभी कोई संदेश नहीं",
+  "View application": "आवेदन देखें",
+  "Say hello. Keep it about this job.": "नमस्ते कहें। बात इसी नौकरी के बारे में रखें।",
+  "What time should I come?": "मुझे किस समय आना है?",
+  "Which documents should I bring?": "कौन-से कागज़ात लाने हैं?",
+  "Is food and stay provided?": "क्या खाना और रहने की जगह मिलेगी?",
+  "Write a message": "संदेश लिखें",
+  "Write a message…": "संदेश लिखें…",
+  "Send": "भेजें",
+  "Never share OTPs or bank details. IndustriaLink never asks for money.": "OTP या बैंक की जानकारी कभी न दें। IndustriaLink कभी पैसे नहीं माँगता।",
+  "This conversation is closed.": "यह बातचीत बंद हो गई है।",
+  "Ask HR a question about this job.": "इस नौकरी के बारे में HR से पूछें।",
+  "Message HR": "HR को संदेश भेजें",
+  "Settings saved": "सेटिंग सेव हो गई",
+
   // ---- time
   "just now": "अभी",
   "in a moment": "थोड़ी देर में",

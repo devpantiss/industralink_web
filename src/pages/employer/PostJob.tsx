@@ -45,10 +45,10 @@ export default function PostJob() {
 
   if ((sourceId && source.isLoading) || company.isLoading) return <ListSkeleton count={2} lines={5} />;
   if (source.isError || company.isError) return <ErrorState onRetry={() => { source.refetch(); company.refetch(); }} />;
-  return <JobForm key={sourceId ?? "new"} editing={id ? source.data : undefined} copyOf={!id ? source.data : undefined} verified={company.data?.verification === "approved"} defaults={{ sector: company.data!.sector, location: company.data!.location }} />;
+  return <JobForm key={sourceId ?? "new"} editing={id ? source.data : undefined} copyOf={!id ? source.data : undefined} verified={company.data?.verification === "approved"} defaults={{ sector: company.data!.sector, location: company.data!.location }} sites={company.data?.sites ?? []} />;
 }
 
-function JobForm({ editing, copyOf, verified, defaults }: { editing?: Job; copyOf?: Job; verified: boolean; defaults: Pick<JobInput, "sector" | "location"> }) {
+function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?: Job; copyOf?: Job; verified: boolean; defaults: Pick<JobInput, "sector" | "location">; sites?: string[] }) {
   const base = editing ?? copyOf;
   const [f, setF] = useState<JobInput>(() => base
     ? { ...pick(base), title: copyOf ? `Copy of ${base.title}` : base.title, status: copyOf ? "draft" : base.status }
@@ -141,7 +141,11 @@ function JobForm({ editing, copyOf, verified, defaults }: { editing?: Job; copyO
                       {(Object.keys(TRADE_LABEL) as Trade[]).map((t) => <option key={t} value={t}>{TRADE_LABEL[t]}</option>)}
                     </Select>
                   )}</Field>
-                  <Field label="Site / plant name" hint="Optional, e.g. Smelter Plant 2">{(id, d) => <Input id={id} aria-describedby={d} value={f.siteName ?? ""} onChange={(e) => set({ siteName: e.target.value || undefined })} />}</Field>
+                  <Field label="Site / plant name" hint={sites.length ? "Optional. Pick one of your sites or type a new one." : "Optional, e.g. Smelter Plant 2. Add your sites on the Company page to pick them here."}>{(id, d) => <>
+                    <Input id={id} aria-describedby={d} list="company-sites" value={f.siteName ?? ""} onChange={(e) => set({ siteName: e.target.value || undefined })} />
+                    <datalist id="company-sites">{sites.map((x) => <option key={x} value={x} />)}</datalist>
+                    {sites.length > 0 && <div className="mt-1.5 flex flex-wrap gap-1.5">{sites.map((x) => <button key={x} type="button" onClick={() => set({ siteName: x })} className={`rounded-full border px-2.5 py-0.5 text-caption font-medium ${f.siteName === x ? "border-primary bg-primary-soft text-primary" : "border-border text-ink-secondary hover:border-border-strong"}`}>{x}</button>)}</div>}
+                  </>}</Field>
                   <Field label="Number of openings" error={errors.openings}>{(id, d) => <Input id={id} aria-describedby={d} type="number" min={1} value={f.openings} onChange={(e) => set({ openings: Number(e.target.value) })} />}</Field>
                   <Field label="Work site city" required error={errors.city}>{(id, d) => <Input id={id} aria-describedby={d} value={f.location.city} invalid={!!errors.city} onChange={(e) => set({ location: { ...f.location, city: e.target.value } })} />}</Field>
                   <Field label="State">{(id) => <Input id={id} value={f.location.state} onChange={(e) => set({ location: { ...f.location, state: e.target.value } })} />}</Field>
