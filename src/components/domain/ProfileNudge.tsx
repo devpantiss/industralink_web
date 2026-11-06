@@ -19,8 +19,8 @@ export function ProfileNudge() {
   const onProfile = pathname.startsWith("/worker/profile");
 
   return (
-    <div className="animate-page border-b border-amber-200 bg-gradient-to-r from-amber-50 via-amber-50 to-orange-50">
-      <div className="mx-auto flex max-w-content flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:px-6 lg:px-8">
+    <div className="animate-page border-b border-warning-fg/15 bg-warning-bg">
+      <div className="mx-auto flex max-w-content flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-on">
             {needsResume ? <FileUp className="h-5 w-5" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />}
@@ -35,7 +35,7 @@ export function ProfileNudge() {
             <div className="mt-1.5 max-w-xs"><ProgressBar value={s.profileStrength} label="Profile complete" /></div>
           </div>
         </div>
-        <Link to={first.link} className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-md bg-ink px-4 text-body font-medium text-white transition-transform hover:bg-ink/90 active:scale-[0.98]">
+        <Link to={first.link} className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink px-5 text-body font-semibold text-white transition-transform hover:bg-ink/90 active:scale-[0.98]">
           {onProfile ? first.label : needsResume ? "Upload resume" : "Complete profile"} <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>

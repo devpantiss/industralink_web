@@ -4,7 +4,7 @@ import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { initials } from "@/lib/format";
 
-const avatarColors = ["bg-teal-100 text-teal-800", "bg-emerald-100 text-emerald-800", "bg-violet-100 text-violet-800", "bg-amber-100 text-amber-900", "bg-rose-100 text-rose-800", "bg-stone-200 text-stone-800"];
+const avatarColors = ["bg-[#E7F3EF] text-[#0A5447]", "bg-emerald-100 text-emerald-800", "bg-violet-100 text-violet-800", "bg-amber-100 text-amber-900", "bg-rose-100 text-rose-800", "bg-stone-200 text-stone-800"];
 
 export function Avatar({ name, size = "md", square, className }: { name: string; size?: "sm" | "md" | "lg"; square?: boolean; className?: string }) {
   const color = avatarColors[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % avatarColors.length];
@@ -114,41 +114,35 @@ export function StatCard({ label, value, icon, hint, to, highlight, tone = "blue
   const shown = useCountUp(value);
   const inner = (
     <>
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-center gap-2.5">
+        {icon && <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", STAT_TONE[tone])} aria-hidden>{icon}</span>}
         <span className="min-w-0 text-small font-medium text-ink-secondary">{label}</span>
-        {icon && <span className={cn("hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:flex", STAT_TONE[tone])} aria-hidden>{icon}</span>}
       </div>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="text-display text-ink tabular">{shown.toLocaleString("en-IN")}</span>
+      <div className="mt-2 flex items-center gap-2">
+        <span className="text-display font-bold text-ink tabular">{shown.toLocaleString("en-IN")}</span>
         {highlight && <span className="h-2.5 w-2.5 rounded-full bg-accent animate-pulse-ring" aria-label="Needs attention" />}
       </div>
       {hint && <div className="mt-1 text-caption text-ink-muted">{hint}</div>}
     </>
   );
-  const cls = cn("group relative block overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-xs sm:p-5",
-    "before:absolute before:inset-x-0 before:top-0 before:h-1", {
-      "before:bg-primary": tone === "blue", "before:bg-violet-500": tone === "purple", "before:bg-amber-500": tone === "amber",
-      "before:bg-green-500": tone === "green", "before:bg-teal-500": tone === "teal",
-    },
-    to && "transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md");
+  const cls = cn("group relative block rounded-lg border border-border bg-surface p-4 sm:p-5",
+    to && "transition-[box-shadow,border-color] duration-200 hover:border-border-strong hover:shadow-md");
   return to ? <Link to={to} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
 }
 
-/** Coloured welcome band at the top of each Home page. */
+/** Page intro at the top of each Home page: plain, like Indeed / Naukri. */
 export function Hero({ eyebrow, title, subtitle, actions, children }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode }) {
   return (
-    <section className="bg-hero relative overflow-hidden rounded-xl px-5 py-6 text-white shadow-md sm:px-8 sm:py-8">
-      <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden />
-      <div className="animate-float pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/25 blur-2xl" aria-hidden />
-      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <section>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          {eyebrow && <p className="text-caption font-semibold uppercase tracking-wider text-amber-300">{eyebrow}</p>}
-          <h1 className="mt-1 text-h1 sm:text-[28px] sm:leading-9">{title}</h1>
-          {subtitle && <p className="mt-1 max-w-xl text-body-lg text-white/75">{subtitle}</p>}
+          {eyebrow && <p className="text-caption font-semibold uppercase tracking-wider text-ink-muted">{eyebrow}</p>}
+          <h1 className="mt-0.5 text-h1 text-ink sm:text-[26px] sm:leading-9">{title}</h1>
+          {subtitle && <p className="mt-1 max-w-xl text-body-lg text-ink-secondary">{subtitle}</p>}
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
-      {children && <div className="relative mt-6">{children}</div>}
+      {children && <div className="mt-5">{children}</div>}
     </section>
   );
 }

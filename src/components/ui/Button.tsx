@@ -7,18 +7,18 @@ type Variant = "primary" | "secondary" | "ghost" | "danger" | "accent";
 type Size = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-[120ms] ease-brand active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 select-none";
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[120ms] ease-brand active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 select-none";
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-white shadow-[0_1px_2px_rgb(var(--primary)/.25),0_4px_12px_-2px_rgb(var(--primary)/.35)] hover:bg-primary-hover",
-  secondary: "border border-border bg-surface text-ink hover:border-border-strong hover:bg-surface-muted",
+  primary: "bg-primary text-white hover:bg-primary-hover",
+  secondary: "border border-border-strong bg-surface text-ink hover:border-ink/40 hover:bg-surface-muted",
   ghost: "text-ink-secondary hover:bg-surface-muted hover:text-ink",
   danger: "bg-danger-fg text-white hover:bg-danger-fg/90",
   accent: "bg-accent text-accent-on hover:bg-accent/90",
 };
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-small",
+  sm: "h-8 px-3.5 text-small",
   md: "h-10 px-4 text-body",
-  lg: "h-12 px-5 text-body-lg",
+  lg: "h-12 px-6 text-body-lg",
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", className?: string) {

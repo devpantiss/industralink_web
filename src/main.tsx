@@ -6,9 +6,7 @@ import { AuthProvider } from "@/app/AuthContext";
 import { router } from "@/app/router";
 import { ToastProvider } from "@/components/ui/Toast";
 import "@/styles/index.css";
-import { initPalette } from "@/lib/palette";
 
-initPalette();
 
 const queryClient = new QueryClient({
   defaultOptions: {

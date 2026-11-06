@@ -8,7 +8,6 @@ import { errorCode, errorMessage } from "@/api/client";
 import { EXPERIENCE_LABEL, JOB_TYPE_LABEL, SECTOR_LABEL, SHIFT_LABEL } from "@/lib/labels";
 import { formatDate, formatPay, timeAgo } from "@/lib/format";
 import { Button, LinkButton } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
 import { Banner } from "@/components/ui/Misc";
 import { VerifiedTick } from "@/components/ui/Badge";
 import { Drawer, Modal } from "@/components/ui/Overlay";
@@ -20,6 +19,16 @@ import { cn } from "@/lib/cn";
 
 export default function JobDetail() {
   const { id = "" } = useParams();
+  return (
+    <div className="mx-auto max-w-3xl pb-20 md:pb-0">
+      <Link to="/worker/jobs" className="mb-4 inline-block text-small font-medium text-ink-secondary hover:text-primary">← Back to jobs</Link>
+      <JobDetailView id={id} />
+    </div>
+  );
+}
+
+/** The full job: used as its own page, and inside the side pane on Find Jobs (`embedded`). */
+export function JobDetailView({ id, embedded }: { id: string; embedded?: boolean }) {
   const [sp, setSp] = useSearchParams();
   const q = useQuery({ queryKey: qk.worker.job(id), queryFn: () => workerApi.job(id), retry: (n, e) => errorCode(e) !== "NOT_FOUND" && n < 2 });
   const { toggle, pendingId } = useSaveJob();
@@ -28,7 +37,7 @@ export default function JobDetail() {
   const applyOpen = sp.get("apply") === "1";
   const setApply = (open: boolean) => { const n = new URLSearchParams(sp); open ? n.set("apply", "1") : n.delete("apply"); setSp(n, { replace: true }); };
 
-  if (q.isLoading) return <ListSkeleton count={2} lines={5} />;
+  if (q.isLoading) return <div className={cn(embedded && "p-5")}><ListSkeleton count={2} lines={5} /></div>;
   if (q.isError && errorCode(q.error) === "NOT_FOUND")
     return <EmptyState title="Job not found" description="This job was removed or the link is wrong." action={<LinkButton to="/worker/jobs">Find other jobs</LinkButton>} />;
   if (q.isError || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
@@ -38,6 +47,12 @@ export default function JobDetail() {
   const walkInOver = job.jobType === "walk_in" && job.walkIn && new Date(`${job.walkIn.date}T23:59`) < new Date();
   const shareText = encodeURIComponent(`${job.title} at ${job.companyName}, ${job.location.city}. ${formatPay(job.payMin, job.payMax, job.payPeriod)}. ${window.location.origin}/worker/jobs/${job.id}`);
 
+  const saveBtn = (
+    <button onClick={() => toggle(job)} disabled={pendingId === job.id} aria-pressed={job.saved} aria-label={job.saved ? "Remove from saved" : "Save job"} title={job.saved ? "Saved" : "Save job"}
+      className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface hover:bg-surface-muted", job.saved ? "text-danger-fg" : "text-ink-secondary")}>
+      <Heart className={cn("h-5 w-5", job.saved && "fill-current")} />
+    </button>
+  );
   const actions = closed ? (
     <p className="text-body font-medium text-ink-muted">This job is closed</p>
   ) : job.appliedApplicationId ? (
@@ -47,85 +62,89 @@ export default function JobDetail() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl pb-20 sm:pb-0">
-      <Link to="/worker/jobs" className="mb-4 inline-block text-small text-ink-muted hover:text-primary">← Back to jobs</Link>
-
-      {closed && <div className="mb-4"><Banner tone="warning" icon={<AlertTriangle className="h-5 w-5" />}>This job is no longer accepting applications.</Banner></div>}
-
-      <Card>
-        <CardBody className="p-5 sm:p-6">
-          <div className="flex gap-4">
-            <CompanyLogo job={job} size="lg" />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-h1 text-ink">{job.title}</h1>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-body text-ink-secondary">
-                <Link to={`/worker/companies/${job.companyId}`} className="font-medium hover:text-primary hover:underline">{job.companyName}</Link> <VerifiedTick verified={job.companyVerified} />
-              </p>
-              <p className="mt-1 text-small text-ink-muted">{SECTOR_LABEL[job.sector]} · Posted {timeAgo(job.postedAt)}</p>
-            </div>
-            <button onClick={() => toggle(job)} disabled={pendingId === job.id} aria-pressed={job.saved} aria-label={job.saved ? "Remove from saved" : "Save job"}
-              className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border hover:bg-surface-muted", job.saved ? "text-danger-fg" : "text-ink-muted")}>
-              <Heart className={cn("h-5 w-5", job.saved && "fill-current")} />
-            </button>
+    <div className={cn(!embedded && "rounded-lg border border-border bg-surface")}>
+      {/* Header: what, who, where, pay, apply. Sticky inside the side pane. */}
+      <div className={cn("border-b border-border bg-surface p-5 sm:p-6", embedded ? "sticky top-0 z-10" : "rounded-t-lg")}>
+        {closed && <div className="mb-4"><Banner tone="warning" icon={<AlertTriangle className="h-5 w-5" />}>This job is no longer accepting applications.</Banner></div>}
+        <div className="flex gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className={cn("font-bold text-ink", embedded ? "text-[22px] leading-7" : "text-[26px] leading-8")}>
+              {embedded ? <Link to={`/worker/jobs/${job.id}`} className="hover:underline">{job.title}</Link> : job.title}
+            </h1>
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-body-lg text-ink">
+              <Link to={`/worker/companies/${job.companyId}`} className="font-medium underline-offset-2 hover:text-primary hover:underline">{job.companyName}</Link> <VerifiedTick verified={job.companyVerified} />
+            </p>
+            <p className="text-body text-ink-secondary">{job.location.city}, {job.location.state}{job.siteName ? ` · ${job.siteName}` : ""}</p>
+            <p className="mt-1 text-body-lg font-semibold text-ink">{formatPay(job.payMin, job.payMax, job.payPeriod, true)}</p>
+            <p className="mt-1 text-caption text-ink-muted">{SECTOR_LABEL[job.sector]} · Posted {timeAgo(job.postedAt)}</p>
           </div>
+          <CompanyLogo job={job} size="lg" />
+        </div>
+        <div className={cn("mt-4 items-center gap-2", embedded ? "flex" : "hidden sm:flex")}>{actions}{saveBtn}</div>
+      </div>
 
-          <dl className="mt-6 grid gap-4 rounded-lg bg-surface-muted p-4 sm:grid-cols-2">
-            <Fact icon={Wallet} label="Pay" value={formatPay(job.payMin, job.payMax, job.payPeriod, true)} strong />
-            <Fact icon={MapPin} label="Work location" value={`${job.location.city}, ${job.location.state}`} />
-            {job.siteName && <Fact icon={Factory} label="Site / plant" value={job.siteName} />}
-            <Fact icon={Clock} label="Shift" value={`${SHIFT_LABEL[job.shift]} · ${JOB_TYPE_LABEL[job.jobType]}`} />
-            <Fact icon={Users} label="Openings" value={`${job.openings} people · ${EXPERIENCE_LABEL[job.experience]}`} />
-            {job.qualifications.length > 0 && <Fact icon={GraduationCap} label="Qualification" value={job.qualifications.join(", ")} />}
-            {job.deadline && <Fact icon={CalendarClock} label="Last date to apply" value={formatDate(job.deadline)} />}
-          </dl>
+      <div className="p-5 sm:p-6">
+        <h2 className="text-h2">Job details</h2>
+        <dl className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <Fact icon={Wallet} label="Pay" value={formatPay(job.payMin, job.payMax, job.payPeriod)} />
+          <Fact icon={Clock} label="Shift and job type" value={`${SHIFT_LABEL[job.shift]} · ${JOB_TYPE_LABEL[job.jobType]}`} />
+          <Fact icon={Users} label="Openings" value={`${job.openings} people · ${EXPERIENCE_LABEL[job.experience]}`} />
+          <Fact icon={MapPin} label="Work location" value={`${job.location.city}, ${job.location.state}`} />
+          {job.siteName && <Fact icon={Factory} label="Site / plant" value={job.siteName} />}
+          {job.qualifications.length > 0 && <Fact icon={GraduationCap} label="Qualification" value={job.qualifications.join(", ")} />}
+          {job.deadline && <Fact icon={CalendarClock} label="Last date to apply" value={formatDate(job.deadline)} />}
+        </dl>
 
-          {job.benefits.length > 0 && (
-            <div className="mt-5">
-              <h2 className="mb-2 text-h3">Benefits</h2>
-              <BenefitChips benefits={job.benefits} />
-            </div>
-          )}
+        {job.benefits.length > 0 && (
+          <div className="mt-6 border-t border-border pt-5">
+            <h2 className="mb-3 text-h2">Benefits</h2>
+            <BenefitChips benefits={job.benefits} />
+          </div>
+        )}
 
-          {job.jobType === "walk_in" && job.walkIn && (
-            <div className={cn("mt-5 rounded-lg border p-4", walkInOver ? "border-border bg-surface-muted" : "border-interview-fg/30 bg-interview-bg")}>
-              <h2 className="flex items-center gap-2 text-h3"><CalendarClock className="h-5 w-5 text-interview-fg" aria-hidden /> Walk-in interview</h2>
-              {walkInOver ? <p className="mt-1 text-body text-ink-muted">The walk-in date is over.</p> : (
-                <>
-                  <p className="mt-1 text-body text-ink">{formatDate(job.walkIn.date)} at {job.walkIn.time}</p>
-                  <p className="text-body text-ink-secondary">{job.walkIn.address}</p>
-                  <a className="mt-2 inline-block text-small font-medium text-primary hover:underline" target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${encodeURIComponent(job.walkIn.address)}`}>Open in Maps</a>
-                </>
-              )}
-            </div>
-          )}
+        {job.jobType === "walk_in" && job.walkIn && (
+          <div className={cn("mt-6 rounded-lg border p-4", walkInOver ? "border-border bg-surface-muted" : "border-interview-fg/30 bg-interview-bg")}>
+            <h2 className="flex items-center gap-2 text-h3"><CalendarClock className="h-5 w-5 text-interview-fg" aria-hidden /> Walk-in interview</h2>
+            {walkInOver ? <p className="mt-1 text-body text-ink-muted">The walk-in date is over.</p> : (
+              <>
+                <p className="mt-1 text-body text-ink">{formatDate(job.walkIn.date)} at {job.walkIn.time}</p>
+                <p className="text-body text-ink-secondary">{job.walkIn.address}</p>
+                <a className="mt-2 inline-block text-small font-medium text-primary hover:underline" target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${encodeURIComponent(job.walkIn.address)}`}>Open in Maps</a>
+              </>
+            )}
+          </div>
+        )}
 
-          {job.responsibilities.length > 0 && <Section title="What you'll do" items={job.responsibilities} />}
-          {job.requirements.length > 0 && <Section title="What you need" items={job.requirements} />}
+        {(job.responsibilities.length > 0 || job.requirements.length > 0) && (
+          <div className="mt-6 border-t border-border pt-5">
+            <h2 className="text-h2">Full job description</h2>
+            {job.responsibilities.length > 0 && <Section title="What you'll do" items={job.responsibilities} />}
+            {job.requirements.length > 0 && <Section title="What you need" items={job.requirements} />}
+          </div>
+        )}
 
-          <div className="mt-6 flex items-start gap-3 rounded-lg border border-info-fg/20 bg-info-bg p-4">
-            <Phone className="mt-0.5 h-5 w-5 shrink-0 text-info-fg" aria-hidden />
+        <div className="mt-6 space-y-3 border-t border-border pt-5">
+          <div className="flex items-start gap-3">
+            <Phone className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" aria-hidden />
             <p className="text-body text-ink">
               {job.allowCalls ? <>Once you're <span className="font-semibold">shortlisted</span>, you'll get the HR's number{job.callHours ? ` (calls ${job.callHours})` : ""}.</> : "The employer will contact you if you're shortlisted."}
             </p>
           </div>
-
-          <div className="mt-3 flex items-start gap-3 rounded-lg border border-success-fg/20 bg-success-bg p-4">
+          <div className="flex items-start gap-3 rounded-lg bg-success-bg p-4">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-success-fg" aria-hidden />
             <p className="text-body text-ink"><span className="font-semibold">IndustriaLink never asks for money.</span> Don't pay anyone for a job or "registration".</p>
           </div>
+        </div>
 
-          <div className="mt-4 flex flex-wrap gap-4 text-small">
-            <a href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><Share2 className="h-4 w-4" aria-hidden /> Share on WhatsApp</a>
-            <Link to={`/worker/companies/${job.companyId}`} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><Building2 className="h-4 w-4" aria-hidden /> More jobs at {job.companyName}</Link>
-            <button onClick={() => setReportOpen(true)} className="inline-flex items-center gap-1.5 font-medium text-ink-muted hover:text-danger-fg"><Flag className="h-4 w-4" aria-hidden /> Report this job</button>
-          </div>
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-small">
+          <a href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><Share2 className="h-4 w-4" aria-hidden /> Share on WhatsApp</a>
+          <Link to={`/worker/companies/${job.companyId}`} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><Building2 className="h-4 w-4" aria-hidden /> More jobs at {job.companyName}</Link>
+          <button onClick={() => setReportOpen(true)} className="inline-flex items-center gap-1.5 font-medium text-ink-muted hover:text-danger-fg"><Flag className="h-4 w-4" aria-hidden /> Report this job</button>
+        </div>
+      </div>
 
-          <div className="mt-6 hidden items-center justify-end gap-2 border-t border-border pt-5 sm:flex">{actions}</div>
-        </CardBody>
-      </Card>
-
-      {/* Sticky action bar on mobile */}
-      <div className="glass fixed inset-x-3 bottom-[88px] z-20 flex gap-2 rounded-2xl border p-2.5 sm:hidden">{actions}</div>
+      {/* Phone: action bar above the tab bar */}
+      {!embedded && <div className="fixed inset-x-0 bottom-16 z-20 flex gap-2 border-t border-border bg-surface p-3 sm:hidden">{actions}{saveBtn}</div>}
 
       <ApplyDrawer open={applyOpen && !closed && !job.appliedApplicationId} onClose={() => setApply(false)} jobId={job.id} title={`${job.title} – ${job.companyName}`} />
 
@@ -140,13 +159,13 @@ export default function JobDetail() {
   );
 }
 
-function Fact({ icon: Icon, label, value, strong }: { icon: typeof Wallet; label: string; value: string; strong?: boolean }) {
+function Fact({ icon: Icon, label, value }: { icon: typeof Wallet; label: string; value: string }) {
   return (
     <div className="flex gap-3">
       <Icon className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" aria-hidden />
       <div>
-        <dt className="text-caption text-ink-muted">{label}</dt>
-        <dd className={cn("text-body text-ink", strong && "text-body-lg font-semibold")}>{value}</dd>
+        <dt className="text-body font-semibold text-ink">{label}</dt>
+        <dd className="mt-0.5 inline-block rounded-md bg-surface-muted px-2 py-0.5 text-body text-ink-secondary">{value}</dd>
       </div>
     </div>
   );
@@ -154,8 +173,8 @@ function Fact({ icon: Icon, label, value, strong }: { icon: typeof Wallet; label
 
 function Section({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="mt-6">
-      <h2 className="mb-2 text-h3">{title}</h2>
+    <div className="mt-4">
+      <h3 className="mb-2 text-h3">{title}</h3>
       <ul className="space-y-1.5">
         {items.map((r) => <li key={r} className="flex gap-2 text-body text-ink-secondary"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-muted" aria-hidden />{r}</li>)}
       </ul>

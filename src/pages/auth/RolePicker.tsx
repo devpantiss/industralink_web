@@ -14,15 +14,15 @@ export function RolePicker({ value, onChange }: { value: Audience; onChange: (a:
     { v: "employer" as const, icon: Building2, title: "I'm hiring", text: "Companies & HR · email login" },
   ];
   return (
-    <div role="radiogroup" aria-label="Who are you?" className="grid grid-cols-2 gap-2 rounded-2xl border border-border/70 bg-surface-muted/70 p-1.5 shadow-[inset_0_1px_2px_rgb(15_23_42/.06)]">
+    <div role="radiogroup" aria-label="Who are you?" className="grid grid-cols-2 gap-2">
       {opts.map((o) => {
         const on = value === o.v;
         return (
           <button key={o.v} type="button" role="radio" aria-checked={on} onClick={() => { onChange(o.v); rememberAudience(o.v); }}
-            className={cn("flex flex-col items-start gap-1 rounded-lg px-3 py-3 text-left transition-all duration-200",
-              on ? "bg-surface shadow-md ring-1 ring-primary/30" : "text-ink-secondary hover:bg-surface/60")}>
+            className={cn("flex flex-col items-start gap-1 rounded-lg border px-3 py-3 text-left transition-colors duration-150",
+              on ? "border-primary bg-primary-soft shadow-[inset_0_0_0_1px_rgb(var(--primary))]" : "border-border-strong bg-surface text-ink-secondary hover:bg-surface-muted")}>
             <span className="flex items-center gap-2">
-              <span className={cn("flex h-8 w-8 items-center justify-center rounded-md transition-colors", on ? "bg-primary text-white" : "bg-surface text-ink-muted")}>
+              <span className={cn("flex h-8 w-8 items-center justify-center rounded-md transition-colors", on ? "bg-primary text-white" : "bg-surface-muted text-ink-muted")}>
                 <o.icon className="h-[18px] w-[18px]" aria-hidden />
               </span>
               <span className={cn("text-body font-semibold leading-tight", on ? "text-ink" : "text-ink-secondary")}>{o.title}</span>
