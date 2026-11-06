@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { Building2, HardHat, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "@/api/auth";
 import { errorMessage, USE_MOCKS } from "@/api/client";
@@ -43,8 +44,8 @@ export default function LoginPage() {
             {as === "worker" ? "Create a free job seeker account" : "Register your company"}
           </Link>
         </p>
-        {USE_MOCKS && <DemoAccounts audience={as} />}
       </div>
+      {SHOW_DEMO_LOGIN && <DemoLogin onSuccess={done} />}
     </AuthLayout>
   );
 }
@@ -81,20 +82,36 @@ export function EmailLogin({ onSuccess, footer }: { onSuccess: (r: AuthResponse)
   );
 }
 
-function DemoAccounts({ audience }: { audience: Audience }) {
-  const rows = audience === "worker"
-    ? [{ role: "Worker", login: "Mobile 9876543210", hint: "any 6-digit code" }]
-    : [
-        { role: "Employer", login: "hr@vedanta.demo", hint: "demo1234" },
-        { role: "Employer (not verified)", login: "hr@eastline.demo", hint: "demo1234" },
-      ];
+/** One-click demo logins. Shown with mock data or in local dev; hidden in production builds. */
+const SHOW_DEMO_LOGIN = USE_MOCKS || import.meta.env.DEV;
+
+const DEMO_USERS = [
+  { key: "worker", label: "Worker", who: "Rajan Mehta · Welder", icon: HardHat, login: async () => { await authApi.requestOtp("9876543210"); return authApi.verifyOtp("9876543210", "123456"); } },
+  { key: "employer", label: "HR / Employer", who: "Vedanta Aluminium", icon: Building2, login: () => authApi.login("hr@vedanta.demo", "demo1234") },
+  { key: "admin", label: "Admin", who: "IndustriaLink team", icon: ShieldCheck, login: () => authApi.login("admin@industrialink.demo", "demo1234") },
+] as const;
+
+function DemoLogin({ onSuccess }: { onSuccess: (r: AuthResponse) => void }) {
+  const [busy, setBusy] = useState<string>();
+  const [error, setError] = useState<string>();
+  const go = async (u: (typeof DEMO_USERS)[number]) => {
+    setBusy(u.key); setError(undefined);
+    try { onSuccess(await u.login()); } catch (e) { setError(errorMessage(e)); } finally { setBusy(undefined); }
+  };
   return (
     <div className="mt-8 rounded-lg border border-dashed border-border-strong bg-surface-muted/60 p-4">
-      <p className="text-small font-semibold text-ink">Demo accounts</p>
-      <ul className="mt-2 space-y-1.5 text-small text-ink-secondary">
-        {rows.map((r) => <li key={r.login}><span className="font-medium text-ink">{r.role}:</span> {r.login} · <span className="text-ink-muted">{r.hint}</span></li>)}
-      </ul>
-      <p className="mt-3 text-caption text-ink-muted">Admin? Use <Link to="/admin/login" className="font-medium text-primary hover:underline">/admin/login</Link></p>
+      <p className="text-small font-semibold text-ink">Quick demo login</p>
+      <p className="text-caption text-ink-muted">For testing only. Not shown in production.</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {DEMO_USERS.map((u) => (
+          <Button key={u.key} variant="secondary" size="sm" className="h-auto flex-col gap-0.5 py-2" onClick={() => go(u)}
+            loading={busy === u.key} disabled={!!busy && busy !== u.key} icon={<u.icon className="h-4 w-4" aria-hidden />}>
+            <span className="font-semibold">{u.label}</span>
+            <span className="text-caption font-normal text-ink-muted">{u.who}</span>
+          </Button>
+        ))}
+      </div>
+      {error && <p className="mt-2 text-small text-danger-fg" role="alert">{error}</p>}
     </div>
   );
 }
