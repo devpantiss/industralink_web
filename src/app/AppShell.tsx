@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronsLeft, ChevronsRight, LogOut, Plus, RotateCcw, WifiOff } from "lucide-react";
+import { Bell, ChevronsLeft, ChevronsRight, LifeBuoy, LogOut, Plus, RotateCcw, Settings as SettingsIcon, WifiOff } from "lucide-react";
+import { LangToggle, t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 import { timeAgo } from "@/lib/format";
 import { notificationsApi } from "@/api/notifications";
@@ -78,11 +79,11 @@ function Notifications() {
       {open && (
         <div className="glass-menu animate-pop fixed inset-x-3 top-16 z-40 overflow-hidden rounded-2xl border border-white/60 sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-96">
           <div className="flex items-center justify-between border-b border-ink/5 px-4 py-3">
-            <h2 className="text-h3">Notifications</h2>
-            {unread > 0 && <button className="text-small font-medium text-primary hover:underline" onClick={() => readAll.mutate()}>Mark all as read</button>}
+            <h2 className="text-h3">{t("Notifications")}</h2>
+            {unread > 0 && <button className="text-small font-medium text-primary hover:underline" onClick={() => readAll.mutate()}>{t("Mark all as read")}</button>}
           </div>
           <ul className="max-h-[60vh] overflow-y-auto">
-            {q.data?.length === 0 && <li className="px-4 py-8 text-center text-body text-ink-muted">You're all caught up.</li>}
+            {q.data?.length === 0 && <li className="px-4 py-8 text-center text-body text-ink-muted">{t("You're all caught up.")}</li>}
             {q.data?.map((n) => (
               <li key={n.id}>
                 <button
@@ -149,13 +150,19 @@ function ProfileMenu() {
             </div>
             <p className="mt-1.5 text-caption text-ink-secondary">{PALETTES.find((p) => p.value === palette)?.label}</p>
           </div>
+          <Link to={`/${user.role}/settings`} onClick={() => setOpen(false)} className="flex w-full items-center gap-2 px-4 py-2.5 text-body text-ink-secondary hover:bg-surface-muted">
+            <SettingsIcon className="h-4 w-4" aria-hidden /> {t("Settings")}
+          </Link>
+          <Link to="/help" onClick={() => setOpen(false)} className="flex w-full items-center gap-2 px-4 py-2.5 text-body text-ink-secondary hover:bg-surface-muted">
+            <LifeBuoy className="h-4 w-4" aria-hidden /> {t("Help & support")}
+          </Link>
           {USE_MOCKS && (
             <button onClick={resetDemo} className="flex w-full items-center gap-2 px-4 py-2.5 text-body text-ink-secondary hover:bg-surface-muted">
               <RotateCcw className="h-4 w-4" aria-hidden /> Reset demo data
             </button>
           )}
           <button onClick={signOut} className="flex w-full items-center gap-2 px-4 py-2.5 text-body text-danger-fg hover:bg-danger-bg">
-            <LogOut className="h-4 w-4" aria-hidden /> Log out
+            <LogOut className="h-4 w-4" aria-hidden /> {t("Log out")}
           </button>
         </div>
       )}
@@ -187,12 +194,12 @@ export function AppShell() {
         {!collapsed && <p className="hidden px-5 pt-5 text-caption font-semibold uppercase tracking-wider text-amber-300/90 lg:block">{ROLE_LABEL[user.role]}</p>}
         <nav className="flex flex-1 flex-col gap-1 p-3">
           {items.map((it) => (
-            <NavLink key={it.to} to={it.to} end={it.end} title={it.label}
+            <NavLink key={it.to} to={it.to} end={it.end} title={t(it.label)}
               className={({ isActive }) => cn("relative flex h-10 items-center gap-3 rounded-md px-3 text-body font-medium transition-colors",
                 isActive ? "bg-white/10 text-white before:absolute before:-left-3 before:top-2 before:h-6 before:w-[3px] before:rounded-r before:bg-accent" : "text-white/65 hover:bg-white/5 hover:text-white",
                 collapsed ? "justify-center" : "justify-center lg:justify-start")}>
               <it.icon className="h-5 w-5 shrink-0" aria-hidden />
-              <span className={cn(collapsed ? "sr-only" : "sr-only lg:not-sr-only")}>{it.label}</span>
+              <span className={cn(collapsed ? "sr-only" : "sr-only lg:not-sr-only")}>{t(it.label)}</span>
             </NavLink>
           ))}
         </nav>
@@ -209,6 +216,7 @@ export function AppShell() {
           {user.role === "employer" && (
             <LinkButton to="/employer/jobs/new" size="sm" icon={<Plus className="h-4 w-4" />} className="hidden sm:inline-flex">Post a job</LinkButton>
           )}
+          {user.role === "worker" && <LangToggle />}
           <Notifications />
           <ProfileMenu />
         </header>
@@ -233,7 +241,7 @@ export function AppShell() {
           <NavLink key={it.to} to={it.to} end={it.end}
             className={({ isActive }) => cn("relative flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-medium transition-colors", isActive ? "text-primary before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-primary" : "text-ink-muted")}>
             <it.icon className="h-6 w-6" aria-hidden />
-            {it.short ?? it.label}
+            {t(it.short ?? it.label)}
           </NavLink>
         ))}
       </nav>

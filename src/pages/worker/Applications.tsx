@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { t } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, ChevronRight, FileText } from "lucide-react";
 import type { WorkerApplication } from "@/types";
@@ -27,12 +28,12 @@ export default function Applications() {
 
   return (
     <div>
-      <PageHeader title="My applications" description="See where each application stands." />
+      <PageHeader title={t("My applications")} description={t("See where each application stands.")} />
       <Tabs
         tabs={[
-          { value: "active", label: "Active", count: groups.active.length },
-          { value: "interviews", label: "Interviews", count: groups.interviews.length },
-          { value: "closed", label: "Closed", count: groups.closed.length },
+          { value: "active", label: t("Active"), count: groups.active.length },
+          { value: "interviews", label: t("Interviews"), count: groups.interviews.length },
+          { value: "closed", label: t("Closed"), count: groups.closed.length },
         ]}
         value={tab}
         onChange={(v) => setSp({ tab: v }, { replace: true })}
@@ -41,9 +42,9 @@ export default function Applications() {
       <QueryState query={q}
         empty={() => groups[tab].length === 0 && (
           <EmptyState icon={<FileText className="h-6 w-6" />}
-            title={tab === "closed" ? "Nothing here yet" : tab === "interviews" ? "No interviews yet" : "You haven't applied yet"}
-            description={tab === "active" ? "Find a job you like and tap Apply. It takes less than a minute." : undefined}
-            action={tab === "active" ? <LinkButton to="/worker/jobs">Find jobs</LinkButton> : undefined} />
+            title={tab === "closed" ? t("Nothing here yet") : tab === "interviews" ? t("No interviews yet") : t("You haven't applied yet")}
+            description={tab === "active" ? t("Find a job you like and tap Apply. It takes less than a minute.") : undefined}
+            action={tab === "active" ? <LinkButton to="/worker/jobs">{t("Find jobs")}</LinkButton> : undefined} />
         )}>
         {() => (
           <ul className="flex flex-col gap-3">
@@ -60,7 +61,7 @@ export default function Applications() {
                     {a.stage === "interview" && a.interview ? (
                       <p className="mt-1 inline-flex items-center gap-1 text-small font-medium text-interview-fg"><CalendarClock className="h-4 w-4" aria-hidden /> {formatDateTime(a.interview.at)}</p>
                     ) : (
-                      <p className="mt-1 text-caption text-ink-muted">Updated {timeAgo(a.updatedAt)}</p>
+                      <p className="mt-1 text-caption text-ink-muted">{t("Updated {when}", { when: timeAgo(a.updatedAt) })}</p>
                     )}
                   </div>
                   <ChevronRight className="h-5 w-5 shrink-0 text-ink-muted" aria-hidden />

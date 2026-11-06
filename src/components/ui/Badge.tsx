@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { t } from "@/lib/i18n";
 import { BadgeCheck, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { AccountStatus, ApplicationStage, JobStatus, VerificationStatus } from "@/types";
@@ -30,7 +31,7 @@ const STAGE_TONE: Record<ApplicationStage, Tone> = {
 };
 
 export function StageBadge({ stage, audience = "employer" }: { stage: ApplicationStage; audience?: "worker" | "employer" }) {
-  const label = audience === "worker" ? STAGE_LABEL_WORKER[stage] : STAGE_LABEL[stage];
+  const label = audience === "worker" ? t(STAGE_LABEL_WORKER[stage]) : STAGE_LABEL[stage];
   const tone = audience === "worker" && stage === "rejected" ? "neutral" : STAGE_TONE[stage];
   const icon = stage === "hired" ? <CheckCircle2 className="h-3 w-3" aria-hidden /> : stage === "rejected" && audience === "employer" ? <XCircle className="h-3 w-3" aria-hidden /> : undefined;
   return <Badge tone={tone} icon={icon}>{label}</Badge>;
@@ -57,11 +58,11 @@ export function AccountStatusBadge({ status }: { status: AccountStatus }) {
 export function VerifiedTick({ verified }: { verified: boolean }) {
   return verified ? (
     <span className="inline-flex items-center gap-0.5 text-caption font-medium text-success-fg">
-      <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> Verified
+      <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {t("Verified")}
     </span>
   ) : (
     <span className="inline-flex items-center gap-0.5 text-caption font-medium text-warning-fg">
-      <Clock className="h-3.5 w-3.5" aria-hidden /> Not yet verified
+      <Clock className="h-3.5 w-3.5" aria-hidden /> {t("Not yet verified")}
     </span>
   );
 }

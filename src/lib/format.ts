@@ -1,4 +1,5 @@
 import type { PayPeriod } from "@/types";
+import { getLang, t } from "./i18n";
 
 const inr = new Intl.NumberFormat("en-IN");
 
@@ -11,22 +12,24 @@ export function formatCompact(n: number) {
 
 /** "₹18,000–22,000 / month" or "₹700 / day (about ₹18,200/month)". */
 export function formatPay(min?: number, max?: number, period: PayPeriod = "month", withMonthly = false) {
-  if (!min && !max) return "Salary not disclosed";
+  if (!min && !max) return t("Salary not disclosed");
   const range = min && max && min !== max ? `₹${inr.format(min)}–${inr.format(max)}` : `₹${inr.format((min || max)!)}`;
-  const base = `${range} / ${period}`;
+  const base = `${range} / ${t(period)}`;
   if (withMonthly && period === "day") {
     const monthly = Math.round(((min || max)! * 26) / 100) * 100;
-    return `${base} (about ₹${inr.format(monthly)}/month)`;
+    return `${base} (${t("about ₹{n}/month", { n: inr.format(monthly) })})`;
   }
   return base;
 }
 
+const loc = () => (getLang() === "hi" ? "hi-IN" : "en-IN");
+
 export function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(loc(), { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-IN", {
+  return new Date(iso).toLocaleString(loc(), {
     day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true,
   });
 }
@@ -34,17 +37,18 @@ export function formatDateTime(iso: string) {
 export function timeAgo(iso: string) {
   const diffSec = (new Date(iso).getTime() - Date.now()) / 1000;
   const abs = Math.abs(diffSec);
-  if (abs < 60) return diffSec > 0 ? "in a moment" : "just now";
+  if (abs < 60) return diffSec > 0 ? t("in a moment") : t("just now");
   const steps: [Intl.RelativeTimeFormatUnit, number][] = [
     ["minute", 60], ["hour", 3600], ["day", 86400], ["week", 604800], ["month", 2629800], ["year", 31557600],
   ];
   let unit: Intl.RelativeTimeFormatUnit = "minute";
   let size = 60;
   for (const [u, s] of steps) if (abs >= s) { unit = u; size = s; }
-  return rtf.format(Math.round(diffSec / size), unit);
+  return (getLang() === "hi" ? rtfHi : rtf).format(Math.round(diffSec / size), unit);
 }
 
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const rtfHi = new Intl.RelativeTimeFormat("hi", { numeric: "auto" });
 
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -58,5 +62,5 @@ export function initials(name: string) {
 
 export function greeting() {
   const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  return t(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
 }

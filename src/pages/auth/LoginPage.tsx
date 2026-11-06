@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { t } from "@/lib/i18n";
 import { Building2, HardHat, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "@/api/auth";
@@ -31,7 +32,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   return (
-    <AuthLayout side={as} title="Welcome back" subtitle="Log in to continue.">
+    <AuthLayout side={as} title={t("Welcome back")} subtitle={t("Log in to continue.")}>
       <RolePicker value={as} onChange={setAs} />
       <div key={as} className="animate-page mt-6">
         {as === "worker" ? (
@@ -41,9 +42,9 @@ export default function LoginPage() {
           <EmailLogin onSuccess={done} />
         )}
         <p className="mt-8 text-center text-body text-ink-secondary">
-          {as === "worker" ? "New here?" : "New company?"}{" "}
+          {as === "worker" ? t("New here?") : "New company?"}{" "}
           <Link to={`/signup?as=${as}`} className="font-semibold text-primary hover:underline">
-            {as === "worker" ? "Create a free job seeker account" : "Register your company"}
+            {as === "worker" ? t("Create a free job seeker account") : "Register your company"}
           </Link>
         </p>
       </div>

@@ -6,9 +6,10 @@ import { initials } from "@/lib/format";
 
 const avatarColors = ["bg-teal-100 text-teal-800", "bg-emerald-100 text-emerald-800", "bg-violet-100 text-violet-800", "bg-amber-100 text-amber-900", "bg-rose-100 text-rose-800", "bg-stone-200 text-stone-800"];
 
-export function Avatar({ name, size = "md", square, className }: { name: string; size?: "sm" | "md" | "lg"; square?: boolean; className?: string }) {
+export function Avatar({ name, size = "md", square, className, src }: { name: string; size?: "sm" | "md" | "lg"; square?: boolean; className?: string; src?: string }) {
   const color = avatarColors[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % avatarColors.length];
   const sz = size === "sm" ? "h-8 w-8 text-caption" : size === "lg" ? "h-14 w-14 text-h2" : "h-10 w-10 text-small";
+  if (src) return <img src={src} alt="" className={cn("shrink-0 object-cover", square ? "rounded-md" : "rounded-full", sz, className)} />;
   return (
     <span className={cn("inline-flex shrink-0 items-center justify-center font-semibold", square ? "rounded-md" : "rounded-full", sz, color, className)} aria-hidden>
       {initials(name) || "?"}

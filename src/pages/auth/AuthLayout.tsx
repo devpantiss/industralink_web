@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LangToggle, t } from "@/lib/i18n";
 import { Link } from "react-router-dom";
 import { BadgeCheck, IndianRupee, ShieldCheck } from "lucide-react";
 
@@ -7,7 +8,7 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
     ? { h: "Hire skilled industrial workers, faster.", points: ["Post a job in under 2 minutes", "See ITI, licences and experience at a glance", "Move candidates on a simple hiring board"] }
     : side === "admin"
       ? { h: "IndustriaLink admin console.", points: ["Approve companies", "Remove fake or unsafe jobs", "Every action is logged"] }
-      : { h: "India's trusted platform for industrial jobs.", points: ["Every company is checked by our team", "Pay shown clearly on every job", "We never ask workers for money"] };
+      : { h: t("India's trusted platform for industrial jobs."), points: [t("Every company is checked by our team"), t("Pay shown clearly on every job"), t("We never ask workers for money")] };
   const icons = [BadgeCheck, IndianRupee, ShieldCheck];
   return (
     <div className="flex min-h-screen bg-surface">
@@ -44,7 +45,10 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
             </span>
             <span className="text-h3 font-semibold">IndustriaLink</span>
           </Link>
-          <h1 className="text-h1 text-ink">{title}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-h1 text-ink">{title}</h1>
+            {side !== "admin" && <LangToggle className="shrink-0" />}
+          </div>
           {subtitle && <p className="mt-1 text-body text-ink-secondary">{subtitle}</p>}
           <div className="mt-6">{children}</div>
         </div>

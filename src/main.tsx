@@ -6,6 +6,7 @@ import { AuthProvider } from "@/app/AuthContext";
 import { router } from "@/app/router";
 import { ToastProvider } from "@/components/ui/Toast";
 import "@/styles/index.css";
+import { LangProvider } from "@/lib/i18n";
 import { initPalette } from "@/lib/palette";
 
 initPalette();
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <LangProvider>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
@@ -25,5 +27,6 @@ createRoot(document.getElementById("root")!).render(
         </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
+    </LangProvider>
   </StrictMode>,
 );

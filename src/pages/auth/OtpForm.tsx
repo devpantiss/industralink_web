@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { t } from "@/lib/i18n";
 import { authApi } from "@/api/auth";
 import { errorCode, errorMessage, USE_MOCKS } from "@/api/client";
 import type { AuthResponse } from "@/types";
@@ -42,12 +43,12 @@ export function OtpForm({ mode, name, initialPhone = "", onSuccess, onWrongMode,
   const send = async (e?: FormEvent) => {
     e?.preventDefault();
     setError(undefined);
-    if (!/^[6-9]\d{9}$/.test(phone)) return setError("Enter a valid 10-digit mobile number.");
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError(t("Enter a valid 10-digit mobile number."));
     setBusy(true);
     try {
       const r = await authApi.requestOtp(phone);
-      if (mode === "login" && r.isNewUser) return setError(wrongMode("No account with this number yet.", "Create one now →"));
-      if (mode === "signup" && !r.isNewUser) return setError(wrongMode("You already have an account with this number.", "Log in instead →"));
+      if (mode === "login" && r.isNewUser) return setError(wrongMode(t("No account with this number yet."), t("Create one now →")));
+      if (mode === "signup" && !r.isNewUser) return setError(wrongMode(t("You already have an account with this number."), t("Log in instead →")));
       setStep("code");
       setWait(30);
       setTimeout(() => codeRef.current?.focus(), 50);
@@ -61,12 +62,12 @@ export function OtpForm({ mode, name, initialPhone = "", onSuccess, onWrongMode,
   const verify = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
-    if (!/^\d{6}$/.test(code)) return setError("Enter the 6-digit code.");
+    if (!/^\d{6}$/.test(code)) return setError(t("Enter the 6-digit code."));
     setBusy(true);
     try {
       onSuccess(await authApi.verifyOtp(phone, code, mode === "signup" ? name : undefined));
     } catch (err) {
-      setError(errorCode(err) === "EXISTS" ? wrongMode(errorMessage(err), "Log in →") : errorMessage(err));
+      setError(errorCode(err) === "EXISTS" ? wrongMode(errorMessage(err), t("Log in →")) : errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -75,13 +76,13 @@ export function OtpForm({ mode, name, initialPhone = "", onSuccess, onWrongMode,
   if (step === "phone") {
     return (
       <form onSubmit={send} className="flex flex-col gap-4" noValidate>
-        <Field label="Mobile number" error={error} hint="We'll send a 6-digit code by SMS. No password needed.">
+        <Field label={t("Mobile number")} error={error} hint={t("We'll send a 6-digit code by SMS. No password needed.")}>
           {(id, d) => (
             <Input id={id} aria-describedby={d} prefix="+91" inputSize="lg" inputMode="numeric" autoComplete="tel-national" maxLength={10}
               placeholder="98765 43210" value={phone} invalid={!!error} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} autoFocus />
           )}
         </Field>
-        <Button type="submit" size="lg" loading={busy} loadingText="Sending code…">Send code</Button>
+        <Button type="submit" size="lg" loading={busy} loadingText={t("Sending code…")}>{t("Send code")}</Button>
       </form>
     );
   }
@@ -89,16 +90,16 @@ export function OtpForm({ mode, name, initialPhone = "", onSuccess, onWrongMode,
   return (
     <form onSubmit={verify} className="animate-page flex flex-col gap-4" noValidate>
       <p className="text-body text-ink-secondary">
-        Code sent to <span className="font-medium text-ink">+91 {phone}</span>.{" "}
-        <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setStep("phone"); setCode(""); setError(undefined); }}>Change number</button>
+        {t("Code sent to")} <span className="font-medium text-ink">+91 {phone}</span>.{" "}
+        <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setStep("phone"); setCode(""); setError(undefined); }}>{t("Change number")}</button>
       </p>
-      <Field label="6-digit code" error={error} hint={USE_MOCKS ? "Demo: any 6 digits work." : undefined}>
+      <Field label={t("6-digit code")} error={error} hint={USE_MOCKS ? t("Demo: any 6 digits work.") : undefined}>
         {(id, d) => (
           <Input ref={codeRef} id={id} aria-describedby={d} inputSize="lg" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
             className="text-center text-h2 tracking-[0.5em]" placeholder="••••••" value={code} invalid={!!error} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
         )}
       </Field>
-      <Button type="submit" size="lg" loading={busy} loadingText="Checking…">{submitLabel}</Button>
+      <Button type="submit" size="lg" loading={busy} loadingText={t("Checking…")}>{t(submitLabel)}</Button>
       <p className="text-center text-small text-ink-muted">
         {wait > 0 ? <>Resend code in 0:{String(wait).padStart(2, "0")}</> : (
           <button type="button" className="font-medium text-primary hover:underline" onClick={() => send()}>Resend code</button>

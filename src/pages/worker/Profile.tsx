@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
+import { t } from "@/lib/i18n";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Eye, FileImage, FileText, FileUp, Pencil, Star, Trash2 } from "lucide-react";
+import { BadgeCheck, Camera, Eye, FileImage, FileText, FileUp, Pencil, Star, Trash2 } from "lucide-react";
 import type { Availability, DocType, ExperienceBand, Shift, Trade, WorkerDocument, WorkerProfile } from "@/types";
-import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EXPERIENCE_LABEL, LICENCES, QUALIFICATIONS, SHIFT_LABEL, TRADE_LABEL } from "@/lib/labels";
+import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EMPLOYMENT_TYPE_LABEL, EXPERIENCE_LABEL, LANGUAGES, LICENCES, QUALIFICATIONS, SHIFT_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { formatBytes, formatDate, formatNumber } from "@/lib/format";
 import { DocumentPreview } from "@/components/domain/CandidatePanel";
 import { workerApi } from "@/api/worker";
@@ -29,34 +30,79 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="My profile" description="Employers see this when you apply. Your profile works as your resume." />
+      <PageHeader title={t("My profile")} description={t("Employers see this when you apply. Your profile works as your resume.")} />
       {profile.isLoading ? <ListSkeleton count={2} /> : profile.isError || !profile.data ? <ErrorState onRetry={() => profile.refetch()} /> : (
         <>
           <Card className="mb-6">
             <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Avatar name={profile.data.name} size="lg" />
+              <PhotoPicker profile={profile.data} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-h2">{profile.data.name}</h2>
-                  <Badge tone="success" icon={<BadgeCheck className="h-3 w-3" aria-hidden />}>Mobile verified</Badge>
+                  <Badge tone="success" icon={<BadgeCheck className="h-3 w-3" aria-hidden />}>{t("Mobile verified")}</Badge>
                 </div>
                 <p className="text-body text-ink-secondary">
-                  {profile.data.trade ? TRADE_LABEL[profile.data.trade] : "Trade not added"} · +91 {profile.data.phone}
+                  {profile.data.trade ? t(TRADE_LABEL[profile.data.trade]) : t("Trade not added")} · +91 {profile.data.phone}
                 </p>
               </div>
               {summary.data && (
                 <div className="w-full sm:w-56">
-                  <p className="mb-1 text-small text-ink-secondary">Profile {summary.data.profileStrength}% complete</p>
+                  <p className="mb-1 text-small text-ink-secondary">{t("Profile {n}% complete", { n: summary.data.profileStrength })}</p>
                   <ProgressBar value={summary.data.profileStrength} label="Profile strength" />
-                  {summary.data.profileHint && <p className="mt-1 text-caption text-ink-muted">{summary.data.profileHint}</p>}
+                  {summary.data.profileHint && <p className="mt-1 text-caption text-ink-muted">{t(summary.data.profileHint)}</p>}
                 </div>
               )}
             </CardBody>
           </Card>
-          <Tabs tabs={[{ value: "profile", label: "Details" }, { value: "documents", label: "Resume & documents" }]} value={tab} onChange={(v) => setSp({ tab: v }, { replace: true })} className="mb-6" />
+          <Tabs tabs={[{ value: "profile", label: t("Details") }, { value: "documents", label: t("Resume & documents") }]} value={tab} onChange={(v) => setSp({ tab: v }, { replace: true })} className="mb-6" />
           <div key={tab} className="animate-page">{tab === "profile" ? <ProfileDetails p={profile.data} /> : <Documents />}</div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Shrinks the photo on the phone before upload, so it stays small on slow networks. */
+function resizeImage(file: File, max = 320): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      resolve(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => reject(new Error("bad image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function PhotoPicker({ profile }: { profile: WorkerProfile }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const save = useMutation({
+    mutationFn: (photoUrl: string | undefined) => workerApi.updateProfile({ photoUrl }),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(v ? "Photo added" : "Photo removed"); },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+  const pick = async (f?: File) => {
+    if (!f) return;
+    if (!f.type.startsWith("image/")) return toast.error("Please choose a photo (JPG or PNG).");
+    try { save.mutate(await resizeImage(f)); } catch { toast.error("Couldn't read this photo. Try another one."); }
+  };
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-1">
+      <label className="group relative cursor-pointer" title="Change photo">
+        <Avatar name={profile.name} size="lg" src={profile.photoUrl} className="h-16 w-16" />
+        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-md transition-transform group-hover:scale-105"><Camera className="h-3.5 w-3.5" aria-hidden /></span>
+        <input type="file" accept="image/*" className="sr-only" aria-label={profile.photoUrl ? "Change profile photo" : "Add profile photo"} onChange={(e) => pick(e.target.files?.[0])} />
+      </label>
+      {profile.photoUrl
+        ? <button className="text-caption text-ink-muted hover:text-danger-fg" onClick={() => save.mutate(undefined)}>Remove</button>
+        : <span className="text-caption font-medium text-primary">Add photo</span>}
     </div>
   );
 }
@@ -73,21 +119,23 @@ function ProfileDetails({ p }: { p: WorkerProfile }) {
     setEditState(s);
     if (!s && sp.get("edit")) { const n = new URLSearchParams(sp); n.delete("edit"); setSp(n, { replace: true }); }
   };
-  const editBtn = (s: Section) => <Button variant="ghost" size="sm" icon={<Pencil className="h-4 w-4" />} onClick={() => setEdit(s)}>Edit</Button>;
+  const editBtn = (s: Section) => <Button variant="ghost" size="sm" icon={<Pencil className="h-4 w-4" />} onClick={() => setEdit(s)}>{t("Edit")}</Button>;
 
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="Work" action={editBtn("work")} />
+        <CardHeader title={t("Work")} action={editBtn("work")} />
         <CardBody>
           <DefinitionList items={[
-            ["Trade", p.trade ? TRADE_LABEL[p.trade] : ""],
-            ["Experience", p.experience ? EXPERIENCE_LABEL[p.experience] : ""],
-            ["Education", p.qualifications.join(", ")],
-            ["Licences / certificates", p.licences.join(", ")],
+            [t("Trade"), p.trade ? t(TRADE_LABEL[p.trade]) : ""],
+            [t("Experience"), p.experience ? t(EXPERIENCE_LABEL[p.experience]) : ""],
+            [t("Education"), p.qualifications.join(", ")],
+            [t("Licences / certificates"), p.licences.join(", ")],
+            [t("Safety training"), p.safetyTrainingHours ? t("{n} hours", { n: p.safetyTrainingHours }) : ""],
+            [t("Languages I speak"), (p.languages ?? []).join(", ")],
           ]} />
           <div className="mt-4">
-            <p className="text-caption text-ink-muted">Skills</p>
+            <p className="text-caption text-ink-muted">{t("Skills")}</p>
             {p.skills.length ? (
               <ul className="mt-1.5 flex flex-wrap gap-1.5">{p.skills.map((s) => <li key={s} className="rounded-sm bg-surface-muted px-2 py-1 text-small text-ink">{s}</li>)}</ul>
             ) : <p className="text-body text-ink-muted">—</p>}
@@ -95,28 +143,29 @@ function ProfileDetails({ p }: { p: WorkerProfile }) {
         </CardBody>
       </Card>
       <Card>
-        <CardHeader title="Personal" action={editBtn("personal")} />
+        <CardHeader title={t("Personal")} action={editBtn("personal")} />
         <CardBody>
           <DefinitionList items={[
-            ["Name", p.name],
-            ["Mobile", `+91 ${p.phone}`],
+            [t("Name"), p.name],
+            [t("Mobile"), `+91 ${p.phone}`],
             ["Email", p.email ?? ""],
-            ["Date of birth", p.dob ? formatDate(p.dob) : ""],
-            ["Gender", p.gender ? { male: "Male", female: "Female", other: "Other" }[p.gender] : ""],
-            ["City", p.location ? `${p.location.city}${p.location.state ? `, ${p.location.state}` : ""}` : ""],
-            ["Address", [p.address, p.pincode].filter(Boolean).join(" – ")],
-            ["About me", p.about ?? ""],
+            [t("Date of birth"), p.dob ? formatDate(p.dob) : ""],
+            [t("Gender"), p.gender ? { male: "Male", female: "Female", other: "Other" }[p.gender] : ""],
+            [t("City"), p.location ? `${p.location.city}${p.location.state ? `, ${p.location.state}` : ""}` : ""],
+            [t("Address"), [p.address, p.pincode].filter(Boolean).join(" – ")],
+            [t("About me"), p.about ?? ""],
           ]} />
         </CardBody>
       </Card>
       <Card>
-        <CardHeader title="Job preferences" action={editBtn("preferences")} />
+        <CardHeader title={t("Job preferences")} action={editBtn("preferences")} />
         <CardBody>
           <DefinitionList items={[
-            ["Expected pay", p.expectedPay ? `₹${formatNumber(p.expectedPay)} / month` : ""],
-            ["Shift", p.shiftPreference ? SHIFT_LABEL[p.shiftPreference] : ""],
-            ["Ready to move", p.willingToRelocate ? "Yes" : "No"],
-            ["When can you join", AVAILABILITY_LABEL[p.availability]],
+            [t("Expected pay"), p.expectedPay ? `₹${formatNumber(p.expectedPay)} / ${t("month")}` : ""],
+            [t("Shift"), p.shiftPreference ? t(SHIFT_LABEL[p.shiftPreference]) : ""],
+            [t("Looking for"), p.employmentType ? t(EMPLOYMENT_TYPE_LABEL[p.employmentType]) : ""],
+            [t("Ready to move"), p.willingToRelocate ? t("Yes") : t("No")],
+            [t("When can you join"), t(AVAILABILITY_LABEL[p.availability])],
           ]} />
         </CardBody>
       </Card>
@@ -136,8 +185,10 @@ function EditDrawer({ section, profile, onClose }: { section: Exclude<Section, n
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success("Profile updated"); onClose(); },
     onError: (e) => toast.error(errorMessage(e)),
   });
-  const toggle = (key: "qualifications" | "licences", v: string) =>
-    setD({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] });
+  const toggle = (key: "qualifications" | "licences" | "languages", v: string) => {
+    const list = d[key] ?? [];
+    setD({ ...d, [key]: list.includes(v) ? list.filter((x) => x !== v) : [...list, v] });
+  };
   const addSkill = () => {
     const s = skill.trim();
     if (s && !d.skills.includes(s)) setD({ ...d, skills: [...d.skills, s] });
@@ -171,6 +222,12 @@ function EditDrawer({ section, profile, onClose }: { section: Exclude<Section, n
             <Group label="Licences / certificates">
               {LICENCES.map((q) => <Chip key={q} selected={d.licences.includes(q)} onClick={() => toggle("licences", q)}>{q}</Chip>)}
             </Group>
+            <Field label="Safety training (hours)" hint="Total hours of safety training you have done, e.g. 40. Leave empty if none.">
+              {(id, desc) => <Input id={id} aria-describedby={desc} inputMode="numeric" maxLength={4} value={d.safetyTrainingHours ?? ""} onChange={(e) => setD({ ...d, safetyTrainingHours: Number(e.target.value.replace(/\D/g, "")) || undefined })} className="w-32" />}
+            </Field>
+            <Group label="Languages I speak">
+              {LANGUAGES.map((l) => <Chip key={l} selected={(d.languages ?? []).includes(l)} onClick={() => toggle("languages", l)}>{l}</Chip>)}
+            </Group>
             <div>
               <p className="mb-1.5 text-small font-medium text-ink">Skills</p>
               <div className="flex gap-2">
@@ -188,7 +245,7 @@ function EditDrawer({ section, profile, onClose }: { section: Exclude<Section, n
         {section === "personal" && (
           <>
             <Field label="Name" error={error}>{(id, desc) => <Input id={id} aria-describedby={desc} value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} invalid={!!error} />}</Field>
-            <Field label="Mobile number" hint="To change your number, contact support (we verify it by OTP).">{(id, desc) => <Input id={id} aria-describedby={desc} prefix="+91" value={d.phone} disabled />}</Field>
+            <Field label="Mobile number" hint={<>New number? <Link to="/help?topic=Change%20my%20mobile%20number" className="font-medium text-primary hover:underline">Send us a request</Link> and we'll change it.</>}>{(id, desc) => <Input id={id} aria-describedby={desc} prefix="+91" value={d.phone} disabled />}</Field>
             <Field label="Email" hint="Optional">{(id, desc) => <Input id={id} aria-describedby={desc} type="email" value={d.email ?? ""} onChange={(e) => setD({ ...d, email: e.target.value || undefined })} />}</Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date of birth">{(id) => <Input id={id} type="date" max={new Date(Date.now() - 18 * 365.25 * 86_400_000).toISOString().slice(0, 10)} value={d.dob?.slice(0, 10) ?? ""} onChange={(e) => setD({ ...d, dob: e.target.value || undefined })} />}</Field>
@@ -212,6 +269,9 @@ function EditDrawer({ section, profile, onClose }: { section: Exclude<Section, n
         {section === "preferences" && (
           <>
             <Field label="Expected pay per month">{(id) => <Input id={id} prefix="₹" inputMode="numeric" value={d.expectedPay ? formatNumber(d.expectedPay) : ""} onChange={(e) => setD({ ...d, expectedPay: Number(e.target.value.replace(/\D/g, "")) || undefined })} />}</Field>
+            <Group label="Looking for">
+              {(["permanent", "contract", "any"] as const).map((x) => <Chip key={x} selected={d.employmentType === x} onClick={() => setD({ ...d, employmentType: x })}>{EMPLOYMENT_TYPE_LABEL[x]}</Chip>)}
+            </Group>
             <Group label="Shift">
               {(["any", "day", "night", "rotational"] as (Shift | "any")[]).map((s) => <Chip key={s} selected={d.shiftPreference === s} onClick={() => setD({ ...d, shiftPreference: s })}>{SHIFT_LABEL[s]}</Chip>)}
             </Group>

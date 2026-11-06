@@ -68,7 +68,7 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
 
   return (
     <Drawer open onClose={onClose} width="max-w-[640px]"
-      title={<span className="flex items-center gap-3"><Avatar name={w.name} /> <span className="min-w-0"><span className="block truncate">{w.name}</span><span className="block text-small font-normal text-ink-muted">{w.trade ? TRADE_LABEL[w.trade] : "Worker"} · {w.experience ? EXPERIENCE_LABEL[w.experience] : "—"} · {w.location?.city ?? "—"}</span></span></span>}
+      title={<span className="flex items-center gap-3"><Avatar name={w.name} src={w.photoUrl} /> <span className="min-w-0"><span className="block truncate">{w.name}</span><span className="block text-small font-normal text-ink-muted">{w.trade ? TRADE_LABEL[w.trade] : "Worker"} · {w.experience ? EXPERIENCE_LABEL[w.experience] : "—"} · {w.location?.city ?? "—"}</span></span></span>}
       subtitle={<span className="flex flex-wrap items-center gap-2">{showJob && <span>For <span className="font-medium text-ink">{c.jobTitle}</span> ·</span>} <StageBadge stage={c.stage} /> <span>Applied {formatDate(c.appliedAt)}</span></span>}
       footer={closed ? (
         <p className="w-full text-center text-small text-ink-muted">{c.stage === "withdrawn" ? "This candidate withdrew their application." : `Candidate is ${STAGE_LABEL[c.stage].toLowerCase()}.`}</p>

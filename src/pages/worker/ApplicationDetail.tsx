@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, CheckCircle2, Lock, MapPin, MessageCircle, PartyPopper, Phone, XCircle } from "lucide-react";
@@ -33,12 +34,12 @@ export default function ApplicationDetail() {
   const toast = useToast();
   const withdraw = useMutation({
     mutationFn: () => workerApi.withdraw(id),
-    onSuccess: () => { setConfirm(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success("Application withdrawn"); },
+    onSuccess: () => { setConfirm(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(t("Application withdrawn")); },
     onError: (e) => toast.error(errorMessage(e)),
   });
 
   if (q.isLoading) return <ListSkeleton count={2} lines={4} />;
-  if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState title="Application not found" action={<LinkButton to="/worker/applications">Back to applications</LinkButton>} />;
+  if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState title={t("Application not found")} action={<LinkButton to="/worker/applications">{t("Back to applications")}</LinkButton>} />;
   if (q.isError || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const a = q.data;
   const job = a.job;
@@ -47,7 +48,7 @@ export default function ApplicationDetail() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <Link to="/worker/applications" className="inline-block text-small text-ink-muted hover:text-primary">← Back to applications</Link>
+      <Link to="/worker/applications" className="inline-block text-small text-ink-muted hover:text-primary">← {t("Back to applications")}</Link>
 
       <Card>
         <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -55,58 +56,58 @@ export default function ApplicationDetail() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2"><h1 className="text-h1">{job.title}</h1><StageBadge stage={a.stage} audience="worker" /></div>
             <p className="text-body text-ink-secondary">{job.companyName} · {job.location.city}</p>
-            <p className="text-small text-ink-muted">{formatPay(job.payMin, job.payMax, job.payPeriod)} · Applied {formatDate(a.appliedAt)}</p>
+            <p className="text-small text-ink-muted">{formatPay(job.payMin, job.payMax, job.payPeriod)} · {t("Applied {when}", { when: formatDate(a.appliedAt) })}</p>
           </div>
-          <LinkButton to={`/worker/jobs/${job.id}`} variant="secondary">View job</LinkButton>
+          <LinkButton to={`/worker/jobs/${job.id}`} variant="secondary">{t("View job")}</LinkButton>
         </CardBody>
       </Card>
 
-      {job.status === "closed" && open && <Banner tone="warning">This job has been closed by the employer.</Banner>}
-      {quiet && <Banner tone="info">No update yet. You can keep applying to other jobs meanwhile.</Banner>}
+      {job.status === "closed" && open && <Banner tone="warning">{t("This job has been closed by the employer.")}</Banner>}
+      {quiet && <Banner tone="info">{t("No update yet. You can keep applying to other jobs meanwhile.")}</Banner>}
       {a.stage === "rejected" && (
-        <Banner tone="info" action={<LinkButton to={`/worker/jobs?trade=${job.trade}`} variant="secondary" size="sm">See similar jobs</LinkButton>}>
-          Not selected this time. Don't worry, there are more {job.title.toLowerCase()} jobs waiting.
+        <Banner tone="info" action={<LinkButton to={`/worker/jobs?trade=${job.trade}`} variant="secondary" size="sm">{t("See similar jobs")}</LinkButton>}>
+          {t("Not selected this time. Don't worry, there are more jobs like this waiting.")}
         </Banner>
       )}
       {a.stage === "offer" && <OfferCard appId={a.id} accepted={a.offerResponse === "accepted"} company={job.companyName} />}
-      {a.stage === "withdrawn" && a.offerResponse === "declined" && <Banner tone="info">You declined this offer. The employer has been told.</Banner>}
+      {a.stage === "withdrawn" && a.offerResponse === "declined" && <Banner tone="info">{t("You declined this offer. The employer has been told.")}</Banner>}
 
       {a.stage === "interview" && a.interview && (
         <Card className="border-interview-fg/30">
-          <CardHeader title={<span className="flex items-center gap-2"><CalendarClock className="h-5 w-5 text-interview-fg" aria-hidden /> Interview</span>} />
+          <CardHeader title={<span className="flex items-center gap-2"><CalendarClock className="h-5 w-5 text-interview-fg" aria-hidden /> {t("Interview")}</span>} />
           <CardBody className="space-y-3">
             <p className="text-h3">{formatDateTime(a.interview.at)}</p>
             <p className="flex items-start gap-2 text-body text-ink-secondary"><MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {a.interview.place}</p>
-            <p className="text-small text-ink-muted">Bring your Aadhaar, certificates and 2 passport photos.</p>
+            <p className="text-small text-ink-muted">{t("Bring your Aadhaar, certificates and 2 passport photos.")}</p>
             <InterviewReply appId={a.id} response={a.interview.response} note={a.interview.responseNote} />
             <div className="flex flex-wrap gap-2 pt-1">
-              <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={calendarLink(`Interview: ${job.title}`, a.interview.at, a.interview.place)}>Add to calendar</a>
-              <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${encodeURIComponent(a.interview.place)}`}>Open in Maps</a>
+              <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={calendarLink(`Interview: ${job.title}`, a.interview.at, a.interview.place)}>{t("Add to calendar")}</a>
+              <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${encodeURIComponent(a.interview.place)}`}>{t("Open in Maps")}</a>
             </div>
           </CardBody>
         </Card>
       )}
 
       <Card>
-        <CardHeader title="Progress" />
+        <CardHeader title={t("Progress")} />
         <CardBody><ApplicationTimeline app={a} /></CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Contact the employer" />
+        <CardHeader title={t("Contact the employer")} />
         <CardBody>
           {a.contact ? (
             <div className="space-y-3">
-              <p className="text-body text-ink-secondary">You're shortlisted, so you can now contact HR{a.contact.hours ? <> between <span className="font-medium text-ink">{a.contact.hours}</span></> : null}.</p>
+              <p className="text-body text-ink-secondary">{t("You're shortlisted, so you can now contact HR.")}{a.contact.hours ? <> {t("Call between")} <span className="font-medium text-ink">{a.contact.hours}</span></> : null}</p>
               <div className="flex flex-wrap gap-2">
-                <a href={`tel:+91${a.contact.phone}`} className={buttonClass("primary")}><Phone className="h-4 w-4" aria-hidden /> Call HR</a>
+                <a href={`tel:+91${a.contact.phone}`} className={buttonClass("primary")}><Phone className="h-4 w-4" aria-hidden /> {t("Call HR")}</a>
                 <a href={`https://wa.me/91${a.contact.phone}`} target="_blank" rel="noreferrer" className={buttonClass("secondary")}><MessageCircle className="h-4 w-4" aria-hidden /> WhatsApp</a>
               </div>
             </div>
           ) : (
             <p className="flex items-start gap-2 text-body text-ink-secondary">
               <Lock className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" aria-hidden />
-              {open ? (job.allowCalls ? "HR's number appears here once you're shortlisted. Until then, the employer will contact you." : "This employer contacts candidates directly. Keep your phone reachable.") : "This application is closed."}
+              {open ? (job.allowCalls ? t("HR's number appears here once you're shortlisted. Until then, the employer will contact you.") : t("This employer contacts candidates directly. Keep your phone reachable.")) : t("This application is closed.")}
             </p>
           )}
         </CardBody>
@@ -114,13 +115,13 @@ export default function ApplicationDetail() {
 
       {open && (
         <div className="flex justify-center pt-2">
-          <Button variant="ghost" className="text-danger-fg hover:bg-danger-bg hover:text-danger-fg" onClick={() => setConfirm(true)}>Withdraw application</Button>
+          <Button variant="ghost" className="text-danger-fg hover:bg-danger-bg hover:text-danger-fg" onClick={() => setConfirm(true)}>{t("Withdraw application")}</Button>
         </div>
       )}
 
       <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} onConfirm={() => withdraw.mutate()} loading={withdraw.isPending}
-        title="Withdraw this application?" confirmLabel="Withdraw"
-        message="The employer will no longer see your application, and you can't apply to this job again." />
+        title={t("Withdraw this application?")} confirmLabel={t("Withdraw")}
+        message={t("The employer will no longer see your application, and you can't apply to this job again.")} />
     </div>
   );
 }
@@ -134,30 +135,30 @@ function InterviewReply({ appId, response, note }: { appId: string; response?: "
   const toast = useToast();
   const reply = useMutation({
     mutationFn: (r: "attending" | "cant_attend") => repliesApi.interview(appId, r, r === "cant_attend" ? why.trim() : undefined),
-    onSuccess: (_d, r) => { setEditing(false); setAsking(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "attending" ? "HR knows you're coming" : "HR will suggest a new time"); },
+    onSuccess: (_d, r) => { setEditing(false); setAsking(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "attending" ? t("HR knows you're coming") : t("HR will suggest a new time")); },
     onError: (e) => toast.error(errorMessage(e)),
   });
   if (response && !editing) {
     return (
       <div className={`flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-body ${response === "attending" ? "bg-success-bg text-success-fg" : "bg-warning-bg text-warning-fg"}`}>
         <span className="flex items-center gap-2 font-medium">
-          {response === "attending" ? <><CheckCircle2 className="h-4 w-4" aria-hidden /> You said you'll attend</> : <><XCircle className="h-4 w-4" aria-hidden /> You said you can't attend{note ? `: "${note}"` : ""}</>}
+          {response === "attending" ? <><CheckCircle2 className="h-4 w-4" aria-hidden /> {t("You said you'll attend")}</> : <><XCircle className="h-4 w-4" aria-hidden /> {t("You said you can't attend")}{note ? `: "${note}"` : ""}</>}
         </span>
-        <button className="text-small font-semibold underline" onClick={() => setEditing(true)}>Change</button>
+        <button className="text-small font-semibold underline" onClick={() => setEditing(true)}>{t("Change")}</button>
       </div>
     );
   }
   return (
     <div className="rounded-lg border border-border p-3">
-      <p className="text-body font-semibold text-ink">Will you come?</p>
+      <p className="text-body font-semibold text-ink">{t("Will you come?")}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        <Button icon={<CheckCircle2 className="h-4 w-4" />} loading={reply.isPending && reply.variables === "attending"} onClick={() => reply.mutate("attending")}>Yes, I'll attend</Button>
-        <Button variant="secondary" onClick={() => setAsking((v) => !v)} aria-expanded={asking}>Can't make it</Button>
+        <Button icon={<CheckCircle2 className="h-4 w-4" />} loading={reply.isPending && reply.variables === "attending"} onClick={() => reply.mutate("attending")}>{t("Yes, I'll attend")}</Button>
+        <Button variant="secondary" onClick={() => setAsking((v) => !v)} aria-expanded={asking}>{t("Can't make it")}</Button>
       </div>
       {asking && (
         <div className="mt-3 space-y-2">
-          <Field label="Tell HR why, or a better time (optional)">{(id) => <Textarea id={id} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="e.g. I'm on night shift that day. Can I come on Saturday?" />}</Field>
-          <Button variant="secondary" loading={reply.isPending && reply.variables === "cant_attend"} onClick={() => reply.mutate("cant_attend")}>Send to HR</Button>
+          <Field label={t("Tell HR why, or a better time (optional)")}>{(id) => <Textarea id={id} value={why} onChange={(e) => setWhy(e.target.value)} placeholder={t("e.g. I'm on night shift that day. Can I come on Saturday?")} />}</Field>
+          <Button variant="secondary" loading={reply.isPending && reply.variables === "cant_attend"} onClick={() => reply.mutate("cant_attend")}>{t("Send to HR")}</Button>
         </div>
       )}
     </div>
@@ -171,24 +172,24 @@ function OfferCard({ appId, accepted, company }: { appId: string; accepted: bool
   const toast = useToast();
   const reply = useMutation({
     mutationFn: (r: "accepted" | "declined") => repliesApi.offer(appId, r, why.trim() || undefined),
-    onSuccess: (_d, r) => { setDeclining(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "accepted" ? "Offer accepted. Congratulations!" : "Offer declined"); },
+    onSuccess: (_d, r) => { setDeclining(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "accepted" ? t("Offer accepted. Congratulations!") : t("Offer declined")); },
     onError: (e) => toast.error(errorMessage(e)),
   });
-  if (accepted) return <Banner tone="success" icon={<PartyPopper className="h-5 w-5" />}>You accepted the offer from {company}. HR will call you with your joining date.</Banner>;
+  if (accepted) return <Banner tone="success" icon={<PartyPopper className="h-5 w-5" />}>{t("You accepted the offer from {company}. HR will call you with your joining date.", { company })}</Banner>;
   return (
     <Card className="border-success-fg/30">
       <CardBody className="space-y-3">
-        <p className="flex items-center gap-2 text-h3 text-ink"><PartyPopper className="h-5 w-5 text-success-fg" aria-hidden /> {company} sent you an offer!</p>
-        <p className="text-body text-ink-secondary">Tell them if you'll take the job. Accept only if you plan to join.</p>
+        <p className="flex items-center gap-2 text-h3 text-ink"><PartyPopper className="h-5 w-5 text-success-fg" aria-hidden /> {t("{company} sent you an offer!", { company })}</p>
+        <p className="text-body text-ink-secondary">{t("Tell them if you'll take the job. Accept only if you plan to join.")}</p>
         <div className="flex flex-wrap gap-2">
-          <Button loading={reply.isPending && reply.variables === "accepted"} onClick={() => reply.mutate("accepted")}>Accept offer</Button>
-          <Button variant="secondary" onClick={() => setDeclining(true)}>Decline</Button>
+          <Button loading={reply.isPending && reply.variables === "accepted"} onClick={() => reply.mutate("accepted")}>{t("Accept offer")}</Button>
+          <Button variant="secondary" onClick={() => setDeclining(true)}>{t("Decline")}</Button>
         </div>
       </CardBody>
       <ConfirmDialog open={declining} onClose={() => setDeclining(false)} onConfirm={() => reply.mutate("declined")} loading={reply.isPending}
-        title="Decline this offer?" confirmLabel="Decline offer"
-        message="The employer will be told, and this application will close.">
-        <Field label="Reason (optional)" className="mt-3">{(id) => <Textarea id={id} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="e.g. Got a job closer to home" />}</Field>
+        title={t("Decline this offer?")} confirmLabel={t("Decline offer")}
+        message={t("The employer will be told, and this application will close.")}>
+        <Field label={t("Reason (optional)")} className="mt-3">{(id) => <Textarea id={id} value={why} onChange={(e) => setWhy(e.target.value)} placeholder={t("e.g. Got a job closer to home")} />}</Field>
       </ConfirmDialog>
     </Card>
   );

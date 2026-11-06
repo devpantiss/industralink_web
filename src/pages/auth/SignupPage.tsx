@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { t } from "@/lib/i18n";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "@/api/auth";
 import { errorCode, errorMessage } from "@/api/client";
@@ -21,7 +22,7 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout side={as} title="Create your free account" subtitle="Takes less than a minute.">
+    <AuthLayout side={as} title={t("Create your free account")} subtitle={t("Takes less than a minute.")}>
       <RolePicker value={as} onChange={setAs} />
       <div key={as} className="animate-page mt-6">
         {as === "worker"
@@ -42,10 +43,10 @@ function WorkerSignup({ onSuccess, initialPhone, onExisting }: { onSuccess: (r: 
   if (!confirmed) {
     return (
       <form className="flex flex-col gap-4" noValidate onSubmit={(e) => { e.preventDefault(); if (name.trim().length < 2) return setError("Please enter your name."); setConfirmed(true); }}>
-        <Field label="Your full name" error={error} hint="As on your Aadhaar, so employers can trust it.">
+        <Field label={t("Your full name")} error={error} hint={t("As on your Aadhaar, so employers can trust it.")}>
           {(id, d) => <Input id={id} aria-describedby={d} inputSize="lg" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} autoFocus invalid={!!error} />}
         </Field>
-        <Button type="submit" size="lg">Continue</Button>
+        <Button type="submit" size="lg">{t("Continue")}</Button>
       </form>
     );
   }

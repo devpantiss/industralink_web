@@ -1,4 +1,5 @@
 import { Bus, Car, Clock, Factory, Fuel, Hammer, HardHat, Pickaxe, ShieldAlert, Ship, Timer, Truck, UtensilsCrossed, Home, Landmark, type LucideIcon } from "lucide-react";
+import { t } from "@/lib/i18n";
 import type { Benefit, Job, Sector } from "@/types";
 import { BENEFIT_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/cn";
@@ -16,16 +17,16 @@ export function BenefitChips({ benefits, max, className }: { benefits: Benefit[]
   const rest = benefits.length - shown.length;
   if (!benefits.length) return null;
   return (
-    <ul className={cn("flex flex-wrap gap-1.5", className)} aria-label="Benefits">
+    <ul className={cn("flex flex-wrap gap-1.5", className)} aria-label={t("Benefits")}>
       {shown.map((b) => {
         const Icon = BENEFIT_ICON[b];
         return (
           <li key={b} className="inline-flex items-center gap-1 rounded-sm bg-success-bg px-2 py-0.5 text-caption font-medium text-success-fg">
-            <Icon className="h-3 w-3" aria-hidden /> {BENEFIT_LABEL[b]}
+            <Icon className="h-3 w-3" aria-hidden /> {t(BENEFIT_LABEL[b])}
           </li>
         );
       })}
-      {rest > 0 && <li className="rounded-sm bg-surface-muted px-2 py-0.5 text-caption text-ink-muted">+{rest} more</li>}
+      {rest > 0 && <li className="rounded-sm bg-surface-muted px-2 py-0.5 text-caption text-ink-muted">{t("+{n} more", { n: rest })}</li>}
     </ul>
   );
 }

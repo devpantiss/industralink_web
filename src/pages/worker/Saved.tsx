@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { t } from "@/lib/i18n";
 import { Heart } from "lucide-react";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
@@ -13,10 +14,10 @@ export default function Saved() {
   const { toggle, pendingId } = useSaveJob();
   return (
     <div>
-      <PageHeader title="Saved jobs" description="Jobs you want to look at again." />
+      <PageHeader title={t("Saved jobs")} description={t("Jobs you want to look at again.")} />
       <QueryState query={q}
         empty={(d) => d.length === 0 && (
-          <EmptyState icon={<Heart className="h-6 w-6" />} title="No saved jobs yet" description="Tap ♡ on any job to save it here." action={<LinkButton to="/worker/jobs">Find jobs</LinkButton>} />
+          <EmptyState icon={<Heart className="h-6 w-6" />} title={t("No saved jobs yet")} description={t("Tap ♡ on any job to save it here.")} action={<LinkButton to="/worker/jobs">{t("Find jobs")}</LinkButton>} />
         )}>
         {(jobs) => (
           <div className="grid gap-4 lg:grid-cols-2">

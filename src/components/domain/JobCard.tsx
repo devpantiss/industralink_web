@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { t } from "@/lib/i18n";
 import { CalendarClock, CheckCircle2, Clock, Heart, MapPin, Users, Wallet } from "lucide-react";
 import type { JobForWorker } from "@/types";
 import { EXPERIENCE_LABEL, SECTOR_LABEL, SHIFT_LABEL } from "@/lib/labels";
@@ -30,7 +31,7 @@ export function JobCard({ job, onToggleSave, saving }: { job: JobForWorker; onTo
                 onClick={() => onToggleSave(job)}
                 disabled={saving}
                 aria-pressed={job.saved}
-                aria-label={job.saved ? "Remove from saved" : "Save job"}
+                aria-label={job.saved ? t("Remove from saved") : t("Save job")}
                 className={cn("relative z-10 -m-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-muted", job.saved ? "text-danger-fg" : "text-ink-muted")}
               >
                 <Heart className={cn("h-5 w-5", job.saved && "fill-current")} />
@@ -49,27 +50,27 @@ export function JobCard({ job, onToggleSave, saving }: { job: JobForWorker; onTo
           <Wallet className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden /> {formatPay(job.payMin, job.payMax, job.payPeriod)}
         </li>
         <li className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden /> {job.location.city}, {job.location.state}</li>
-        <li className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden /> {SHIFT_LABEL[job.shift]}</li>
-        <li className="flex items-center gap-2 text-ink-secondary"><Users className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden /> {job.openings} openings · {EXPERIENCE_LABEL[job.experience]}</li>
+        <li className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden /> {t(SHIFT_LABEL[job.shift])}</li>
+        <li className="flex items-center gap-2 text-ink-secondary"><Users className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden /> {t("{n} openings", { n: job.openings })} · {t(EXPERIENCE_LABEL[job.experience])}</li>
       </ul>
 
       <BenefitChips benefits={job.benefits} max={4} className="mt-3" />
 
       {job.jobType === "walk_in" && job.walkIn && (
         <p className="mt-3 inline-flex items-center gap-1.5 rounded-sm bg-interview-bg px-2 py-1 text-small font-medium text-interview-fg">
-          <CalendarClock className="h-4 w-4" aria-hidden /> Walk-in · {formatDate(job.walkIn.date)}, {job.walkIn.time}
+          <CalendarClock className="h-4 w-4" aria-hidden /> {t("Walk-in")} · {formatDate(job.walkIn.date)}, {job.walkIn.time}
         </p>
       )}
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
-        <span className="text-caption text-ink-muted">{SECTOR_LABEL[job.sector]}{job.siteName ? ` · ${job.siteName}` : ""} · {timeAgo(job.postedAt)}</span>
+        <span className="text-caption text-ink-muted">{t(SECTOR_LABEL[job.sector])}{job.siteName ? ` · ${job.siteName}` : ""} · {timeAgo(job.postedAt)}</span>
         <div className="relative z-10 flex items-center gap-2">
           {closed ? (
-            <span className="text-small font-medium text-ink-muted">Closed</span>
+            <span className="text-small font-medium text-ink-muted">{t("Closed")}</span>
           ) : job.appliedApplicationId ? (
-            <span className="inline-flex items-center gap-1 text-small font-medium text-success-fg"><CheckCircle2 className="h-4 w-4" aria-hidden /> Applied</span>
+            <span className="inline-flex items-center gap-1 text-small font-medium text-success-fg"><CheckCircle2 className="h-4 w-4" aria-hidden /> {t("Applied")}</span>
           ) : (
-            <Link to={`/worker/jobs/${job.id}?apply=1`} className={buttonClass("primary", "sm")}>Apply now</Link>
+            <Link to={`/worker/jobs/${job.id}?apply=1`} className={buttonClass("primary", "sm")}>{t("Apply now")}</Link>
           )}
         </div>
       </div>

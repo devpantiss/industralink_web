@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { t } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, FileUp, Sparkles } from "lucide-react";
 import { workerApi } from "@/api/worker";
@@ -27,16 +28,16 @@ export function ProfileNudge() {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-body font-semibold text-ink">
-              {needsResume ? "Upload your resume to get noticed by employers" : `Your profile is ${s.profileStrength}% complete`}
+              {needsResume ? t("Upload your resume to get noticed by employers") : t("Your profile is {n}% complete", { n: s.profileStrength })}
             </p>
             <p className="truncate text-small text-ink-secondary">
-              {s.missing.length === 1 ? first.label : `${s.missing.length} things left: ${s.missing.slice(0, 3).map((m) => m.label.replace(/^(Add|Upload) (your )?/i, "")).join(", ")}${s.missing.length > 3 ? "…" : ""}`}
+              {s.missing.length === 1 ? t(first.label) : t("{n} things left: {list}", { n: s.missing.length, list: s.missing.slice(0, 3).map((m) => t(m.label)).join(", ") + (s.missing.length > 3 ? "…" : "") })}
             </p>
-            <div className="mt-1.5 max-w-xs"><ProgressBar value={s.profileStrength} label="Profile complete" /></div>
+            <div className="mt-1.5 max-w-xs"><ProgressBar value={s.profileStrength} label={t("Profile complete")} /></div>
           </div>
         </div>
         <Link to={first.link} className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-md bg-ink px-4 text-body font-medium text-white transition-transform hover:bg-ink/90 active:scale-[0.98]">
-          {onProfile ? first.label : needsResume ? "Upload resume" : "Complete profile"} <ArrowRight className="h-4 w-4" aria-hidden />
+          {onProfile ? t(first.label) : needsResume ? t("Upload resume") : t("Complete profile")} <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>
     </div>

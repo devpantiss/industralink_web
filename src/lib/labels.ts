@@ -104,3 +104,5 @@ export const EMPLOYMENT_TYPE_LABEL: Record<"permanent" | "contract" | "any", str
   contract: "Contract work",
   any: "Permanent or contract",
 };
+
+export const LANGUAGES = ["Hindi", "English", "Odia", "Bengali", "Telugu", "Tamil", "Marathi", "Gujarati", "Punjabi", "Kannada", "Malayalam", "Assamese"];

@@ -1,4 +1,5 @@
 import { Building2, HardHat } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 
 export type Audience = "worker" | "employer";
@@ -10,11 +11,11 @@ export const lastAudience = (): Audience => { try { return localStorage.getItem(
 /** Big, clear choice so workers and HR never land on the wrong form. */
 export function RolePicker({ value, onChange }: { value: Audience; onChange: (a: Audience) => void }) {
   const opts = [
-    { v: "worker" as const, icon: HardHat, title: "I'm looking for a job", text: "Workers · mobile login" },
-    { v: "employer" as const, icon: Building2, title: "I'm hiring", text: "Companies & HR · email login" },
+    { v: "worker" as const, icon: HardHat, title: t("I'm looking for a job"), text: t("Workers · mobile login") },
+    { v: "employer" as const, icon: Building2, title: t("I'm hiring"), text: t("Companies & HR · email login") },
   ];
   return (
-    <div role="radiogroup" aria-label="Who are you?" className="grid grid-cols-2 gap-2 rounded-2xl border border-border/70 bg-surface-muted/70 p-1.5 shadow-[inset_0_1px_2px_rgb(15_23_42/.06)]">
+    <div role="radiogroup" aria-label={t("Who are you?")} className="grid grid-cols-2 gap-2 rounded-2xl border border-border/70 bg-surface-muted/70 p-1.5 shadow-[inset_0_1px_2px_rgb(15_23_42/.06)]">
       {opts.map((o) => {
         const on = value === o.v;
         return (

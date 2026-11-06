@@ -1,4 +1,5 @@
 import { Check, X } from "lucide-react";
+import { t } from "@/lib/i18n";
 import type { Application, ApplicationStage } from "@/types";
 import { STAGE_LABEL_WORKER } from "@/lib/labels";
 import { formatDateTime } from "@/lib/format";
@@ -28,9 +29,9 @@ export function ApplicationTimeline({ app }: { app: Application }) {
               {done && <Check className="h-3.5 w-3.5" aria-hidden />}
             </span>
             <div className="-mt-0.5">
-              <p className={cn("text-body font-medium", done ? "text-ink" : "text-ink-muted")}>{STEP_LABEL[s]}</p>
+              <p className={cn("text-body font-medium", done ? "text-ink" : "text-ink-muted")}>{t(STEP_LABEL[s]!)}</p>
               {at && <p className="text-small text-ink-muted">{formatDateTime(at)}</p>}
-              {current && <p className="text-small text-ink-muted">Waiting for the employer</p>}
+              {current && <p className="text-small text-ink-muted">{t("Waiting for the employer")}</p>}
             </div>
           </li>
         );
@@ -39,7 +40,7 @@ export function ApplicationTimeline({ app }: { app: Application }) {
         <li className="relative flex gap-3">
           <span className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-bg text-neutral-fg"><X className="h-3.5 w-3.5" aria-hidden /></span>
           <div className="-mt-0.5">
-            <p className="text-body font-medium text-ink">{STAGE_LABEL_WORKER[app.stage]}</p>
+            <p className="text-body font-medium text-ink">{t(STAGE_LABEL_WORKER[app.stage])}</p>
             <p className="text-small text-ink-muted">{formatDateTime(app.updatedAt)}</p>
           </div>
         </li>

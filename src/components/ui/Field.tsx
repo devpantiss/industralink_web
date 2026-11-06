@@ -7,7 +7,7 @@ const control =
 
 interface FieldProps {
   label?: string;
-  hint?: string;
+  hint?: ReactNode;
   error?: ReactNode;
   required?: boolean;
   children: (id: string, describedBy?: string) => ReactNode;

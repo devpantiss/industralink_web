@@ -25,6 +25,8 @@ const Applications = lazy(() => import("@/pages/worker/Applications"));
 const ApplicationDetail = lazy(() => import("@/pages/worker/ApplicationDetail"));
 const Saved = lazy(() => import("@/pages/worker/Saved"));
 const Profile = lazy(() => import("@/pages/worker/Profile"));
+const Companies = lazy(() => import("@/pages/worker/Companies"));
+const Settings = lazy(() => import("@/pages/shared/Settings"));
 
 const EmployerHome = lazy(() => import("@/pages/employer/EmployerHome"));
 const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
@@ -105,6 +107,8 @@ export const router = createBrowserRouter([
           { path: "applications/:id", element: page(<ApplicationDetail />) },
           { path: "saved", element: page(<Saved />) },
           { path: "profile", element: page(<Profile />) },
+          { path: "companies", element: page(<Companies />) },
+          { path: "settings", element: page(<Settings />) },
           { path: "*", element: <NotFound /> },
         ],
       },
@@ -125,6 +129,7 @@ export const router = createBrowserRouter([
           { path: "jobs/:id/edit", element: page(<PostJob />) },
           { path: "candidates", element: page(<Candidates />) },
           { path: "company", element: page(<CompanyPage />) },
+          { path: "settings", element: page(<Settings />) },
           { path: "*", element: <NotFound /> },
         ],
       },
@@ -143,6 +148,7 @@ export const router = createBrowserRouter([
           { path: "jobs", element: page(<AdminJobs />) },
           { path: "activity", element: page(<ActivityLog />) },
           { path: "reports", element: page(<Reports />) },
+          { path: "settings", element: page(<Settings />) },
           { path: "*", element: <NotFound /> },
         ],
       },

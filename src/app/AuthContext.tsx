@@ -4,6 +4,7 @@ import type { AuthResponse, Role, User } from "@/types";
 import { authApi } from "@/api/auth";
 import { UNAUTHORIZED_EVENT } from "@/api/client";
 import { session } from "@/lib/session";
+import { setLangScope } from "@/lib/i18n";
 
 interface AuthState {
   user: User | null;
@@ -39,6 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, [qc]);
+
+  // Set during render so the very first paint already uses the right language.
+  setLangScope(!user || user.role === "worker");
 
   const value = useMemo<AuthState>(() => ({
     user,
