@@ -37,7 +37,7 @@ export function Drawer({ open, onClose, title, subtitle, footer, children, width
     <div className="fixed inset-0 z-50">
       <div className="glass-scrim animate-fade absolute inset-0" onClick={onClose} aria-hidden />
       <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : undefined}
-        className={cn("glass-thick animate-drawer absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden outline-none focus-visible:ring-0 sm:inset-y-2 sm:right-2 sm:rounded-xl sm:border sm:border-white/60", width)}>
+        className={cn("glass-thick animate-drawer absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden outline-none focus-visible:ring-0 sm:inset-y-2 sm:right-2 sm:rounded-2xl sm:border sm:border-white/60", width)}>
         <div className="flex items-start justify-between gap-3 border-b border-ink/5 px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-h2 text-ink">{title}</h2>
@@ -60,7 +60,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
       <div className="glass-scrim animate-fade absolute inset-0" onClick={onClose} aria-hidden />
-      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="glass-thick animate-pop relative w-full max-w-[440px] rounded-xl border border-border p-6 outline-none focus-visible:ring-0">
+      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="glass-thick animate-pop relative w-full max-w-[440px] rounded-2xl border border-white/60 p-6 outline-none focus-visible:ring-0">
         <h2 className="text-h2 text-ink">{title}</h2>
         {children && <div className="mt-2 text-body text-ink-secondary">{children}</div>}
         {footer && <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">{footer}</div>}

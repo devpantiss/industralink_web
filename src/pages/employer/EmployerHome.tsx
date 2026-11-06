@@ -20,11 +20,11 @@ export default function EmployerHome() {
 
   return (
     <div className="space-y-6">
-      <Hero title={`Welcome back${company.data ? `, ${company.data.name}` : ""}`}
+      <Hero eyebrow="Hiring dashboard" title={`Welcome back${company.data ? `, ${company.data.name}` : ""}`}
         subtitle={s.data?.newApplicants ? `${s.data.newApplicants} new applicants are waiting for you.` : "Today's hiring at a glance."}
         actions={<>
-          <LinkButton to="/employer/candidates" variant="secondary">View candidates</LinkButton>
-          <LinkButton to="/employer/jobs/new" icon={<Plus className="h-4 w-4" />} className="sm:hidden">Post a job</LinkButton>
+          <LinkButton to="/employer/candidates" variant="secondary" size="lg" className="border-white/20 bg-white/10 text-white hover:bg-white/20">View candidates</LinkButton>
+          <LinkButton to="/employer/jobs/new" variant="accent" size="lg" icon={<Plus className="h-5 w-5" />}>Post a job</LinkButton>
         </>} />
       <VerificationBanner />
 

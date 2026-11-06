@@ -121,7 +121,7 @@ export default function JobPipeline() {
       )}
 
       {selected.size > 0 && (
-        <div className="glass-ink animate-pop fixed inset-x-3 bottom-20 z-30 mx-auto flex max-w-xl flex-wrap items-center gap-2 rounded-2xl p-3 text-white md:bottom-6">
+        <div className="glass-ink animate-pop fixed inset-x-3 bottom-24 z-30 mx-auto flex max-w-xl flex-wrap items-center gap-2 rounded-2xl p-3 text-white sm:bottom-6">
           <span className="px-2 text-body font-medium">{selected.size} selected</span>
           <div className="flex-1" />
           <Select aria-label="Move selected to" className="h-9 w-auto border-white/20 bg-white/10 text-white" value="" onChange={(e) => e.target.value && requestMove([...selected], e.target.value as ApplicationStage)}>

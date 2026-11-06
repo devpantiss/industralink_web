@@ -5,8 +5,8 @@ export function Card({ className, interactive, ...rest }: HTMLAttributes<HTMLDiv
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-surface",
-        interactive && "transition-[box-shadow,transform] duration-200 hover:border-border-strong hover:shadow-md",
+        "rounded-lg border border-border bg-surface shadow-xs",
+        interactive && "transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md",
         className,
       )}
       {...rest}
