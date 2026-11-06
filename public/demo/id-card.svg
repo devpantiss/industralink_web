@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" font-family="Arial, sans-serif">
+  <rect width="640" height="400" rx="20" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="3"/>
+  <rect width="640" height="70" rx="20" fill="#0F1E3D"/>
+  <text x="32" y="45" font-size="22" fill="#fff" font-weight="bold">IDENTITY CARD (DEMO)</text>
+  <rect x="32" y="100" width="150" height="180" rx="10" fill="#E2E8F0"/>
+  <circle cx="107" cy="160" r="36" fill="#94A3B8"/><rect x="62" y="205" width="90" height="55" rx="28" fill="#94A3B8"/>
+  <text x="210" y="130" font-size="16" fill="#64748B">Name</text><text x="210" y="158" font-size="22" fill="#0F172A">Rajan Mehta</text>
+  <text x="210" y="200" font-size="16" fill="#64748B">Number</text><text x="210" y="228" font-size="22" fill="#0F172A">XXXX XXXX 4821</text>
+  <text x="32" y="360" font-size="14" fill="#B91C1C">DEMO DOCUMENT · NOT A REAL ID · only last 4 digits shown</text>
+</svg>

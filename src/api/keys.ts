@@ -1,0 +1,34 @@
+/** React Query cache keys, kept in one place so invalidation is consistent. */
+export const qk = {
+  me: ["me"] as const,
+  notifications: ["notifications"] as const,
+  worker: {
+    all: ["worker"] as const,
+    summary: ["worker", "summary"] as const,
+    jobs: (p: object) => ["worker", "jobs", p] as const,
+    job: (id: string) => ["worker", "job", id] as const,
+    company: (id: string) => ["worker", "company", id] as const,
+    saved: ["worker", "saved"] as const,
+    applications: ["worker", "applications"] as const,
+    application: (id: string) => ["worker", "application", id] as const,
+    profile: ["worker", "profile"] as const,
+    documents: ["worker", "documents"] as const,
+  },
+  employer: {
+    all: ["employer"] as const,
+    summary: ["employer", "summary"] as const,
+    jobs: (status?: string) => ["employer", "jobs", status ?? "all"] as const,
+    job: (id: string) => ["employer", "job", id] as const,
+    candidates: (jobId: string) => ["employer", "candidates", jobId] as const,
+    allCandidates: (p: object) => ["employer", "all-candidates", p] as const,
+    company: ["employer", "company"] as const,
+  },
+  admin: {
+    all: ["admin"] as const,
+    summary: ["admin", "summary"] as const,
+    verifications: ["admin", "verifications"] as const,
+    jobs: (p: object) => ["admin", "jobs", p] as const,
+    users: (p: object) => ["admin", "users", p] as const,
+    audit: ["admin", "audit"] as const,
+  },
+};
