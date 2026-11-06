@@ -16,7 +16,7 @@ import { Input, Select } from "@/components/ui/Field";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { BenefitChips } from "@/components/domain/JobBits";
-import { CandidateDrawer, QualificationBadges, useCandidateMoves } from "@/components/domain/CandidatePanel";
+import { CandidateDrawer, QualificationBadges, ReplyBadge, useCandidateMoves } from "@/components/domain/CandidatePanel";
 
 /** Each stage has its own colour so the board reads at a glance. */
 const COLUMN: Record<string, { dot: string; top: string; tint: string }> = {
@@ -43,6 +43,7 @@ export default function JobPipeline() {
     list: cands.data ?? [], optimisticKey: qk.employer.candidates(id),
     defaultPlace: job.data?.walkIn?.address ?? [job.data?.siteName, job.data?.location.city].filter(Boolean).join(", "),
     onDone: () => setSelected(new Set()),
+    job: job.data ? { id: job.data.id, title: job.data.title, openings: job.data.openings, status: job.data.status } : undefined,
   });
 
   const filtered = useMemo(() => {
@@ -162,7 +163,12 @@ function BoardCard({ c, selected, onSelect, onOpen }: { c: Candidate; selected: 
       </div>
       <div className="mt-2"><QualificationBadges c={c} /></div>
       {c.stage === "interview" && c.interview ? (
-        <p className="mt-2 flex items-center gap-1 text-caption font-medium text-interview-fg"><CalendarClock className="h-3.5 w-3.5" aria-hidden /> {formatDateTime(c.interview.at)}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <p className="flex items-center gap-1 text-caption font-medium text-interview-fg"><CalendarClock className="h-3.5 w-3.5" aria-hidden /> {formatDateTime(c.interview.at)}</p>
+          <ReplyBadge response={c.interview.response} compact />
+        </div>
+      ) : c.stage === "offer" && c.offerResponse === "accepted" ? (
+        <p className="mt-2 text-caption font-semibold text-success-fg">✓ Offer accepted</p>
       ) : (
         <p className="mt-2 text-caption text-ink-muted">Applied {timeAgo(c.appliedAt)}</p>
       )}

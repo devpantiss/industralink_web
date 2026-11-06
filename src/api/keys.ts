@@ -22,6 +22,8 @@ export const qk = {
     candidates: (jobId: string) => ["employer", "candidates", jobId] as const,
     allCandidates: (p: object) => ["employer", "all-candidates", p] as const,
     company: ["employer", "company"] as const,
+    talent: (p: object) => ["employer", "talent", p] as const,
+    analytics: ["employer", "analytics"] as const,
   },
   admin: {
     all: ["admin"] as const,
@@ -30,5 +32,16 @@ export const qk = {
     jobs: (p: object) => ["admin", "jobs", p] as const,
     users: (p: object) => ["admin", "users", p] as const,
     audit: ["admin", "audit"] as const,
+    reports: (status: string) => ["admin", "reports", status] as const,
+    support: (status: string) => ["admin", "support", status] as const,
+    settings: ["admin", "settings"] as const,
   },
+  /** Shared by every role. */
+  messages: {
+    all: ["messages"] as const,
+    thread: (id: string) => ["messages", id] as const,
+  },
+  settings: ["settings"] as const,
+  companies: (p: object) => ["companies", p] as const,
+  publicJob: (id: string) => ["public-job", id] as const,
 };

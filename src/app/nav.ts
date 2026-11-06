@@ -1,9 +1,13 @@
-import { BadgeCheck, Bookmark, Briefcase, Building2, FileText, Home, LayoutGrid, ScrollText, Search, User, UserSearch, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, Flag, Bookmark, Briefcase, Building2, FileText, Home, LayoutGrid, ScrollText, Search, User, UserSearch, Users, type LucideIcon } from "lucide-react";
 import type { Role } from "@/types";
 
-export interface NavItem { label: string; short?: string; to: string; icon: LucideIcon; end?: boolean }
+export interface NavItem {
+  label: string; short?: string; to: string; icon: LucideIcon; end?: boolean;
+  /** false = only in the desktop sidebar (phone tab bar shows at most 5). */
+  mobile?: boolean;
+}
 
-/** Max 5 items per role (plan section 2). */
+/** Phone tab bar shows the items without `mobile: false` (max 5). */
 export const NAV: Record<Role, NavItem[]> = {
   worker: [
     { label: "Home", to: "/worker", icon: Home, end: true },
@@ -21,9 +25,10 @@ export const NAV: Record<Role, NavItem[]> = {
   admin: [
     { label: "Home", to: "/admin", icon: LayoutGrid, end: true },
     { label: "Company approvals", short: "Approvals", to: "/admin/verifications", icon: BadgeCheck },
+    { label: "Reports & help", short: "Reports", to: "/admin/reports", icon: Flag },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Jobs", to: "/admin/jobs", icon: Briefcase },
-    { label: "Activity Log", short: "Log", to: "/admin/activity", icon: ScrollText },
+    { label: "Activity Log", short: "Log", to: "/admin/activity", icon: ScrollText, mobile: false },
   ],
 };
 

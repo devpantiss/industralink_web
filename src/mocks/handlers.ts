@@ -4,11 +4,12 @@
  * and nothing in the UI needs to change.
  */
 import type {
-  AdminJobRow, AdminSummary, AdminUserRow, Application, ApplicationStage, Candidate, CompanyForWorker, EmployerSummary, Job,
-  JobForWorker, Paginated, User, VerificationItem, WorkerApplication, WorkerDocument, WorkerProfile, WorkerSummary,
+  AdminJobRow, AdminSummary, AdminUserRow, Application, ApplicationStage, Candidate, Company, CompanyForWorker, EmployerAnalytics, EmployerSummary, Job,
+  JobForWorker, JobReport, Message, MessageThread, Paginated, TalentProfile, User, UserSettings, VerificationItem, WorkerApplication, WorkerDocument, WorkerProfile, WorkerSummary,
 } from "@/types";
 import { SECTOR_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { getDb, newId, now, saveDb } from "./db";
+import { DEFAULT_SETTINGS } from "./seed";
 import { HttpError, route, type MockRequest } from "./router";
 
 /* ---------------- helpers ---------------- */
@@ -115,10 +116,11 @@ route("POST", "/auth/signup/employer", ({ body }) => {
   const companyId = newId("c");
   db().companies.push({
     id: companyId, name: body.companyName, sector: "metals", size: "1–50", location: { city: "", state: "" },
-    verification: "pending", status: "pending", createdAt: now(),
+    hrName: body.name, verification: db().platform.autoApproveCompanies ? "approved" : "pending",
+    status: db().platform.autoApproveCompanies ? "active" : "pending", createdAt: now(),
   });
   const user: User & { password?: string } = {
-    id: newId("u"), role: "employer", name: body.name, email, password: body.password, status: "pending",
+    id: newId("u"), role: "employer", name: body.name, email, password: body.password, status: db().platform.autoApproveCompanies ? "active" : "pending",
     onboarded: false, companyId, createdAt: now(),
   };
   db().users.push(user);
@@ -524,7 +526,9 @@ route("PATCH", "/employer/applications/:id", (req) => {
   if (stage === "interview") {
     const at = req.body?.interview?.at;
     if (!at || new Date(at) < new Date()) throw new HttpError(422, "Choose an interview time in the future.", "VALIDATION");
+    const rescheduled = a.stage === "interview";
     a.interview = { at, place: req.body.interview.place || j.location.city };
+    if (rescheduled) notify(a.workerId, "Interview time changed", `${j.companyName} moved your ${j.title} interview. Please check the new time.`, `/worker/applications/${a.id}`);
   }
   if (stage && stage !== a.stage) {
     a.stage = stage;
@@ -578,6 +582,10 @@ route("GET", "/admin/summary", (req): AdminSummary => {
   });
   const attention: AdminSummary["attention"] = [];
   if (pending) attention.push({ id: "pc", text: `${pending} ${pending === 1 ? "company is" : "companies are"} waiting for approval`, link: "/admin/verifications" });
+  const openReports = d.reports.filter((r) => r.status === "open").length;
+  const openTickets = d.tickets.filter((t) => t.status === "open").length;
+  if (openReports) attention.push({ id: "rp", text: `${openReports} job ${openReports === 1 ? "report needs" : "reports need"} a decision`, link: "/admin/reports" });
+  if (openTickets) attention.push({ id: "tk", text: `${openTickets} help ${openTickets === 1 ? "request is" : "requests are"} waiting`, link: "/admin/reports?tab=help" });
   const unpaid = d.jobs.filter((j) => j.status === "active" && !j.payMin && !j.payMax).length;
   if (unpaid) attention.push({ id: "np", text: `${unpaid} active ${unpaid === 1 ? "job has" : "jobs have"} no pay shown`, link: "/admin/jobs" });
   return {
@@ -585,6 +593,8 @@ route("GET", "/admin/summary", (req): AdminSummary => {
     companies: d.companies.length,
     activeJobs: d.jobs.filter((j) => j.status === "active").length,
     pendingVerifications: pending,
+    openReports,
+    openTickets,
     attention,
     signupsPerWeek: weeks,
   };
@@ -703,4 +713,424 @@ route("POST", "/admin/jobs/:id/remove", (req) => {
 route("GET", "/admin/audit", (req) => {
   need(req, "admin");
   return db().audit.slice(0, 100);
+});
+
+
+/* =================================================================
+   Added for the gap review (reports, replies, password, settings,
+   messages, find workers, analytics, platform settings).
+   ================================================================= */
+
+const settingsOf = (userId: string): UserSettings => ({ ...DEFAULT_SETTINGS, ...db().settings[userId] });
+const hrOf = (companyId: string) => db().users.find((x) => x.companyId === companyId && x.role === "employer");
+const OPEN_STAGES: ApplicationStage[] = ["shortlisted", "interview", "offer", "hired"];
+
+/* ---------- reports (worker -> admin) ---------- */
+
+route("POST", "/jobs/:id/report", (req) => {
+  const u = need(req, "worker");
+  const j = findJob(req.params.id!);
+  const reasons = ["asks_money", "fake", "wrong_details", "unsafe", "other"];
+  if (!reasons.includes(req.body?.reason)) throw new HttpError(422, "Choose a reason.", "VALIDATION");
+  if (req.body.reason === "other" && !req.body.details?.trim()) throw new HttpError(422, "Tell us what is wrong.", "VALIDATION");
+  if (db().reports.some((r) => r.jobId === j.id && r.reporterName === u.name && r.status === "open"))
+    throw new HttpError(409, "You already reported this job. Our team is checking it.", "ALREADY_REPORTED");
+  const r: JobReport = {
+    id: newId("r"), jobId: j.id, jobTitle: j.title, companyName: j.companyName, reporterName: u.name,
+    reason: req.body.reason, details: req.body.details?.trim() || undefined, at: now(), status: "open",
+  };
+  db().reports.unshift(r);
+  db().users.filter((x) => x.role === "admin").forEach((a) => notify(a.id, "Job reported", `${j.title} (${j.companyName}) was reported.`, "/admin/reports"));
+  saveDb();
+  return { ok: true };
+});
+
+route("GET", "/admin/reports", (req) => {
+  need(req, "admin");
+  const status = req.query.status ?? "open";
+  return db().reports
+    .filter((r) => status === "all" || r.status === status)
+    .map((r) => ({ ...r, jobStatus: db().jobs.find((j) => j.id === r.jobId)?.status ?? "closed", reportsForJob: db().reports.filter((x) => x.jobId === r.jobId).length }));
+});
+
+route("POST", "/admin/reports/:id", (req) => {
+  const admin = need(req, "admin");
+  const r = db().reports.find((x) => x.id === req.params.id);
+  if (!r) throw new HttpError(404, "Report not found.");
+  if (r.status !== "open") throw new HttpError(409, "This report was already handled.", "ALREADY_DONE");
+  const action = req.body?.action as "dismiss" | "remove_job";
+  if (action === "remove_job") {
+    const reason = req.body?.note?.trim() || "Reported by workers and checked by our team";
+    const j = findJob(r.jobId);
+    j.status = "closed";
+    j.removedByAdmin = true;
+    const hr = hrOf(j.companyId);
+    if (hr) notify(hr.id, "Job removed by IndustriaLink", `"${j.title}" was removed. Reason: ${reason}`, "/employer/jobs?tab=closed");
+    db().reports.forEach((x) => { if (x.jobId === r.jobId && x.status === "open") { x.status = "job_removed"; x.resolvedAt = now(); x.resolvedBy = admin.name; } });
+    audit(admin, "Removed reported job", `${j.title} (${j.companyName})`);
+  } else {
+    r.status = "dismissed"; r.resolvedAt = now(); r.resolvedBy = admin.name;
+    audit(admin, "Dismissed report", `${r.jobTitle} (${r.companyName})`);
+  }
+  saveDb();
+  return { ok: true };
+});
+
+/* ---------- worker replies to interview / offer ---------- */
+
+const myApp = (u: User, id: string) => {
+  const a = db().applications.find((x) => x.id === id && x.workerId === u.id);
+  if (!a) throw new HttpError(404, "Application not found.", "NOT_FOUND");
+  return a;
+};
+
+route("POST", "/worker/applications/:id/interview-response", (req) => {
+  const u = need(req, "worker");
+  const a = myApp(u, req.params.id!);
+  if (a.stage !== "interview" || !a.interview) throw new HttpError(409, "There is no interview to reply to.", "NO_INTERVIEW");
+  const response = req.body?.response;
+  if (response !== "attending" && response !== "cant_attend") throw new HttpError(422, "Choose a reply.", "VALIDATION");
+  a.interview.response = response;
+  a.interview.responseNote = req.body?.note?.trim() || undefined;
+  a.interview.respondedAt = now();
+  a.updatedAt = now();
+  const j = findJob(a.jobId);
+  const hr = hrOf(j.companyId);
+  if (hr) notify(hr.id, response === "attending" ? "Interview confirmed" : "Candidate can't attend",
+    response === "attending" ? `${u.name} will attend the interview for ${j.title}.` : `${u.name} can't attend the interview for ${j.title}${a.interview.responseNote ? `: "${a.interview.responseNote}"` : "."} Please pick a new time.`,
+    `/employer/jobs/${j.id}`);
+  saveDb();
+  return withJob(a);
+});
+
+route("POST", "/worker/applications/:id/offer-response", (req) => {
+  const u = need(req, "worker");
+  const a = myApp(u, req.params.id!);
+  if (a.stage !== "offer") throw new HttpError(409, "There is no offer to reply to.", "NO_OFFER");
+  const response = req.body?.response;
+  if (response !== "accepted" && response !== "declined") throw new HttpError(422, "Choose a reply.", "VALIDATION");
+  a.offerResponse = response;
+  a.updatedAt = now();
+  if (response === "declined") {
+    a.stage = "withdrawn";
+    a.timeline.push({ stage: "withdrawn", at: a.updatedAt, note: req.body?.note?.trim() ? `Declined the offer: ${req.body.note.trim()}` : "Declined the offer" });
+  } else {
+    a.timeline.push({ stage: "offer", at: a.updatedAt, note: "Accepted the offer" });
+  }
+  const j = findJob(a.jobId);
+  const hr = hrOf(j.companyId);
+  if (hr) notify(hr.id, response === "accepted" ? "Offer accepted 🎉" : "Offer declined",
+    response === "accepted" ? `${u.name} accepted your offer for ${j.title}. Mark them hired once they join.` : `${u.name} declined your offer for ${j.title}.`, `/employer/jobs/${j.id}`);
+  saveDb();
+  return withJob(a);
+});
+
+/* ---------- password ---------- */
+
+route("POST", "/auth/password/forgot", ({ body }) => {
+  const email = String(body?.email ?? "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw new HttpError(422, "Enter a valid email address.", "VALIDATION");
+  const u = db().users.find((x) => x.email?.toLowerCase() === email);
+  // Same answer whether or not the email exists, so nobody can probe for accounts.
+  if (!u) return { ok: true };
+  const tokenValue = newId("reset");
+  db().passwordResets.push({ token: tokenValue, userId: u.id, expiresAt: new Date(Date.now() + 3_600_000).toISOString() });
+  saveDb();
+  // Demo only: the real API emails this link instead of returning it.
+  return { ok: true, demoResetLink: `/reset-password?token=${tokenValue}` };
+});
+
+route("POST", "/auth/password/reset", ({ body }) => {
+  const r = db().passwordResets.find((x) => x.token === body?.token);
+  if (!r || new Date(r.expiresAt) < new Date()) throw new HttpError(410, "This reset link has expired. Ask for a new one.", "EXPIRED");
+  if (String(body?.password ?? "").length < 8) throw new HttpError(422, "Use at least 8 characters.", "VALIDATION");
+  const u = db().users.find((x) => x.id === r.userId)!;
+  u.password = body.password;
+  db().passwordResets = db().passwordResets.filter((x) => x.userId !== u.id);
+  saveDb();
+  return { ok: true, role: u.role };
+});
+
+route("POST", "/auth/password/change", (req) => {
+  const u = need(req);
+  const stored = db().users.find((x) => x.id === u.id)!;
+  if (!stored.email) throw new HttpError(400, "Workers log in with a mobile code, so there is no password.", "NO_PASSWORD");
+  if (stored.password !== req.body?.current) throw new HttpError(422, "Current password is wrong.", "WRONG_PASSWORD");
+  if (String(req.body?.next ?? "").length < 8) throw new HttpError(422, "Use at least 8 characters.", "VALIDATION");
+  stored.password = req.body.next;
+  saveDb();
+  return { ok: true };
+});
+
+/* ---------- public job page (no login) ---------- */
+
+route("GET", "/public/jobs/:id", (req) => {
+  const j = findJob(req.params.id!);
+  const company = db().companies.find((c) => c.id === j.companyId);
+  if (j.status === "draft" || company?.status === "blocked") throw new HttpError(404, "This job was removed or doesn't exist.", "NOT_FOUND");
+  const { hrPhone: _private, ...publicJob } = j;
+  return publicJob;
+});
+
+/* ---------- settings & account ---------- */
+
+route("GET", "/me/settings", (req) => settingsOf(need(req).id));
+
+route("PATCH", "/me/settings", (req) => {
+  const u = need(req);
+  const allowed: (keyof UserSettings)[] = ["language", "jobAlerts", "smsAlerts", "whatsappAlerts", "visibleToEmployers"];
+  const next = { ...settingsOf(u.id) };
+  for (const k of allowed) if (k in (req.body ?? {})) (next as any)[k] = req.body[k];
+  db().settings[u.id] = next;
+  saveDb();
+  return next;
+});
+
+route("POST", "/me/delete", (req) => {
+  const u = need(req);
+  if (u.role === "admin") throw new HttpError(400, "Admin accounts are removed by the IndustriaLink team.", "ADMIN");
+  if (req.body?.confirm !== "DELETE") throw new HttpError(422, 'Type DELETE to confirm.', "VALIDATION");
+  const d = db();
+  if (u.role === "worker") {
+    d.applications.forEach((a) => {
+      if (a.workerId === u.id && !["hired", "rejected", "withdrawn"].includes(a.stage)) { a.stage = "withdrawn"; a.updatedAt = now(); a.timeline.push({ stage: "withdrawn", at: a.updatedAt, note: "Account deleted" }); }
+    });
+    // Keep an empty shell so old applications still render for HR, but remove all personal data.
+    const w = d.workers.find((x) => x.userId === u.id);
+    if (w) Object.assign(w, { name: "Deleted user", phone: "", email: undefined, dob: undefined, address: undefined, pincode: undefined, about: undefined, photoUrl: undefined, skills: [], licences: [], qualifications: [], languages: [] });
+    d.documents = d.documents.filter((x) => x.ownerId !== u.id);
+    delete d.saved[u.id];
+  } else if (u.companyId) {
+    const c = d.companies.find((x) => x.id === u.companyId);
+    if (c) c.status = "blocked";
+    d.jobs.forEach((j) => j.companyId === u.companyId && j.status === "active" && (j.status = "closed"));
+  }
+  d.users = d.users.filter((x) => x.id !== u.id);
+  d.notifications = d.notifications.filter((n) => n.userId !== u.id);
+  delete d.settings[u.id];
+  audit(u, "Deleted own account", u.name);
+  saveDb();
+  return { ok: true };
+});
+
+/* ---------- companies list for workers ---------- */
+
+route("GET", "/companies", (req) => {
+  need(req, "worker");
+  const text = req.query.q?.toLowerCase().trim();
+  return db().companies
+    .filter((c) => c.verification === "approved" && c.status === "active")
+    .filter((c) => !text || `${c.name} ${c.location.city} ${SECTOR_LABEL[c.sector]}`.toLowerCase().includes(text))
+    .filter((c) => !req.query.sector || c.sector === req.query.sector)
+    .map((c) => {
+      const { gstNumber: _gst, ...company } = c;
+      return { company: company as Company, openJobs: db().jobs.filter((j) => j.companyId === c.id && j.status === "active").length };
+    })
+    .sort((a, b) => b.openJobs - a.openJobs);
+});
+
+/* ---------- help / support ---------- */
+
+route("POST", "/support", (req) => {
+  const topic = String(req.body?.topic ?? "").trim();
+  const message = String(req.body?.message ?? "").trim();
+  if (!topic || message.length < 10) throw new HttpError(422, "Choose a topic and write at least a short message.", "VALIDATION");
+  const u = req.user;
+  const contact = u ? (u.phone ? `+91 ${u.phone}` : u.email ?? "") : String(req.body?.contact ?? "").trim();
+  if (!contact) throw new HttpError(422, "Give a phone number or email so we can reply.", "VALIDATION");
+  db().tickets.unshift({ id: newId("t"), userId: u?.id, name: u?.name ?? (String(req.body?.name ?? "").trim() || "Guest"), contact, role: u?.role ?? "guest", topic, message, at: now(), status: "open" });
+  saveDb();
+  return { ok: true };
+});
+
+route("GET", "/admin/support", (req) => {
+  need(req, "admin");
+  const status = req.query.status ?? "open";
+  return db().tickets.filter((t) => status === "all" || t.status === status);
+});
+
+route("POST", "/admin/support/:id/close", (req) => {
+  const admin = need(req, "admin");
+  const t = db().tickets.find((x) => x.id === req.params.id);
+  if (!t) throw new HttpError(404, "Request not found.");
+  t.status = "closed";
+  if (t.userId) notify(t.userId, "Your help request was answered", `About "${t.topic}". Our team has handled it.`);
+  audit(admin, "Closed help request", `${t.topic} (${t.name})`);
+  saveDb();
+  return { ok: true };
+});
+
+/* ---------- messages (after shortlisting) ---------- */
+
+function threadAccess(u: User, applicationId: string) {
+  const a = db().applications.find((x) => x.id === applicationId);
+  if (!a) throw new HttpError(404, "Conversation not found.", "NOT_FOUND");
+  const j = db().jobs.find((x) => x.id === a.jobId);
+  if (!j) throw new HttpError(404, "Conversation not found.", "NOT_FOUND");
+  if (u.role === "worker" && a.workerId !== u.id) throw new HttpError(404, "Conversation not found.", "NOT_FOUND");
+  if (u.role === "employer" && j.companyId !== u.companyId) throw new HttpError(404, "Conversation not found.", "NOT_FOUND");
+  if (u.role === "admin") throw new HttpError(403, "Admins can't read private messages.", "FORBIDDEN");
+  return { a, j };
+}
+
+function toThread(u: User, a: Application, j: Job): MessageThread {
+  const msgs = db().messages.filter((m) => m.applicationId === a.id);
+  const last = msgs[msgs.length - 1];
+  const lastRead = db().reads[`${u.id}:${a.id}`] ?? "";
+  const worker = workerOf(a.workerId);
+  const hr = hrOf(j.companyId);
+  return {
+    applicationId: a.id, jobTitle: j.title, companyName: j.companyName, workerName: worker?.name ?? "Worker",
+    otherName: u.role === "worker" ? `${hr?.name ?? "HR"} · ${j.companyName}` : worker?.name ?? "Worker",
+    stage: a.stage, lastMessage: last?.text, lastAt: last?.at,
+    unread: msgs.filter((m) => m.fromUserId !== u.id && m.at > lastRead).length,
+    canSend: db().platform.messagingEnabled && OPEN_STAGES.includes(a.stage),
+  };
+}
+
+route("GET", "/messages", (req) => {
+  const u = need(req);
+  const d = db();
+  const jobs = new Map(d.jobs.map((j) => [j.id, j]));
+  return d.applications
+    .filter((a) => {
+      const j = jobs.get(a.jobId);
+      if (!j) return false;
+      const mine = u.role === "worker" ? a.workerId === u.id : u.role === "employer" && j.companyId === u.companyId;
+      return mine && (OPEN_STAGES.includes(a.stage) || d.messages.some((m) => m.applicationId === a.id));
+    })
+    .map((a) => toThread(u, a, jobs.get(a.jobId)!))
+    .sort((x, y) => (y.lastAt ?? "").localeCompare(x.lastAt ?? ""));
+});
+
+route("GET", "/messages/:applicationId", (req) => {
+  const u = need(req);
+  const { a, j } = threadAccess(u, req.params.applicationId!);
+  db().reads[`${u.id}:${a.id}`] = now();
+  saveDb();
+  return { thread: toThread(u, a, j), messages: db().messages.filter((m) => m.applicationId === a.id) };
+});
+
+route("POST", "/messages/:applicationId", (req) => {
+  const u = need(req);
+  const { a, j } = threadAccess(u, req.params.applicationId!);
+  if (!db().platform.messagingEnabled) throw new HttpError(403, "Messaging is turned off right now.", "DISABLED");
+  if (!OPEN_STAGES.includes(a.stage)) throw new HttpError(403, "You can message once the worker is shortlisted, and until the application closes.", "NOT_ALLOWED");
+  const text = String(req.body?.text ?? "").trim();
+  if (!text) throw new HttpError(422, "Write a message first.", "VALIDATION");
+  if (text.length > 1000) throw new HttpError(422, "Keep messages under 1000 characters.", "VALIDATION");
+  const m: Message = { id: newId("m"), applicationId: a.id, fromUserId: u.id, fromRole: u.role as "worker" | "employer", text, at: now() };
+  db().messages.push(m);
+  db().reads[`${u.id}:${a.id}`] = m.at;
+  const to = u.role === "worker" ? hrOf(j.companyId)?.id : a.workerId;
+  if (to) notify(to, `Message from ${u.name}`, text.length > 80 ? `${text.slice(0, 80)}…` : text, u.role === "worker" ? `/employer/messages?c=${a.id}` : `/worker/messages?c=${a.id}`);
+  saveDb();
+  return m;
+});
+
+/* ---------- employer: find workers ---------- */
+
+route("GET", "/employer/talent", (req): TalentProfile[] => {
+  const u = need(req, "employer");
+  const d = db();
+  if (!d.platform.talentSearchEnabled) throw new HttpError(403, "Find workers is turned off right now.", "DISABLED");
+  const cid = myCompanyId(u);
+  const company = d.companies.find((c) => c.id === cid)!;
+  if (company.verification !== "approved") throw new HttpError(403, "You can search workers after your company is verified.", "NOT_VERIFIED");
+  const myJobs = new Set(d.jobs.filter((j) => j.companyId === cid).map((j) => j.id));
+  const q = req.query;
+  const text = q.q?.toLowerCase().trim();
+  return d.workers
+    .filter((w) => { const usr = d.users.find((x) => x.id === w.userId); return usr?.status === "active" && usr.onboarded && settingsOf(w.userId).visibleToEmployers; })
+    .filter((w) => !q.trade || w.trade === q.trade)
+    .filter((w) => !q.experience || w.experience === q.experience)
+    .filter((w) => !q.city || `${w.location?.city ?? ""} ${w.location?.state ?? ""}`.toLowerCase().includes(q.city.toLowerCase()) || (q.relocate === "true" && w.willingToRelocate))
+    .filter((w) => !text || `${w.name} ${w.skills.join(" ")} ${w.licences.join(" ")} ${w.qualifications.join(" ")} ${w.trade ? TRADE_LABEL[w.trade] : ""}`.toLowerCase().includes(text))
+    .map((w) => ({
+      userId: w.userId, name: w.name, trade: w.trade, experience: w.experience, qualifications: w.qualifications, licences: w.licences,
+      skills: w.skills, location: w.location, willingToRelocate: w.willingToRelocate, expectedPay: w.expectedPay, availability: w.availability,
+      languages: w.languages, safetyTrainingHours: w.safetyTrainingHours, photoUrl: w.photoUrl,
+      invitedTo: d.invites.filter((i) => i.companyId === cid && i.workerId === w.userId).map((i) => i.jobId),
+      appliedTo: d.applications.filter((a) => a.workerId === w.userId && myJobs.has(a.jobId)).map((a) => a.jobId),
+    }));
+});
+
+route("POST", "/employer/talent/:workerId/invite", (req) => {
+  const u = need(req, "employer");
+  const d = db();
+  const j = ownJob(u, req.body?.jobId);
+  if (j.status !== "active") throw new HttpError(409, "Only open jobs can be shared.", "JOB_CLOSED");
+  const w = d.workers.find((x) => x.userId === req.params.workerId);
+  if (!w) throw new HttpError(404, "Worker not found.");
+  if (d.applications.some((a) => a.workerId === w.userId && a.jobId === j.id)) throw new HttpError(409, `${w.name} already applied to this job.`, "ALREADY_APPLIED");
+  if (d.invites.some((i) => i.workerId === w.userId && i.jobId === j.id)) throw new HttpError(409, `You already invited ${w.name} to this job.`, "ALREADY_INVITED");
+  d.invites.push({ companyId: j.companyId, workerId: w.userId, jobId: j.id, at: now() });
+  notify(w.userId, `${j.companyName} invited you to apply`, `${j.title} · ${j.location.city}. Have a look and apply if it suits you.`, `/worker/jobs/${j.id}`);
+  saveDb();
+  return { ok: true };
+});
+
+/* ---------- employer analytics ---------- */
+
+route("GET", "/employer/analytics", (req): EmployerAnalytics => {
+  const u = need(req, "employer");
+  const d = db();
+  const cid = myCompanyId(u);
+  const jobs = d.jobs.filter((j) => j.companyId === cid && j.status !== "draft");
+  const ids = new Set(jobs.map((j) => j.id));
+  const apps = d.applications.filter((a) => ids.has(a.jobId));
+  const hiredApps = apps.filter((a) => a.stage === "hired");
+  const days = hiredApps.map((a) => {
+    const h = a.timeline.find((t) => t.stage === "hired")?.at ?? a.updatedAt;
+    return (new Date(h).getTime() - new Date(a.appliedAt).getTime()) / 86_400_000;
+  });
+  const active = jobs.filter((j) => j.status === "active");
+  const openings = active.reduce((s, j) => s + j.openings, 0);
+  const hiredActive = hiredApps.filter((a) => active.some((j) => j.id === a.jobId)).length;
+  const byState = new Map<string, number>();
+  apps.forEach((a) => { const st = workerOf(a.workerId)?.location?.state || "Not given"; byState.set(st, (byState.get(st) ?? 0) + 1); });
+  const weeks = [...Array(8)].map((_, i) => {
+    const end = Date.now() - (7 - i) * 7 * 86_400_000;
+    const start = end - 7 * 86_400_000;
+    return {
+      week: new Date(end).toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+      count: apps.filter((a) => { const t = new Date(a.appliedAt).getTime(); return t > start && t <= end; }).length,
+    };
+  });
+  const reached = (a: Application, s: ApplicationStage[]) => s.includes(a.stage) || a.timeline.some((t) => s.includes(t.stage as ApplicationStage));
+  return {
+    totalApplicants: apps.length,
+    hired: hiredApps.length,
+    fillRate: openings ? Math.round((hiredActive / openings) * 100) : 0,
+    avgDaysToHire: days.length ? Math.round((days.reduce((s, x) => s + x, 0) / days.length) * 10) / 10 : null,
+    resumeShare: apps.length ? Math.round((apps.filter((a) => a.sentWith === "document").length / apps.length) * 100) : 0,
+    applicantsPerWeek: weeks,
+    byState: [...byState.entries()].map(([state, count]) => ({ state, count })).sort((a, b) => b.count - a.count),
+    byJob: jobs.map((j) => {
+      const ja = apps.filter((a) => a.jobId === j.id);
+      return {
+        jobId: j.id, title: j.title, openings: j.openings, applied: ja.length,
+        shortlisted: ja.filter((a) => reached(a, ["shortlisted", "interview", "offer", "hired"])).length,
+        interview: ja.filter((a) => reached(a, ["interview", "offer", "hired"])).length,
+        hired: ja.filter((a) => a.stage === "hired").length,
+      };
+    }).sort((a, b) => b.applied - a.applied),
+  };
+});
+
+/* ---------- admin: platform settings ---------- */
+
+route("GET", "/admin/settings", (req) => { need(req, "admin"); return db().platform; });
+
+route("PATCH", "/admin/settings", (req) => {
+  const admin = need(req, "admin");
+  const p = db().platform;
+  for (const k of ["autoApproveCompanies", "messagingEnabled", "talentSearchEnabled"] as const) {
+    if (typeof req.body?.[k] === "boolean" && req.body[k] !== p[k]) {
+      p[k] = req.body[k];
+      audit(admin, `${p[k] ? "Turned on" : "Turned off"} setting`, { autoApproveCompanies: "Auto-approve companies", messagingEnabled: "Messaging", talentSearchEnabled: "Find workers" }[k]);
+    }
+  }
+  saveDb();
+  return p;
 });

@@ -98,3 +98,9 @@ export const DOC_TYPE_LABEL: Record<DocType, string> = {
 
 export const QUALIFICATIONS = ["Below 10th", "10th", "12th", "ITI", "Diploma", "Graduate"];
 export const LICENCES = ["DGMS", "HMV licence", "LMV licence", "Forklift", "Crane licence", "Welding cert", "Electrical licence"];
+
+export const EMPLOYMENT_TYPE_LABEL: Record<"permanent" | "contract" | "any", string> = {
+  permanent: "Permanent job",
+  contract: "Contract work",
+  any: "Permanent or contract",
+};

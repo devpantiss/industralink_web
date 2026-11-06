@@ -229,7 +229,7 @@ export function AppShell() {
 
       {/* Mobile bottom tabs */}
       <nav className="glass fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 flex h-16 rounded-2xl border sm:hidden" aria-label="Main">
-        {items.map((it) => (
+        {items.filter((it) => it.mobile !== false).map((it) => (
           <NavLink key={it.to} to={it.to} end={it.end}
             className={({ isActive }) => cn("relative flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-medium transition-colors", isActive ? "text-primary before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-primary" : "text-ink-muted")}>
             <it.icon className="h-6 w-6" aria-hidden />

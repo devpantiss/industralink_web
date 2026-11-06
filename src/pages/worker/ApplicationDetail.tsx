@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Lock, MapPin, MessageCircle, Phone } from "lucide-react";
+import { CalendarClock, CheckCircle2, Lock, MapPin, MessageCircle, PartyPopper, Phone, XCircle } from "lucide-react";
+import { repliesApi } from "@/api/extra";
+import { Field, Textarea } from "@/components/ui/Field";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
 import { errorCode, errorMessage } from "@/api/client";
@@ -66,7 +68,8 @@ export default function ApplicationDetail() {
           Not selected this time. Don't worry, there are more {job.title.toLowerCase()} jobs waiting.
         </Banner>
       )}
-      {a.stage === "offer" && <Banner tone="success">You got an offer! 🎉 The employer will call you with the next steps.</Banner>}
+      {a.stage === "offer" && <OfferCard appId={a.id} accepted={a.offerResponse === "accepted"} company={job.companyName} />}
+      {a.stage === "withdrawn" && a.offerResponse === "declined" && <Banner tone="info">You declined this offer. The employer has been told.</Banner>}
 
       {a.stage === "interview" && a.interview && (
         <Card className="border-interview-fg/30">
@@ -75,6 +78,7 @@ export default function ApplicationDetail() {
             <p className="text-h3">{formatDateTime(a.interview.at)}</p>
             <p className="flex items-start gap-2 text-body text-ink-secondary"><MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {a.interview.place}</p>
             <p className="text-small text-ink-muted">Bring your Aadhaar, certificates and 2 passport photos.</p>
+            <InterviewReply appId={a.id} response={a.interview.response} note={a.interview.responseNote} />
             <div className="flex flex-wrap gap-2 pt-1">
               <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={calendarLink(`Interview: ${job.title}`, a.interview.at, a.interview.place)}>Add to calendar</a>
               <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${encodeURIComponent(a.interview.place)}`}>Open in Maps</a>
@@ -118,5 +122,74 @@ export default function ApplicationDetail() {
         title="Withdraw this application?" confirmLabel="Withdraw"
         message="The employer will no longer see your application, and you can't apply to this job again." />
     </div>
+  );
+}
+
+/** "Will you come?" Lets HR know before the day, instead of waiting at the gate. */
+function InterviewReply({ appId, response, note }: { appId: string; response?: "attending" | "cant_attend"; note?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [why, setWhy] = useState(note ?? "");
+  const qc = useQueryClient();
+  const toast = useToast();
+  const reply = useMutation({
+    mutationFn: (r: "attending" | "cant_attend") => repliesApi.interview(appId, r, r === "cant_attend" ? why.trim() : undefined),
+    onSuccess: (_d, r) => { setEditing(false); setAsking(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "attending" ? "HR knows you're coming" : "HR will suggest a new time"); },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+  if (response && !editing) {
+    return (
+      <div className={`flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-body ${response === "attending" ? "bg-success-bg text-success-fg" : "bg-warning-bg text-warning-fg"}`}>
+        <span className="flex items-center gap-2 font-medium">
+          {response === "attending" ? <><CheckCircle2 className="h-4 w-4" aria-hidden /> You said you'll attend</> : <><XCircle className="h-4 w-4" aria-hidden /> You said you can't attend{note ? `: "${note}"` : ""}</>}
+        </span>
+        <button className="text-small font-semibold underline" onClick={() => setEditing(true)}>Change</button>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-body font-semibold text-ink">Will you come?</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button icon={<CheckCircle2 className="h-4 w-4" />} loading={reply.isPending && reply.variables === "attending"} onClick={() => reply.mutate("attending")}>Yes, I'll attend</Button>
+        <Button variant="secondary" onClick={() => setAsking((v) => !v)} aria-expanded={asking}>Can't make it</Button>
+      </div>
+      {asking && (
+        <div className="mt-3 space-y-2">
+          <Field label="Tell HR why, or a better time (optional)">{(id) => <Textarea id={id} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="e.g. I'm on night shift that day. Can I come on Saturday?" />}</Field>
+          <Button variant="secondary" loading={reply.isPending && reply.variables === "cant_attend"} onClick={() => reply.mutate("cant_attend")}>Send to HR</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OfferCard({ appId, accepted, company }: { appId: string; accepted: boolean; company: string }) {
+  const [declining, setDeclining] = useState(false);
+  const [why, setWhy] = useState("");
+  const qc = useQueryClient();
+  const toast = useToast();
+  const reply = useMutation({
+    mutationFn: (r: "accepted" | "declined") => repliesApi.offer(appId, r, why.trim() || undefined),
+    onSuccess: (_d, r) => { setDeclining(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "accepted" ? "Offer accepted. Congratulations!" : "Offer declined"); },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+  if (accepted) return <Banner tone="success" icon={<PartyPopper className="h-5 w-5" />}>You accepted the offer from {company}. HR will call you with your joining date.</Banner>;
+  return (
+    <Card className="border-success-fg/30">
+      <CardBody className="space-y-3">
+        <p className="flex items-center gap-2 text-h3 text-ink"><PartyPopper className="h-5 w-5 text-success-fg" aria-hidden /> {company} sent you an offer!</p>
+        <p className="text-body text-ink-secondary">Tell them if you'll take the job. Accept only if you plan to join.</p>
+        <div className="flex flex-wrap gap-2">
+          <Button loading={reply.isPending && reply.variables === "accepted"} onClick={() => reply.mutate("accepted")}>Accept offer</Button>
+          <Button variant="secondary" onClick={() => setDeclining(true)}>Decline</Button>
+        </div>
+      </CardBody>
+      <ConfirmDialog open={declining} onClose={() => setDeclining(false)} onConfirm={() => reply.mutate("declined")} loading={reply.isPending}
+        title="Decline this offer?" confirmLabel="Decline offer"
+        message="The employer will be told, and this application will close.">
+        <Field label="Reason (optional)" className="mt-3">{(id) => <Textarea id={id} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="e.g. Got a job closer to home" />}</Field>
+      </ConfirmDialog>
+    </Card>
   );
 }

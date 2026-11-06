@@ -3,7 +3,7 @@
  * UI code never imports it directly.
  */
 import type {
-  Application, AppNotification, AuditEntry, Company, Job, User, WorkerDocument, WorkerProfile,
+  Application, AppNotification, AuditEntry, Company, Job, JobReport, Message, PlatformSettings, SupportTicket, User, UserSettings, WorkerDocument, WorkerProfile,
 } from "@/types";
 
 const DAY = 86_400_000;
@@ -24,7 +24,18 @@ export interface MockDb {
   saved: Record<string, string[]>; // workerId -> jobIds
   notifications: AppNotification[];
   audit: AuditEntry[];
+  reports: JobReport[];
+  tickets: SupportTicket[];
+  messages: Message[];
+  settings: Record<string, UserSettings>; // userId -> settings
+  invites: { companyId: string; workerId: string; jobId: string; at: string }[];
+  platform: PlatformSettings;
+  passwordResets: { token: string; userId: string; expiresAt: string }[];
+  /** `${userId}:${applicationId}` -> last time the user opened that conversation. */
+  reads: Record<string, string>;
 }
+
+export const DEFAULT_SETTINGS: UserSettings = { language: "en", jobAlerts: true, smsAlerts: true, whatsappAlerts: true, visibleToEmployers: true };
 
 export function createSeed(): MockDb {
   const users: MockDb["users"] = [
@@ -48,13 +59,14 @@ export function createSeed(): MockDb {
       qualifications: ["10th", "ITI"], licences: ["Welding cert"], location: { city: "Jharsuguda", state: "Odisha" },
       willingToRelocate: true, expectedPay: 22000, shiftPreference: "any", availability: "15_days",
       skills: ["Arc welding", "MIG welding", "Gas cutting", "Blueprint reading"], email: "rajan.mehta@gmail.demo", dob: "1996-04-12", gender: "male", pincode: "768201",
+      languages: ["Hindi", "Odia"], safetyTrainingHours: 40, employmentType: "permanent",
       about: "ITI welder with 4 years in an aluminium smelter. Comfortable with night shifts.",
     },
     {
       userId: "u-w2", name: "Suresh Kumar", phone: "9811122233", trade: "machine_operator", experience: "5_plus",
       qualifications: ["12th", "ITI"], licences: ["DGMS"], location: { city: "Dhanbad", state: "Jharkhand" },
       willingToRelocate: true, expectedPay: 28000, shiftPreference: "rotational", availability: "immediate",
-      skills: ["Dumper operation", "Shovel operation"],
+      skills: ["Dumper operation", "Shovel operation"], languages: ["Hindi"], safetyTrainingHours: 120, employmentType: "any",
     },
     {
       userId: "u-w3", name: "Amit Prasad", phone: "9822233344", trade: "electrician", experience: "3_5",
@@ -72,7 +84,7 @@ export function createSeed(): MockDb {
       userId: "u-w5", name: "Karthik Rao", phone: "9844455566", trade: "crane_operator", experience: "3_5",
       qualifications: ["12th", "Diploma"], licences: ["Crane licence"], location: { city: "Visakhapatnam", state: "Andhra Pradesh" },
       willingToRelocate: true, expectedPay: 30000, shiftPreference: "rotational", availability: "30_days",
-      skills: ["Gantry crane", "Mobile crane", "Rigging"],
+      skills: ["Gantry crane", "Mobile crane", "Rigging"], languages: ["Telugu", "Hindi", "English"], safetyTrainingHours: 60,
     },
     {
       userId: "u-w6", name: "Manoj Das", phone: "9855566677", trade: "helper", experience: "1_2",
@@ -89,7 +101,7 @@ export function createSeed(): MockDb {
   ];
 
   const companies: Company[] = [
-    { id: "c-1", name: "Vedanta Aluminium", sector: "metals", size: "1000+", location: { city: "Jharsuguda", state: "Odisha" }, website: "vedanta.demo", gstNumber: "21AAACV1234F1Z5", about: "Large aluminium smelter and power plant in western Odisha.", verification: "approved", status: "active", createdAt: ago(120) },
+    { id: "c-1", name: "Vedanta Aluminium", sector: "metals", size: "1000+", location: { city: "Jharsuguda", state: "Odisha" }, website: "vedanta.demo", gstNumber: "21AAACV1234F1Z5", about: "Large aluminium smelter and power plant in western Odisha.", hrName: "Priya Sharma", hrDesignation: "HR Manager", sites: ["Smelter Plant 2", "Power Plant", "Main Gate Workshop"], verification: "approved", status: "active", createdAt: ago(120) },
     { id: "c-2", name: "Coastal Port Services", sector: "shipping", size: "200–1000", location: { city: "Visakhapatnam", state: "Andhra Pradesh" }, gstNumber: "37AABCC5678K1Z2", about: "Cargo handling and stevedoring at Vizag port.", verification: "approved", status: "active", createdAt: ago(90) },
     { id: "c-3", name: "Eastline Logistics", sector: "logistics", size: "50–200", location: { city: "Kolkata", state: "West Bengal" }, gstNumber: "19AAECE9012L1Z8", about: "Truck fleet and warehousing across East India.", verification: "pending", status: "pending", createdAt: ago(2) },
     { id: "c-4", name: "PetroSafe Contractors", sector: "petroleum", size: "50–200", location: { city: "Jamnagar", state: "Gujarat" }, gstNumber: "24AAFCP3456M1Z1", about: "Maintenance contractor for refineries.", verification: "pending", status: "pending", createdAt: ago(1) },
@@ -264,8 +276,28 @@ export function createSeed(): MockDb {
     { id: "l-3", at: ago(7), actor: "Neha Kapoor", action: "Approved company", target: "Pune Auto Components" },
   ];
 
+  const reports: JobReport[] = [
+    { id: "r-1", jobId: "j-12", jobTitle: jobs.find((j) => j.id === "j-12")?.title ?? "Job", companyName: jobs.find((j) => j.id === "j-12")?.companyName ?? "", reporterName: "Manoj Das", reason: "asks_money", details: "Caller asked ₹2,000 for a uniform before joining.", at: ago(0, 5), status: "open" },
+    { id: "r-2", jobId: "j-9", jobTitle: jobs.find((j) => j.id === "j-9")?.title ?? "Job", companyName: jobs.find((j) => j.id === "j-9")?.companyName ?? "", reporterName: "Ravi Teja", reason: "wrong_details", details: "Pay on call was lower than shown.", at: ago(2), status: "open" },
+  ];
+
+  const tickets: SupportTicket[] = [
+    { id: "t-1", userId: "u-w4", name: "Gurpreet Singh", contact: "+91 9833344455", role: "worker", topic: "Change my mobile number", message: "I have a new SIM. Old number 9833344455, new number 9888800011.", at: ago(1), status: "open" },
+  ];
+
+  const messages: Message[] = [
+    { id: "m-1", applicationId: "a-1", fromUserId: "u-e1", fromRole: "employer", text: "Hi Rajan, please bring your ITI certificate and one ID proof for the interview.", at: ago(0, 4) },
+    { id: "m-2", applicationId: "a-1", fromUserId: "u-w1", fromRole: "worker", text: "Okay sir, I will bring both. Which gate should I come to?", at: ago(0, 3) },
+    { id: "m-3", applicationId: "a-1", fromUserId: "u-e1", fromRole: "employer", text: "Gate 2, Admin Building. Ask for Priya at reception.", at: ago(0, 2) },
+  ];
+
   return {
-    users, workers, companies, jobs, applications, documents, notifications, audit,
+    users, workers, companies, jobs, applications, documents, notifications, audit, reports, tickets, messages,
     saved: { "u-w1": ["j-1", "j-8", "j-14"] },
+    settings: {},
+    invites: [],
+    platform: { autoApproveCompanies: false, messagingEnabled: true, talentSearchEnabled: true },
+    passwordResets: [],
+    reads: { "u-w1:a-1": ago(0, 2.5), "u-e1:a-1": ago(0, 1) },
   };
 }

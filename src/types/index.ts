@@ -63,6 +63,12 @@ export interface WorkerProfile {
   gender?: "male" | "female" | "other";
   address?: string;
   pincode?: string;
+  /** Languages the worker can speak, e.g. ["Hindi", "Odia"]. */
+  languages?: string[];
+  safetyTrainingHours?: number;
+  employmentType?: "permanent" | "contract" | "any";
+  /** Profile photo (data URL in the demo, storage URL in production). */
+  photoUrl?: string;
 }
 
 export interface Company {
@@ -74,6 +80,11 @@ export interface Company {
   website?: string;
   gstNumber?: string;
   about?: string;
+  /** Main HR contact shown to admin during approval. */
+  hrName?: string;
+  hrDesignation?: string;
+  /** Plants / sites, used as quick picks when posting a job. */
+  sites?: string[];
   verification: VerificationStatus;
   rejectionReason?: string;
   status: AccountStatus;
@@ -135,6 +146,10 @@ export interface TimelineEvent {
 export interface Interview {
   at: string; // ISO datetime
   place: string;
+  /** Worker's reply to the invite. */
+  response?: "attending" | "cant_attend";
+  responseNote?: string;
+  respondedAt?: string;
 }
 
 export interface Application {
@@ -149,6 +164,8 @@ export interface Application {
   sentWith: "profile" | "document";
   documentId?: string;
   rejectionNote?: string;
+  /** Worker's reply to an offer. Declining also closes the application (stage "withdrawn"). */
+  offerResponse?: "accepted" | "declined";
 }
 
 /** Application as seen by the worker (job embedded). */
@@ -230,6 +247,120 @@ export interface AdminJobRow extends Job {
   companyStatus: AccountStatus;
 }
 
+/* ---------- Reports, support, settings ---------- */
+
+export type ReportReason = "asks_money" | "fake" | "wrong_details" | "unsafe" | "other";
+export type ReportStatus = "open" | "dismissed" | "job_removed";
+
+export interface JobReport {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  reporterName: string;
+  reason: ReportReason;
+  details?: string;
+  at: string;
+  status: ReportStatus;
+  resolvedAt?: string;
+  resolvedBy?: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId?: string;
+  name: string;
+  contact: string;
+  role: Role | "guest";
+  topic: string;
+  message: string;
+  at: string;
+  status: "open" | "closed";
+}
+
+export interface UserSettings {
+  language: "en" | "hi";
+  /** New matching jobs (worker) / new applicants (employer). */
+  jobAlerts: boolean;
+  smsAlerts: boolean;
+  whatsappAlerts: boolean;
+  /** Worker only: let employers find this profile in "Find workers". */
+  visibleToEmployers: boolean;
+}
+
+export interface PlatformSettings {
+  /** New companies go live without admin approval (not recommended). */
+  autoApproveCompanies: boolean;
+  /** Workers and HR can message each other after shortlisting. */
+  messagingEnabled: boolean;
+  /** Employers can search all workers who allow it. */
+  talentSearchEnabled: boolean;
+}
+
+/* ---------- Messages ---------- */
+
+export interface Message {
+  id: string;
+  applicationId: string;
+  fromUserId: string;
+  fromRole: "worker" | "employer";
+  text: string;
+  at: string;
+}
+
+export interface MessageThread {
+  applicationId: string;
+  jobTitle: string;
+  companyName: string;
+  workerName: string;
+  /** Name of the person on the other side. */
+  otherName: string;
+  stage: ApplicationStage;
+  lastMessage?: string;
+  lastAt?: string;
+  unread: number;
+  /** False when the application is closed or messaging is off. */
+  canSend: boolean;
+}
+
+/* ---------- Employer: find workers, analytics ---------- */
+
+/** A worker as seen in "Find workers". No phone, email or documents until they apply. */
+export interface TalentProfile {
+  userId: string;
+  name: string;
+  trade?: Trade;
+  experience?: ExperienceBand;
+  qualifications: string[];
+  licences: string[];
+  skills: string[];
+  location?: Location;
+  willingToRelocate: boolean;
+  expectedPay?: number;
+  availability: Availability;
+  languages?: string[];
+  safetyTrainingHours?: number;
+  photoUrl?: string;
+  /** Job ids this company already invited the worker to. */
+  invitedTo: string[];
+  /** Job ids the worker already applied to at this company. */
+  appliedTo: string[];
+}
+
+export interface EmployerAnalytics {
+  totalApplicants: number;
+  hired: number;
+  /** Hired ÷ openings across active jobs, 0–100. */
+  fillRate: number;
+  /** Average days from applying to hired. */
+  avgDaysToHire: number | null;
+  /** Share of applicants who sent a resume file (rest used their profile). */
+  resumeShare: number;
+  applicantsPerWeek: { week: string; count: number }[];
+  byState: { state: string; count: number }[];
+  byJob: { jobId: string; title: string; openings: number; applied: number; shortlisted: number; interview: number; hired: number }[];
+}
+
 /* ---------- Summaries for Home pages ---------- */
 
 export interface WorkerSummary {
@@ -258,6 +389,8 @@ export interface AdminSummary {
   companies: number;
   activeJobs: number;
   pendingVerifications: number;
+  openReports: number;
+  openTickets: number;
   attention: { id: string; text: string; link: string }[];
   signupsPerWeek: { week: string; workers: number; companies: number }[];
 }

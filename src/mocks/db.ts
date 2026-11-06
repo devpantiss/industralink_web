@@ -5,7 +5,7 @@
  */
 import { createSeed, type MockDb } from "./seed";
 
-const KEY = "industrialink.mockdb.v2";
+const KEY = "industrialink.mockdb.v3";
 let db: MockDb | null = null;
 
 export function getDb(): MockDb {

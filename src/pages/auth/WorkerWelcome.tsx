@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { takeNext } from "@/lib/next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bolt, Car, Cog, Construction, HardHat, Hammer, Shield, UserCog, Wrench, Flame, type LucideIcon } from "lucide-react";
 import type { ExperienceBand, Trade, WorkerProfile } from "@/types";
@@ -40,7 +41,7 @@ export default function WorkerWelcome() {
       setUser(await authApi.completeOnboarding());
       qc.invalidateQueries();
       toast.success("Profile ready! Here are jobs for you.");
-      navigate("/worker", { replace: true });
+      navigate(takeNext("worker") ?? "/worker", { replace: true });
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {

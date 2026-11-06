@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { CalendarClock, ChevronRight, Download, ExternalLink, FileImage, FileText, MapPin, MessageCircle, Phone, Printer, Star } from "lucide-react";
 import type { ApplicationStage, Candidate, WorkerDocument } from "@/types";
-import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
+import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EMPLOYMENT_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { formatBytes, formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { employerApi } from "@/api/employer";
 import { qk } from "@/api/keys";
@@ -12,7 +12,7 @@ import { Avatar, DefinitionList, Tabs } from "@/components/ui/Misc";
 import { Badge, StageBadge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Field";
-import { Drawer, Modal } from "@/components/ui/Overlay";
+import { ConfirmDialog, Drawer, Modal } from "@/components/ui/Overlay";
 import { useToast } from "@/components/ui/Toast";
 
 /* ---------------- Document preview ---------------- */
@@ -44,6 +44,13 @@ export function DocumentPreview({ doc, tall }: { doc: WorkerDocument; tall?: boo
 }
 
 /* ---------------- Candidate drawer ---------------- */
+
+/** Worker's answer to the interview invite, for HR. */
+export function ReplyBadge({ response, compact }: { response?: "attending" | "cant_attend"; compact?: boolean }) {
+  if (response === "attending") return <Badge tone="success">{compact ? "✓ Coming" : "✓ Will attend"}</Badge>;
+  if (response === "cant_attend") return <Badge tone="warning">{compact ? "Can't come" : "Can't attend"}</Badge>;
+  return <Badge tone="neutral">{compact ? "No reply" : "No reply yet"}</Badge>;
+}
 
 type PanelTab = "resume" | "profile" | "activity";
 
@@ -86,8 +93,19 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
           <div className="rounded-lg bg-interview-bg p-4">
             <p className="flex items-center gap-2 text-body font-medium text-interview-fg"><CalendarClock className="h-4 w-4" aria-hidden /> Interview {formatDateTime(c.interview.at)}</p>
             <p className="mt-1 flex items-center gap-2 text-small text-ink-secondary"><MapPin className="h-4 w-4" aria-hidden /> {c.interview.place}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-interview-fg/15 pt-3">
+              <ReplyBadge response={c.interview.response} />
+              {c.interview.responseNote && <span className="text-small text-ink-secondary">"{c.interview.responseNote}"</span>}
+              <Button size="sm" variant="secondary" className="ml-auto" onClick={() => onMove("interview")}>{c.interview.response === "cant_attend" ? "Pick a new time" : "Reschedule"}</Button>
+            </div>
           </div>
         )}
+        {c.stage === "offer" && (
+          <div className={cn("rounded-lg p-4 text-body", c.offerResponse === "accepted" ? "bg-success-bg text-success-fg" : "bg-surface-muted text-ink-secondary")}>
+            {c.offerResponse === "accepted" ? <span className="font-medium">✓ Accepted your offer. Mark as hired once they join.</span> : "Offer sent. Waiting for the worker to accept."}
+          </div>
+        )}
+        {c.offerResponse === "declined" && <div className="rounded-lg bg-warning-bg p-4 text-body text-warning-fg">The worker declined your offer.</div>}
 
         <Tabs tabs={[{ value: "resume", label: "Resume & documents", count: c.documents.length }, { value: "profile", label: "Profile" }, { value: "activity", label: "Activity" }]} value={tab} onChange={setTab} />
 
@@ -136,6 +154,9 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
               ["Availability", AVAILABILITY_LABEL[w.availability]],
               ["Shift", w.shiftPreference ? SHIFT_LABEL[w.shiftPreference] : ""],
               ["Ready to move", w.willingToRelocate ? "Yes" : "No"],
+              ["Looking for", w.employmentType ? EMPLOYMENT_TYPE_LABEL[w.employmentType] : ""],
+              ["Languages", (w.languages ?? []).join(", ")],
+              ["Safety training", w.safetyTrainingHours ? `${w.safetyTrainingHours} hours` : ""],
               ["Email", w.email ?? ""],
             ]} />
             {w.skills.length > 0 && (
@@ -169,8 +190,13 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
 interface PendingMove { ids: string[]; stage: ApplicationStage }
 
 /** Handles stage changes, including the extra dialogs for Interview and Reject. */
-export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone }: { list: Candidate[]; optimisticKey?: QueryKey; defaultPlace?: string; onDone?: () => void }) {
+export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone, job }: {
+  list: Candidate[]; optimisticKey?: QueryKey; defaultPlace?: string; onDone?: () => void;
+  /** When given, HR is asked to close the job once every opening is filled. */
+  job?: { id: string; title: string; openings: number; status: string };
+}) {
   const [pending, setPending] = useState<PendingMove | null>(null);
+  const [fullPrompt, setFullPrompt] = useState(false);
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -190,6 +216,10 @@ export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone }:
       setPending(null);
       onDone?.();
       toast.success(ids.length > 1 ? `${ids.length} candidates moved to ${STAGE_LABEL[stage]}` : `Moved to ${STAGE_LABEL[stage]}`);
+      if (stage === "hired" && job && job.status === "active") {
+        const hired = list.filter((c) => c.stage === "hired" || ids.includes(c.id)).length;
+        if (hired >= job.openings) setFullPrompt(true);
+      }
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.employer.all }),
   });
@@ -201,8 +231,17 @@ export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone }:
     else move.mutate({ ids: movable, stage });
   };
 
+  const closeJob = useMutation({
+    mutationFn: () => employerApi.updateJob(job!.id, { status: "closed" }),
+    onSuccess: () => { setFullPrompt(false); toast.success("Job closed. It no longer takes applications."); qc.invalidateQueries({ queryKey: qk.employer.all }); },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+
   const dialogs = (
     <>
+      <ConfirmDialog open={fullPrompt} onClose={() => setFullPrompt(false)} onConfirm={() => closeJob.mutate()} loading={closeJob.isPending} tone="primary"
+        title="All positions are filled 🎉" confirmLabel="Close job"
+        message={`You've hired ${job?.openings ?? ""} ${job?.openings === 1 ? "person" : "people"} for "${job?.title ?? ""}". Close the job so new people stop applying? Candidates still in progress stay on your board.`} />
       <InterviewDialog open={pending?.stage === "interview"} count={pending?.ids.length ?? 0} defaultPlace={defaultPlace ?? ""}
         onClose={() => setPending(null)} loading={move.isPending} onConfirm={(interview) => pending && move.mutate({ ...pending, interview })} />
       <RejectDialog open={pending?.stage === "rejected"} count={pending?.ids.length ?? 0} onClose={() => setPending(null)} loading={move.isPending}

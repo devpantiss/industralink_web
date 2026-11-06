@@ -10,6 +10,9 @@ import { formatDate, formatPay, timeAgo } from "@/lib/format";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Banner } from "@/components/ui/Misc";
+import { Field, Textarea } from "@/components/ui/Field";
+import { reportsApi } from "@/api/extra";
+import type { ReportReason } from "@/types";
 import { VerifiedTick } from "@/components/ui/Badge";
 import { Drawer, Modal } from "@/components/ui/Overlay";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
@@ -23,7 +26,6 @@ export default function JobDetail() {
   const [sp, setSp] = useSearchParams();
   const q = useQuery({ queryKey: qk.worker.job(id), queryFn: () => workerApi.job(id), retry: (n, e) => errorCode(e) !== "NOT_FOUND" && n < 2 });
   const { toggle, pendingId } = useSaveJob();
-  const toast = useToast();
   const [reportOpen, setReportOpen] = useState(false);
   const applyOpen = sp.get("apply") === "1";
   const setApply = (open: boolean) => { const n = new URLSearchParams(sp); open ? n.set("apply", "1") : n.delete("apply"); setSp(n, { replace: true }); };
@@ -36,7 +38,7 @@ export default function JobDetail() {
   const job = q.data;
   const closed = job.status !== "active" || (!!job.deadline && new Date(job.deadline) < new Date());
   const walkInOver = job.jobType === "walk_in" && job.walkIn && new Date(`${job.walkIn.date}T23:59`) < new Date();
-  const shareText = encodeURIComponent(`${job.title} at ${job.companyName}, ${job.location.city}. ${formatPay(job.payMin, job.payMax, job.payPeriod)}. ${window.location.origin}/worker/jobs/${job.id}`);
+  const shareText = encodeURIComponent(`${job.title} at ${job.companyName}, ${job.location.city}. ${formatPay(job.payMin, job.payMax, job.payPeriod)}. ${window.location.origin}/jobs/${job.id}`);
 
   const actions = closed ? (
     <p className="text-body font-medium text-ink-muted">This job is closed</p>
@@ -129,13 +131,7 @@ export default function JobDetail() {
 
       <ApplyDrawer open={applyOpen && !closed && !job.appliedApplicationId} onClose={() => setApply(false)} jobId={job.id} title={`${job.title} – ${job.companyName}`} />
 
-      <Modal open={reportOpen} onClose={() => setReportOpen(false)} title="Report this job?"
-        footer={<>
-          <Button variant="secondary" onClick={() => setReportOpen(false)}>Cancel</Button>
-          <Button variant="danger" onClick={() => { setReportOpen(false); toast.success("Thanks. Our team will check this job."); }}>Report</Button>
-        </>}>
-        Tell us if this job asks for money, looks fake, or the details are wrong. Our team will check it.
-      </Modal>
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} jobId={job.id} />
     </div>
   );
 }
@@ -229,5 +225,45 @@ function Option({ checked, onChange, title, text }: { checked: boolean; onChange
         <span className="block text-small text-ink-secondary">{text}</span>
       </span>
     </label>
+  );
+}
+
+const REPORT_REASONS: { value: ReportReason; label: string }[] = [
+  { value: "asks_money", label: "They asked me for money" },
+  { value: "fake", label: "Job looks fake" },
+  { value: "wrong_details", label: "Pay or details are wrong" },
+  { value: "unsafe", label: "Unsafe work" },
+  { value: "other", label: "Something else" },
+];
+
+function ReportDialog({ open, onClose, jobId }: { open: boolean; onClose: () => void; jobId: string }) {
+  const [reason, setReason] = useState<ReportReason>("asks_money");
+  const [details, setDetails] = useState("");
+  const toast = useToast();
+  const send = useMutation({
+    mutationFn: () => reportsApi.report(jobId, { reason, details: details.trim() || undefined }),
+    onSuccess: () => { toast.success("Thanks. Our team will check this job within 24 hours."); setDetails(""); onClose(); },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+  return (
+    <Modal open={open} onClose={onClose} title="Report this job"
+      footer={<>
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button variant="danger" loading={send.isPending} disabled={reason === "other" && !details.trim()} onClick={() => send.mutate()}>Send report</Button>
+      </>}>
+      <p>Our team checks every report. The company won't see your name.</p>
+      <fieldset className="mt-4 space-y-2">
+        <legend className="sr-only">What is wrong?</legend>
+        {REPORT_REASONS.map((r) => (
+          <label key={r.value} className={cn("flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-body", reason === r.value ? "border-primary bg-primary-soft" : "border-border")}>
+            <input type="radio" name="report-reason" checked={reason === r.value} onChange={() => setReason(r.value)} className="accent-[rgb(var(--primary))]" />
+            {r.label}
+          </label>
+        ))}
+      </fieldset>
+      <Field label={reason === "other" ? "What happened? (required)" : "What happened? (optional)"} className="mt-4">
+        {(id) => <Textarea id={id} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="e.g. The caller asked ₹2,000 for a uniform." />}
+      </Field>
+    </Modal>
   );
 }

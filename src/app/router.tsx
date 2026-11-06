@@ -10,6 +10,10 @@ import { LinkButton } from "@/components/ui/Button";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const SignupPage = lazy(() => import("@/pages/auth/SignupPage"));
 const AdminLoginPage = lazy(() => import("@/pages/auth/AdminLoginPage"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword").then((m) => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import("@/pages/auth/ForgotPassword").then((m) => ({ default: m.ResetPassword })));
+const PublicJob = lazy(() => import("@/pages/public/PublicJob"));
+const HelpPage = lazy(() => import("@/pages/public/HelpPage"));
 const WorkerWelcome = lazy(() => import("@/pages/auth/WorkerWelcome"));
 const EmployerWelcome = lazy(() => import("@/pages/auth/EmployerWelcome"));
 
@@ -34,6 +38,7 @@ const Verifications = lazy(() => import("@/pages/admin/Verifications"));
 const Users = lazy(() => import("@/pages/admin/Users"));
 const AdminJobs = lazy(() => import("@/pages/admin/AdminJobs"));
 const ActivityLog = lazy(() => import("@/pages/admin/ActivityLog"));
+const Reports = lazy(() => import("@/pages/admin/Reports"));
 
 const page = (el: ReactNode) => <Suspense fallback={<ListSkeleton count={2} />}>{el}</Suspense>;
 
@@ -77,8 +82,13 @@ export const router = createBrowserRouter([
       { path: "/login", element: page(<LoginPage />) },
       { path: "/signup", element: page(<SignupPage />) },
       { path: "/admin/login", element: page(<AdminLoginPage />) },
+      { path: "/forgot-password", element: page(<ForgotPassword />) },
+      { path: "/reset-password", element: page(<ResetPassword />) },
     ],
   },
+  // Open to everyone, logged in or not.
+  { path: "/jobs/:id", element: page(<PublicJob />) },
+  { path: "/help", element: page(<HelpPage />) },
   {
     path: "/worker",
     element: <RequireRole role="worker" />,
@@ -132,6 +142,7 @@ export const router = createBrowserRouter([
           { path: "users", element: page(<Users />) },
           { path: "jobs", element: page(<AdminJobs />) },
           { path: "activity", element: page(<ActivityLog />) },
+          { path: "reports", element: page(<Reports />) },
           { path: "*", element: <NotFound /> },
         ],
       },

@@ -5,6 +5,7 @@ import { authApi } from "@/api/auth";
 import { errorMessage, USE_MOCKS } from "@/api/client";
 import type { AuthResponse } from "@/types";
 import { homeFor, useAuth } from "@/app/AuthContext";
+import { takeNext } from "@/lib/next";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { AuthLayout } from "./AuthLayout";
@@ -18,7 +19,8 @@ export function useFinishLogin() {
   return (res: AuthResponse) => {
     signIn(res);
     const home = homeFor(res.user.role);
-    navigate(from?.startsWith(home) ? from : home, { replace: true });
+    const saved = takeNext(res.user.role);
+    navigate(from?.startsWith(home) ? from : saved ?? home, { replace: true });
   };
 }
 
@@ -76,6 +78,7 @@ export function EmailLogin({ onSuccess, footer }: { onSuccess: (r: AuthResponse)
       <Field label="Password" error={error}>
         {(id, d) => <Input id={id} aria-describedby={d} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!error} />}
       </Field>
+      <Link to={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="-mt-2 self-end text-small font-medium text-primary hover:underline">Forgot password?</Link>
       <Button type="submit" size="lg" loading={busy} loadingText="Logging in…">Log in</Button>
       {footer}
     </form>
