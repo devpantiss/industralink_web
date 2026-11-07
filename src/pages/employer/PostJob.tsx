@@ -215,7 +215,7 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
             )}
           </CardBody>
 
-          <div className="glass sticky bottom-[88px] flex flex-wrap items-center gap-2 rounded-b-lg border-t px-5 py-3 sm:bottom-0 sm:px-6">
+          <div className="glass sticky bottom-[72px] flex flex-wrap items-center gap-2 rounded-b-lg border-t px-5 py-3 sm:px-6 lg:bottom-0">
             {step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button>}
             <div className="flex-1" />
             {editing?.status !== "active" && (

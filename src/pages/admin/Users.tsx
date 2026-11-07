@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Users as UsersIcon } from "lucide-react";
@@ -18,7 +18,8 @@ import { useToast } from "@/components/ui/Toast";
 export default function Users() {
   const [sp, setSp] = useSearchParams();
   const role = (sp.get("role") as "worker" | "employer") || "worker";
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(sp.get("q") ?? "");
+  useEffect(() => { const v = sp.get("q"); if (v !== null) setQ(v); }, [sp]);
   const [status, setStatus] = useState<AccountStatus | "">("");
   const params = { role, q: q.trim() || undefined, status };
   const list = useQuery({ queryKey: qk.admin.users(params), queryFn: () => adminApi.users(params) });

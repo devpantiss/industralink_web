@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Search, UserSearch } from "lucide-react";
@@ -15,8 +15,10 @@ import { CandidateDrawer, QualificationBadges, useCandidateMoves } from "@/compo
 
 /** Everyone who applied to any of this company's jobs, in one searchable list. */
 export default function Candidates() {
-  const [q, setQ] = useState("");
   const [sp] = useSearchParams();
+  const [q, setQ] = useState(sp.get("q") ?? "");
+  // The top-bar search sends ?q=…; follow it when it changes.
+  useEffect(() => { const v = sp.get("q"); if (v !== null) setQ(v); }, [sp]);
   const [stage, setStage] = useState<ApplicationStage | "">((sp.get("stage") as ApplicationStage) ?? "");
   const [jobId, setJobId] = useState("");
   const params = { q: q.trim() || undefined, stage, jobId: jobId || undefined };
