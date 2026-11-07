@@ -8,6 +8,12 @@ import { createSeed, type MockDb } from "./seed";
 const KEY = "industrialink.mockdb.v3";
 let db: MockDb | null = null;
 
+// Another tab saved: drop our copy so we read theirs next time.
+// Otherwise this tab's older copy would overwrite new sign-ups on its next save.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => { if (e.key === KEY || e.key === null) db = null; });
+}
+
 export function getDb(): MockDb {
   if (db) return db;
   try {
@@ -20,11 +26,29 @@ export function getDb(): MockDb {
   return db;
 }
 
+/** Big uploads (photos, files kept as data URLs) are what fill the 5 MB storage. */
+const isBigDataUrl = (v: unknown) => typeof v === "string" && v.startsWith("data:") && v.length > 50_000;
+
+function withoutBigFiles(d: MockDb): MockDb {
+  return {
+    ...d,
+    documents: d.documents.map((doc) => (isBigDataUrl(doc.url) ? { ...doc, url: undefined } : doc)),
+    workers: d.workers.map((w) => (isBigDataUrl(w.photoUrl) ? { ...w, photoUrl: undefined } : w)),
+  };
+}
+
 export function saveDb() {
+  const data = getDb();
   try {
-    localStorage.setItem(KEY, JSON.stringify(getDb()));
+    localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
-    /* ignore: demo still works in memory */
+    // Storage full: keep accounts, jobs and applications; drop file previews from the saved copy.
+    try {
+      localStorage.setItem(KEY, JSON.stringify(withoutBigFiles(data)));
+      console.warn("[mock db] Browser storage is full. Saved without file previews. Use \"Reset demo data\" to clear it.");
+    } catch {
+      console.warn("[mock db] Could not save demo data. Changes will be lost on refresh.");
+    }
   }
 }
 
