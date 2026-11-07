@@ -31,21 +31,42 @@ export function BenefitChips({ benefits, max, className }: { benefits: Benefit[]
   );
 }
 
-/** One calm hue per industry, used for the icon tile everywhere. */
+/** One pastel per industry, used for small sector icon tiles. */
 export const SECTOR_TINT: Record<Sector, string> = {
-  mining: "bg-amber-100 text-amber-800",
-  metals: "bg-slate-200 text-slate-700",
-  shipping: "bg-cyan-100 text-cyan-800",
-  petroleum: "bg-rose-100 text-rose-700",
-  logistics: "bg-teal-100 text-teal-700",
-  automotive: "bg-violet-100 text-violet-700",
+  mining: "bg-tile-orange text-tile-orange-ink",
+  metals: "bg-tile-blue text-tile-blue-ink",
+  shipping: "bg-tile-blue text-tile-blue-ink",
+  petroleum: "bg-tile-rose text-tile-rose-ink",
+  logistics: "bg-tile-green text-tile-green-ink",
+  automotive: "bg-tile-purple text-tile-purple-ink",
 };
 
-export function CompanyLogo({ job, size = "md" }: { job: Pick<Job, "companyName" | "sector">; size?: "md" | "lg" }) {
-  const Icon = SECTOR_ICON[job.sector] ?? HardHat;
+/** Solid brand-style colours for company logos. Picked from the company name, so a company always looks the same. */
+const LOGO_COLORS = ["#E8590C", "#1C7ED6", "#2F9E44", "#5F3DC4", "#495057", "#D6336C", "#0C8599", "#E67700"];
+
+/** Simple white glyph per industry, drawn inside the logo tile. */
+const SECTOR_GLYPH: Record<Sector, string> = {
+  metals: "M5 4h14v3.2h-5.2v9.6H19V20H5v-3.2h5.2V7.2H5z",
+  shipping: "M2 8.5c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2v3c-2.5 0-2.5-2-5-2s-2.5 2-5 2-2.5-2-5-2-2.5 2-5 2zM2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2v3c-2.5 0-2.5-2-5-2s-2.5 2-5 2-2.5-2-5-2-2.5 2-5 2z",
+  logistics: "M3 5h5l6 7-6 7H3l6-7zM10 5h5l6 7-6 7h-5l6-7z",
+  automotive: "M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zm0 5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z",
+  mining: "M1.5 20 9 6.5l4.2 7 2.3-3.5L22.5 20z",
+  petroleum: "M12 2.5s7.5 7.8 7.5 12.5a7.5 7.5 0 0 1-15 0C4.5 10.3 12 2.5 12 2.5z",
+};
+
+export function companyColor(name: string) {
+  return LOGO_COLORS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % LOGO_COLORS.length]!;
+}
+
+const LOGO_SIZE = { sm: "h-9 w-9 rounded-[10px]", md: "h-11 w-11 rounded-xl", lg: "h-14 w-14 rounded-2xl" } as const;
+
+export function CompanyLogo({ job, size = "md", className }: { job: Pick<Job, "companyName" | "sector">; size?: keyof typeof LOGO_SIZE; className?: string }) {
+  const glyph = SECTOR_GLYPH[job.sector];
   return (
-    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-lg", SECTOR_TINT[job.sector] ?? "bg-primary-soft text-primary", size === "lg" ? "h-14 w-14" : "h-11 w-11")} aria-hidden>
-      <Icon className={size === "lg" ? "h-7 w-7" : "h-5 w-5"} />
+    <span className={cn("inline-flex shrink-0 items-center justify-center", LOGO_SIZE[size], className)} style={{ background: companyColor(job.companyName) }} aria-hidden>
+      {glyph ? (
+        <svg viewBox="0 0 24 24" className="h-[54%] w-[54%]" fill="#fff"><path d={glyph} fillRule="evenodd" /></svg>
+      ) : <HardHat className="h-1/2 w-1/2 text-white" />}
     </span>
   );
 }

@@ -1,14 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { initials } from "@/lib/format";
 
-const avatarColors = ["bg-teal-100 text-teal-800", "bg-emerald-100 text-emerald-800", "bg-violet-100 text-violet-800", "bg-amber-100 text-amber-900", "bg-rose-100 text-rose-800", "bg-stone-200 text-stone-800"];
+const avatarColors = ["bg-tile-green text-tile-green-ink", "bg-tile-blue text-tile-blue-ink", "bg-tile-orange text-tile-orange-ink", "bg-tile-purple text-tile-purple-ink", "bg-tile-rose text-tile-rose-ink", "bg-tile-yellow text-tile-yellow-ink"];
 
-export function Avatar({ name, size = "md", square, className, src }: { name: string; size?: "sm" | "md" | "lg"; square?: boolean; className?: string; src?: string }) {
+export function Avatar({ name, size = "md", square, className, src }: { name: string; size?: "sm" | "md" | "lg" | "xl"; square?: boolean; className?: string; src?: string }) {
   const color = avatarColors[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % avatarColors.length];
-  const sz = size === "sm" ? "h-8 w-8 text-caption" : size === "lg" ? "h-14 w-14 text-h2" : "h-10 w-10 text-small";
+  const sz = size === "sm" ? "h-8 w-8 text-caption" : size === "lg" ? "h-14 w-14 text-h2" : size === "xl" ? "h-20 w-20 text-[26px]" : "h-10 w-10 text-small";
   if (src) return <img src={src} alt="" className={cn("shrink-0 object-cover", square ? "rounded-md" : "rounded-full", sz, className)} />;
   return (
     <span className={cn("inline-flex shrink-0 items-center justify-center font-semibold", square ? "rounded-md" : "rounded-full", sz, color, className)} aria-hidden>
@@ -17,7 +17,7 @@ export function Avatar({ name, size = "md", square, className, src }: { name: st
   );
 }
 
-export function ProgressBar({ value, tone = "accent", label }: { value: number; tone?: "accent" | "primary" | "success"; label?: string }) {
+export function ProgressBar({ value, tone = "primary", label }: { value: number; tone?: "accent" | "primary" | "success"; label?: string }) {
   const color = tone === "accent" ? "bg-accent" : tone === "success" ? "bg-success-fg" : "bg-primary";
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
@@ -86,33 +86,15 @@ export function PageHeader({ title, description, actions, breadcrumb }: { title:
 
 export type StatTone = "blue" | "purple" | "amber" | "green" | "teal";
 const STAT_TONE: Record<StatTone, string> = {
-  blue: "bg-primary-soft text-primary",
-  purple: "bg-violet-100 text-violet-700",
-  amber: "bg-amber-100 text-amber-800",
-  green: "bg-green-100 text-green-700",
-  teal: "bg-teal-100 text-teal-700",
+  blue: "bg-tile-blue text-tile-blue-ink",
+  purple: "bg-tile-purple text-tile-purple-ink",
+  amber: "bg-tile-orange text-tile-orange-ink",
+  green: "bg-tile-green text-tile-green-ink",
+  teal: "bg-primary-soft text-primary",
 };
 
-/** Counts up from 0 once, so new numbers draw the eye without being flashy. */
-function useCountUp(target: number, ms = 600) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setV(target); return; }
-    let raf = 0;
-    const start = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / ms);
-      setV(Math.round(target * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, ms]);
-  return v;
-}
-
 export function StatCard({ label, value, icon, hint, to, highlight, tone = "blue" }: { label: string; value: number; icon?: ReactNode; hint?: ReactNode; to?: string; highlight?: boolean; tone?: StatTone }) {
-  const shown = useCountUp(value);
+  const shown = value;
   const inner = (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -121,33 +103,44 @@ export function StatCard({ label, value, icon, hint, to, highlight, tone = "blue
       </div>
       <div className="mt-1 flex items-center gap-2">
         <span className="text-display text-ink tabular">{shown.toLocaleString("en-IN")}</span>
-        {highlight && <span className="h-2.5 w-2.5 rounded-full bg-accent animate-pulse-ring" aria-label="Needs attention" />}
+        {highlight && <span className="h-2.5 w-2.5 rounded-full bg-danger-fg" aria-label="Needs attention" />}
       </div>
       {hint && <div className="mt-1 text-caption text-ink-muted">{hint}</div>}
     </>
   );
-  const cls = cn("group relative block overflow-hidden rounded-lg border border-border/70 bg-surface p-4 shadow-xs sm:p-5",
-    to && "transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md");
+  const cls = cn("group relative block overflow-hidden rounded-lg border border-border bg-surface p-4 sm:p-5",
+    to && "transition-[box-shadow,border-color] duration-200 hover:border-border-strong hover:shadow-md");
   return to ? <Link to={to} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
 }
 
-/** Coloured welcome band at the top of each Home page. */
-export function Hero({ eyebrow, title, subtitle, actions, children, image }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode; image?: string }) {
+/** Geometric shapes for banners: cobalt, ink and safety-yellow blocks with a hazard stripe. */
+export function BannerArt({ className }: { className?: string }) {
   return (
-    <section className="bg-hero relative overflow-hidden rounded-2xl px-5 py-6 text-white shadow-md sm:px-8 sm:py-8">
-      {image && (
-        <>
-          {/* Photo fades in from the right so the text side stays plain and readable */}
-          <img src={image} alt="" aria-hidden decoding="async" className="pointer-events-none absolute inset-y-0 right-0 h-full w-full object-cover opacity-30 sm:w-3/5 sm:opacity-90 [mask-image:linear-gradient(to_right,transparent,#000_55%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgb(var(--hero-from)/0.7)] via-transparent to-transparent" aria-hidden />
-        </>
-      )}
-      <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden />
-      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <svg viewBox="0 0 600 260" preserveAspectRatio="xMaxYMid slice" aria-hidden className={cn("pointer-events-none absolute inset-y-0 right-0 h-full", className)}>
+      <defs>
+        <pattern id="il-hazard" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="22" height="22" fill="rgb(var(--accent))" /><rect width="11" height="22" fill="rgb(var(--text))" />
+        </pattern>
+      </defs>
+      <polygon points="70,40 230,40 175,150 15,150" fill="rgb(var(--primary))" />
+      <polygon points="250,0 400,0 530,130 400,260 250,260 380,130" fill="rgb(var(--text))" />
+      <polygon points="330,0 365,0 495,130 365,260 330,260 460,130" fill="rgb(var(--surface-muted))" />
+      <polygon points="455,0 600,0 600,150" fill="rgb(var(--accent))" />
+      <polygon points="495,200 600,200 600,260 460,260" fill="url(#il-hazard)" />
+    </svg>
+  );
+}
+
+/** Light welcome band with geometric art on the right. `image` is kept for old callers and ignored. */
+export function Hero({ eyebrow, title, subtitle, actions, children }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode; image?: string }) {
+  return (
+    <section className="relative overflow-hidden rounded-xl bg-surface-muted px-5 py-6 sm:px-8 sm:py-8">
+      <BannerArt className="w-[90%] opacity-15 sm:w-[48%] sm:opacity-100" />
+      <div className="relative flex flex-col gap-5 sm:max-w-[54%]">
         <div className="min-w-0">
-          {eyebrow && <p className="text-caption font-semibold uppercase tracking-wider text-amber-300">{eyebrow}</p>}
-          <h1 className="mt-1 text-h1 sm:text-[28px] sm:leading-9">{title}</h1>
-          {subtitle && <p className="mt-1 max-w-xl text-body-lg text-white/75">{subtitle}</p>}
+          {eyebrow && <p className="text-small font-semibold text-primary">{eyebrow}</p>}
+          <h1 className="mt-1 text-[26px] font-extrabold leading-tight tracking-tight text-ink sm:text-[32px]">{title}</h1>
+          {subtitle && <p className="mt-2 max-w-xl text-body-lg text-ink-secondary">{subtitle}</p>}
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>

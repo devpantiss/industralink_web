@@ -20,7 +20,7 @@ export function ProfileNudge() {
   const onProfile = pathname.startsWith("/worker/profile");
 
   return (
-    <div className="animate-page border-b border-amber-200 bg-gradient-to-r from-amber-50 via-amber-50 to-orange-50">
+    <div className="animate-page border-b border-tile-yellow bg-tile-yellow/60">
       <div className="mx-auto flex max-w-content flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:px-6 lg:px-8">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-on">

@@ -16,7 +16,6 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth, useUser } from "./AuthContext";
 import { ProfileNudge } from "@/components/domain/ProfileNudge";
 import { NAV, ROLE_LABEL } from "./nav";
-import { applyPalette, getPalette, PALETTES, type Palette } from "@/lib/palette";
 
 function Logo({ collapsed }: { collapsed?: boolean }) {
   return (
@@ -114,7 +113,6 @@ function ProfileMenu() {
   const { signOut } = useAuth();
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [palette, setPalette] = useState<Palette>(getPalette);
   const ref = useClickOutside(open, () => setOpen(false));
 
   const resetDemo = async () => {
@@ -135,20 +133,6 @@ function ProfileMenu() {
           <div className="border-b border-border px-4 py-3">
             <p className="truncate text-body font-medium text-ink">{user.name}</p>
             <p className="truncate text-small text-ink-muted">{user.phone ? `+91 ${user.phone}` : user.email}</p>
-          </div>
-          <div className="border-b border-border px-4 py-3">
-            <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-ink-muted">Colour theme</p>
-            <div className="flex gap-2" role="radiogroup" aria-label="Colour theme">
-              {PALETTES.map((p) => (
-                <button key={p.value} role="radio" aria-checked={palette === p.value} title={p.label} aria-label={p.label}
-                  onClick={() => { applyPalette(p.value); setPalette(p.value); }}
-                  className={cn("flex h-9 flex-1 overflow-hidden rounded-md ring-offset-2 transition-shadow", palette === p.value ? "ring-2 ring-primary" : "ring-1 ring-border hover:ring-border-strong")}>
-                  <span className="h-full flex-1" style={{ background: p.swatch[0] }} />
-                  <span className="h-full flex-1" style={{ background: p.swatch[1] }} />
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-caption text-ink-secondary">{PALETTES.find((p) => p.value === palette)?.label}</p>
           </div>
           <Link to={`/${user.role}/settings`} onClick={() => setOpen(false)} className="flex w-full items-center gap-2 px-4 py-2.5 text-body text-ink-secondary hover:bg-surface-muted">
             <SettingsIcon className="h-4 w-4" aria-hidden /> {t("Settings")}

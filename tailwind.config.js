@@ -8,7 +8,7 @@ export default {
     extend: {
       colors: {
         bg: v("bg"),
-        surface: { DEFAULT: v("surface"), muted: v("surface-muted") },
+        surface: { DEFAULT: v("surface"), muted: v("surface-muted"), strong: v("surface-strong") },
         border: { DEFAULT: v("border"), strong: v("border-strong") },
         ink: { DEFAULT: v("text"), secondary: v("text-secondary"), muted: v("text-muted") },
         primary: { DEFAULT: v("primary"), hover: v("primary-hover"), soft: v("primary-soft") },
@@ -20,6 +20,12 @@ export default {
         success: { fg: v("success-fg"), bg: v("success-bg") },
         warning: { fg: v("warning-fg"), bg: v("warning-bg") },
         danger: { fg: v("danger-fg"), bg: v("danger-bg") },
+        /* Pastel fact tiles: bg-tile-green + text-tile-green-ink */
+        tile: {
+          green: v("pg"), "green-ink": v("pg-ink"), blue: v("pb"), "blue-ink": v("pb-ink"),
+          orange: v("po"), "orange-ink": v("po-ink"), purple: v("pp"), "purple-ink": v("pp-ink"),
+          rose: v("pr"), "rose-ink": v("pr-ink"), yellow: v("py"), "yellow-ink": v("py-ink"),
+        },
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', "Inter", '"Noto Sans Devanagari"', '"Noto Sans Oriya"', '"Noto Sans Bengali"', '"Noto Sans Telugu"', '"Noto Sans Tamil"', "system-ui", "sans-serif"],
@@ -34,14 +40,14 @@ export default {
         h1: ["24px", { lineHeight: "32px", fontWeight: "700", letterSpacing: "-0.02em" }],
         display: ["30px", { lineHeight: "36px", fontWeight: "700", letterSpacing: "-0.025em" }],
       },
-      borderRadius: { sm: "8px", md: "10px", lg: "14px", xl: "16px", "2xl": "20px" },
+      borderRadius: { sm: "8px", md: "10px", lg: "16px", xl: "20px", "2xl": "24px" },
       boxShadow: {
-        xs: "0 1px 2px rgb(15 23 42 / .04), 0 1px 1px rgb(15 23 42 / .02)",
-        md: "0 2px 4px rgb(15 23 42 / .03), 0 8px 24px -6px rgb(15 23 42 / .10)",
-        lg: "0 4px 8px rgb(15 23 42 / .04), 0 20px 48px -12px rgb(15 23 42 / .18)",
+        xs: "0 1px 2px rgb(21 25 30 / .04)",
+        md: "0 12px 32px -14px rgb(21 25 30 / .22)",
+        lg: "0 24px 60px -20px rgb(21 25 30 / .28)",
       },
       transitionTimingFunction: { brand: "cubic-bezier(0.2, 0, 0, 1)" },
-      maxWidth: { content: "1280px" },
+      maxWidth: { content: "1360px" },
     },
   },
   plugins: [],

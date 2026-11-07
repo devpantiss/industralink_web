@@ -3,204 +3,110 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------
-   Design tokens ("Steel & Safety"). Values are "R G B" so Tailwind
-   can apply opacity. Use token classes (bg-surface, text-ink-muted…)
-   instead of raw hex values in components.
+   Design tokens ("Cobalt"). Values are "R G B" so Tailwind can apply
+   opacity. Use token classes (bg-surface, text-ink-muted…) instead of
+   raw hex values in components.
+
+   Look: white canvas, soft grey cards, cobalt blue for actions,
+   near-black for strong contrast, pastel tiles for key job facts,
+   safety yellow as a small brand accent.
 ------------------------------------------------------------------- */
 :root {
-  /* ---- Palette: Deep Teal (default) ---- */
-  --primary: 15 118 110;         /* #0F766E */
-  --primary-hover: 17 94 89;     /* #115E59 */
-  --primary-soft: 240 253 250;   /* #F0FDFA */
-  --brand-navy: 15 28 31;        /* sidebar #0F1C1F */
-  --accent: 245 158 11;          /* amber #F59E0B */
+  --primary: 36 84 230;          /* cobalt #2454E6 */
+  --primary-hover: 29 69 196;    /* #1D45C4 */
+  --primary-soft: 235 240 254;   /* #EBF0FE */
+  --brand-navy: 21 25 30;        /* ink, used for strong pills */
+  --accent: 242 180 24;          /* safety yellow #F2B418 */
   --on-accent: 28 25 23;
-  --hero-from: 12 26 28;
-  --hero-via: 19 78 74;
-  --hero-to: 15 118 110;
-  --hero-glow: 45 212 191;
+  --hero-from: 30 64 196;
+  --hero-via: 36 84 230;
+  --hero-to: 70 120 255;
+  --hero-glow: 120 160 255;
 
-  --bg: 248 250 250;             /* #F8FAFA */
+  --bg: 244 245 247;             /* #F4F5F7 */
   --surface: 255 255 255;
-  --surface-muted: 241 245 245;
-  --border: 226 232 233;
-  --border-strong: 203 213 214;
-  --text: 15 23 42;              /* #0F172A */
-  --text-secondary: 71 85 105;   /* #475569 */
-  --text-muted: 100 116 139;     /* #64748B */
+  --surface-muted: 245 246 248;  /* #F5F6F8, the grey card colour */
+  --surface-strong: 237 239 242; /* #EDEFF2, hover on grey cards */
+  --border: 230 232 236;         /* #E6E8EC */
+  --border-strong: 212 216 222;  /* #D4D8DE */
+  --text: 21 25 30;              /* #15191E */
+  --text-secondary: 80 90 102;   /* #505A66 */
+  --text-muted: 110 119 131;     /* #6E7783, AA on white */
 
-  --neutral-fg: 71 85 105;   --neutral-bg: 241 245 249;
-  --info-fg: 15 118 110;     --info-bg: 240 253 250;
-  --interview-fg: 109 40 217; --interview-bg: 245 243 255;
-  --success-fg: 21 128 61;   --success-bg: 240 253 244;
-  --warning-fg: 180 83 9;    --warning-bg: 255 251 235;
-  --danger-fg: 185 28 28;    --danger-bg: 254 242 242;
+  --neutral-fg: 80 90 102;    --neutral-bg: 237 239 242;
+  --info-fg: 36 84 230;       --info-bg: 235 240 254;
+  --interview-fg: 74 59 142;  --interview-bg: 233 228 248;
+  --success-fg: 23 96 58;     --success-bg: 221 243 228;
+  --warning-fg: 138 74 16;    --warning-bg: 252 231 211;
+  --danger-fg: 190 30 64;     --danger-bg: 252 229 235;
+
+  /* Pastel fact tiles (salary, shift, applicants, experience). */
+  --pg: 221 243 228;  --pg-ink: 23 96 58;
+  --pb: 221 235 248;  --pb-ink: 29 77 120;
+  --po: 252 231 211;  --po-ink: 138 74 16;
+  --pp: 233 228 248;  --pp-ink: 74 59 142;
+  --pr: 252 229 235;  --pr-ink: 163 36 75;
+  --py: 255 242 220;  --py-ink: 163 91 5;
 
   color-scheme: light;
 }
 
-/* ---- Palette: Industrial Orange ---- */
-:root[data-palette="orange"] {
-  --primary: 194 65 12;          /* #C2410C */
-  --primary-hover: 154 52 18;
-  --primary-soft: 255 247 237;
-  --brand-navy: 24 24 27;        /* zinc #18181B */
-  --accent: 250 204 21;          /* yellow #FACC15 */
-  --hero-from: 24 24 27;
-  --hero-via: 39 39 42;
-  --hero-to: 68 64 60;
-  --hero-glow: 251 146 60;
-  --bg: 250 250 249;
-  --surface-muted: 245 245 244;
-  --border: 231 229 228;
-  --border-strong: 214 211 209;
-  --info-fg: 194 65 12;      --info-bg: 255 247 237;
-}
-
-/* ---- Palette: Graphite ---- */
-:root[data-palette="graphite"] {
-  --primary: 31 41 55;           /* #1F2937 */
-  --primary-hover: 17 24 39;
-  --primary-soft: 243 244 246;
-  --brand-navy: 17 24 39;        /* #111827 */
-  --accent: 245 158 11;
-  --hero-from: 17 24 39;
-  --hero-via: 31 41 55;
-  --hero-to: 55 65 81;
-  --hero-glow: 245 158 11;
-  --bg: 249 250 251;
-  --surface-muted: 243 244 246;
-  --border: 229 231 235;
-  --border-strong: 209 213 219;
-  --info-fg: 15 118 110;     --info-bg: 240 253 250;
-}
-
-/* Dark mode tokens (phase 2): enable by adding data-theme="dark" on <html>. */
-:root[data-theme="dark"] {
-  --primary: 96 165 250;
-  --primary-hover: 147 197 253;
-  --primary-soft: 23 37 84;
-  --accent: 251 191 36;
-  --bg: 11 18 32;
-  --surface: 17 26 46;
-  --surface-muted: 24 35 58;
-  --border: 31 42 68;
-  --border-strong: 51 65 85;
-  --text: 226 232 240;
-  --text-secondary: 148 163 184;
-  --text-muted: 148 163 184;
-  color-scheme: dark;
-}
-
 @layer base {
   html { -webkit-text-size-adjust: 100%; }
-  body {
-    @apply bg-bg font-sans text-body text-ink antialiased;
-    /* Soft colour washes behind everything, so the glass layers have something to refract. */
-    background-image:
-      radial-gradient(1000px 520px at 100% -15%, rgb(var(--hero-glow) / .10), transparent 60%),
-      radial-gradient(800px 460px at -10% 110%, rgb(var(--primary) / .05), transparent 60%);
-    background-attachment: fixed;
-  }
-  :focus-visible {
-    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-surface;
-  }
+  body { @apply bg-bg font-sans text-body text-ink antialiased; }
+  :focus-visible { @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-surface; }
   .tabular { font-variant-numeric: tabular-nums; }
-  /* Thinner line icons read as more modern; also applies to every lucide icon. */
-  svg.lucide { stroke-width: 1.75; }
+  svg.lucide { stroke-width: 1.8; }
+  input[type="checkbox"], input[type="radio"] { accent-color: rgb(var(--primary)); }
+  h1, h2, h3 { text-wrap: balance; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* ---------- Motion (kept subtle: 150–350ms, small distances) ---------- */
-@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* ---------- Motion: short, ease-out, only for state changes ---------- */
+@keyframes page-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(var(--accent) / .55); } 70% { box-shadow: 0 0 0 8px rgb(var(--accent) / 0); } 100% { box-shadow: 0 0 0 0 rgb(var(--accent) / 0); } }
-.animate-page { animation: page-in 280ms cubic-bezier(0.2, 0, 0, 1) both; }
-.animate-rise { animation: rise 350ms cubic-bezier(0.2, 0, 0, 1) both; }
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-pulse-ring { animation: pulse-ring 2s infinite; }
-.origin-left-grow { transform-origin: left; animation: grow-x 700ms cubic-bezier(0.2, 0, 0, 1) both; }
-/* Lists fade in one after another */
-.stagger > * { animation: rise 350ms cubic-bezier(0.2, 0, 0, 1) both; }
-.stagger > *:nth-child(2) { animation-delay: 40ms; }
-.stagger > *:nth-child(3) { animation-delay: 80ms; }
-.stagger > *:nth-child(4) { animation-delay: 120ms; }
-.stagger > *:nth-child(5) { animation-delay: 160ms; }
-.stagger > *:nth-child(6) { animation-delay: 200ms; }
-.stagger > *:nth-child(n+7) { animation-delay: 240ms; }
-
-/* ---------- Glass (Apple-style materials) ----------
-   Rule: glass only on the navigation / floating layer (top bar, tab bar,
-   sidebar, menus, sheets, toasts). Content cards stay solid. No glass on glass. */
-.glass {
-  background: rgb(var(--surface) / .72);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-color: rgb(255 255 255 / .55);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .65), 0 8px 32px -8px rgb(15 23 42 / .12);
-}
-.glass-thick {
-  background: rgb(var(--surface) / .86);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
-  backdrop-filter: saturate(180%) blur(28px);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), 0 24px 64px -12px rgb(15 23 42 / .28);
-}
-/* Menus that open from a glass bar: nearly solid (no glass on glass). */
-.glass-menu {
-  background: rgb(var(--surface));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .8), 0 20px 48px -12px rgb(15 23 42 / .25);
-}
-.glass-dark {
-  background: rgb(var(--brand-navy) / .94);
-  -webkit-backdrop-filter: saturate(160%) blur(24px);
-  backdrop-filter: saturate(160%) blur(24px);
-  box-shadow: inset -1px 0 0 rgb(255 255 255 / .06), inset 0 1px 0 rgb(255 255 255 / .06);
-}
-.glass-ink {
-  background: rgb(var(--text) / .82);
-  -webkit-backdrop-filter: saturate(160%) blur(20px);
-  backdrop-filter: saturate(160%) blur(20px);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 16px 40px -12px rgb(15 23 42 / .4);
-}
-.glass-scrim { background: rgb(15 23 42 / .28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-
-/* Accessibility & old browsers: fall back to solid surfaces. */
-@media (prefers-reduced-transparency: reduce) {
-  .glass, .glass-thick, .glass-menu { background: rgb(var(--surface)); backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .glass-dark { background: rgb(var(--brand-navy)); backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .glass-ink { background: rgb(var(--text)); backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .glass-scrim { background: rgb(15 23 42 / .45); backdrop-filter: none; -webkit-backdrop-filter: none; }
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass, .glass-thick { background: rgb(var(--surface) / .97); }
-  .glass-dark { background: rgb(var(--brand-navy)); }
-  .glass-ink { background: rgb(var(--text) / .95); }
-}
-
-/* Brand surfaces */
-.bg-hero {
-  background:
-    radial-gradient(600px 200px at 85% -20%, rgb(var(--accent) / .22), transparent 60%),
-    radial-gradient(500px 240px at 0% 120%, rgb(var(--hero-glow) / .28), transparent 60%),
-    linear-gradient(120deg, rgb(var(--hero-from)) 0%, rgb(var(--hero-via)) 55%, rgb(var(--hero-to)) 100%);
-}
-/* Was a square grid; now a soft top sheen, which reads cleaner. */
-.bg-grid {
-  background: linear-gradient(180deg, rgb(255 255 255 / .07), transparent 40%);
-}
-
 @keyframes shimmer { 100% { transform: translateX(100%); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
-.animate-drawer { animation: slide-in-right 300ms cubic-bezier(0.2, 0, 0, 1); }
+@keyframes pop-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes tap-pop { 50% { transform: scale(1.2); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.animate-page { animation: page-in 200ms cubic-bezier(0.2, 0, 0, 1) both; }
+.animate-rise { animation: rise 220ms cubic-bezier(0.2, 0, 0, 1) both; }
+.animate-drawer { animation: slide-in-right 280ms cubic-bezier(0.2, 0, 0, 1); }
 .animate-fade { animation: fade-in 200ms cubic-bezier(0.2, 0, 0, 1); }
-.animate-pop { animation: pop-in 200ms cubic-bezier(0.2, 0, 0, 1); }
+.animate-pop { animation: pop-in 180ms cubic-bezier(0.2, 0, 0, 1); }
+.animate-tap { animation: tap-pop 220ms cubic-bezier(0.2, 0, 0, 1); }
+.origin-left-grow { transform-origin: left; animation: grow-x 500ms cubic-bezier(0.2, 0, 0, 1) both; }
+/* Kept for existing lists: a light fade, no stagger. */
+.stagger > * { animation: rise 220ms cubic-bezier(0.2, 0, 0, 1) both; }
+/* Draws a tick: give the <path> pathLength="1". */
+.draw-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 300ms cubic-bezier(0.2, 0, 0, 1) forwards; }
+/* Sliding indicator (nav underline, tab pill). Position is set from JS. */
+.slide-ind { transition: transform 280ms cubic-bezier(0.2, 0, 0, 1), width 280ms cubic-bezier(0.2, 0, 0, 1), height 280ms cubic-bezier(0.2, 0, 0, 1); }
+.no-anim, .no-anim * { transition: none !important; }
+
+/* ---------- Surfaces ----------
+   Earlier versions used frosted glass; the class names stay so old markup
+   keeps working, but they are now plain solid surfaces. */
+.glass { background: rgb(var(--surface)); border-color: rgb(var(--border)); }
+.glass-thick { background: rgb(var(--surface)); box-shadow: 0 24px 60px -20px rgb(21 25 30 / .28); }
+.glass-menu { background: rgb(var(--surface)); border-color: rgb(var(--border)) !important; box-shadow: 0 16px 40px -16px rgb(21 25 30 / .25); }
+.glass-dark { background: rgb(var(--brand-navy)); }
+.glass-ink { background: rgb(var(--primary)); box-shadow: 0 16px 40px -16px rgb(36 84 230 / .45); }
+.glass-scrim { background: rgb(21 25 30 / .32); }
+
+/* Brand banner (login side panel, company header). */
+.bg-hero { background: linear-gradient(120deg, rgb(var(--hero-from)) 0%, rgb(var(--hero-via)) 55%, rgb(var(--hero-to)) 100%); }
+.bg-grid { background: linear-gradient(180deg, rgb(255 255 255 / .08), transparent 45%); }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

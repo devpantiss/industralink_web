@@ -28,13 +28,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:items-end sm:px-6">
         {items.map((t) => (
-          <div key={t.id} className="glass-ink animate-pop pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl px-4 py-3 text-body text-white">
-            {t.tone === "success" ? <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" aria-hidden /> : <AlertCircle className="h-5 w-5 shrink-0 text-red-400" aria-hidden />}
+          <div key={t.id} role={t.tone === "error" ? "alert" : "status"} className="animate-pop pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-body text-ink shadow-md">
+            {t.tone === "success" ? <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success-bg text-success-fg"><CheckCircle2 className="h-4 w-4" aria-hidden /></span> : <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-danger-bg text-danger-fg"><AlertCircle className="h-4 w-4" aria-hidden /></span>}
             <span className="flex-1">{t.message}</span>
             {t.action && (
-              <button className="font-semibold text-amber-300 hover:underline" onClick={() => { t.action!.onClick(); remove(t.id); }}>{t.action.label}</button>
+              <button className="rounded-md px-2 py-1 font-semibold text-primary hover:bg-primary-soft" onClick={() => { t.action!.onClick(); remove(t.id); }}>{t.action.label}</button>
             )}
-            <button aria-label="Dismiss" onClick={() => remove(t.id)} className={cn("text-white/60 hover:text-white")}><X className="h-4 w-4" /></button>
+            <button aria-label="Dismiss" onClick={() => remove(t.id)} className={cn("text-ink-muted hover:text-ink")}><X className="h-4 w-4" /></button>
           </div>
         ))}
       </div>

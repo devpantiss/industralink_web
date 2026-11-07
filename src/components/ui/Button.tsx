@@ -3,17 +3,18 @@ import { Link, type LinkProps } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "accent";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "accent" | "dark";
 type Size = "sm" | "md" | "lg";
 
 const base =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-[120ms] ease-brand active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 select-none";
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-white shadow-[0_1px_2px_rgb(var(--primary)/.25),0_4px_12px_-2px_rgb(var(--primary)/.35)] hover:bg-primary-hover",
+  primary: "bg-primary text-white hover:bg-primary-hover",
   secondary: "border border-border bg-surface text-ink hover:border-border-strong hover:bg-surface-muted",
   ghost: "text-ink-secondary hover:bg-surface-muted hover:text-ink",
   danger: "bg-danger-fg text-white hover:bg-danger-fg/90",
   accent: "bg-accent text-accent-on hover:bg-accent/90",
+  dark: "bg-ink text-white hover:bg-ink/90",
 };
 const sizes: Record<Size, string> = {
   sm: "h-8 px-3 text-small",
