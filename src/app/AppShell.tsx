@@ -204,7 +204,7 @@ export function AppShell() {
           <Link to={`/${user.role}`} aria-label="IndustriaLink home" className="hidden lg:block"><Logo collapsed={collapsed} /></Link>
         </div>
         {!collapsed && <p className="hidden px-6 pt-4 text-caption font-medium uppercase tracking-wider text-ink-muted lg:block">{ROLE_LABEL[user.role]}</p>}
-        <nav className="flex flex-1 flex-col gap-0.5 p-3">
+        <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-3">
           {items.map((it) => (
             <NavLink key={it.to} to={it.to} end={it.end} title={t(it.label)}
               className={({ isActive }) => cn("relative flex h-10 items-center gap-3 rounded-xl px-3 text-body font-medium transition-colors",
@@ -223,7 +223,7 @@ export function AppShell() {
 
       <div className={cn("flex min-h-screen flex-col transition-[padding] duration-200 ease-brand sm:pl-[72px]", !collapsed && "lg:pl-60")}>
         {/* Top bar */}
-        <header className="glass sticky top-0 z-20 flex h-14 items-center gap-3 border-b px-4 sm:h-16 sm:px-6 lg:px-8">
+        <header className="glass sticky top-0 z-20 flex h-14 items-center gap-1.5 border-b px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
           <Link to={`/${user.role}`} className="sm:hidden" aria-label="IndustriaLink home"><Logo /></Link>
           <div className="flex-1" />
           {user.role === "employer" && (

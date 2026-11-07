@@ -35,22 +35,23 @@ export default function Companies() {
       </div>
       <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<Building2 className="h-6 w-6" />} title={t("No companies found")} description={t("Try another name or industry.")} />}>
         {(rows) => (
-          <ul className="stagger grid gap-3 md:grid-cols-2">
+          <ul className="stagger grid grid-cols-1 gap-3 md:grid-cols-2">
             {rows.map(({ company: c, openJobs }) => {
               const Icon = SECTOR_ICON[c.sector];
               return (
-                <li key={c.id}>
-                  <Link to={`/worker/companies/${c.id}`} className="flex h-full items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <li key={c.id} className="min-w-0">
+                  <Link to={`/worker/companies/${c.id}`} className="flex h-full items-center gap-3 rounded-lg sm:gap-4 border border-border bg-surface p-4 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md">
                     <span className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", SECTOR_TINT[c.sector])}><Icon className="h-6 w-6" aria-hidden /></span>
                     <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-1.5 text-h3 text-ink"><span className="truncate">{c.name}</span> <VerifiedTick verified /></p>
+                      <p className="flex items-center gap-1.5 text-h3 text-ink"><span className="min-w-0 truncate">{c.name}</span> <span className="shrink-0"><VerifiedTick verified /></span></p>
                       <p className="truncate text-small text-ink-secondary">{t(SECTOR_LABEL[c.sector])}</p>
                       <p className="mt-1 flex flex-wrap gap-x-3 text-caption text-ink-muted">
                         <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden />{c.location.city || "—"}</span>
                         <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden />{c.size}</span>
+                        <span className={cn("font-semibold sm:hidden", openJobs ? "text-primary" : "")}>{openJobs ? t("{n} open jobs", { n: openJobs }) : t("No openings")}</span>
                       </p>
                     </div>
-                    <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-caption font-semibold", openJobs ? "bg-primary-soft text-primary" : "bg-surface-muted text-ink-muted")}>
+                    <span className={cn("hidden shrink-0 rounded-full px-2.5 py-1 text-caption font-semibold sm:inline", openJobs ? "bg-primary-soft text-primary" : "bg-surface-muted text-ink-muted")}>
                       {openJobs ? t("{n} open jobs", { n: openJobs }) : t("No openings")}
                     </span>
                     <ChevronRight className="h-5 w-5 shrink-0 text-ink-muted" aria-hidden />

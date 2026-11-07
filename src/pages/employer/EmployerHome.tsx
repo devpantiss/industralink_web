@@ -104,13 +104,13 @@ export default function EmployerHome() {
           <ul className="divide-y divide-border">
             {(jobs.data ?? []).slice(0, 5).map((j) => (
               <li key={j.id}>
-                <Link to={`/employer/jobs/${j.id}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-muted">
+                <Link to={`/employer/jobs/${j.id}`} className="flex items-center gap-2 px-4 py-3.5 hover:bg-surface-muted sm:gap-4 sm:px-5">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-body font-medium text-ink">{j.title}</p>
-                    <p className="text-small text-ink-muted">{j.location.city} · posted {timeAgo(j.postedAt)}</p>
+                    <p className="truncate text-small text-ink-muted">{j.location.city} · posted {timeAgo(j.postedAt)}</p>
                   </div>
-                  <span className="text-small text-ink-secondary tabular">{j.applicantsCount} applicants</span>
-                  {j.newApplicantsCount > 0 && <span className="rounded-full bg-primary px-2 py-0.5 text-caption font-semibold text-white tabular">{j.newApplicantsCount} new</span>}
+                  <span className="hidden text-small text-ink-secondary tabular sm:inline">{j.applicantsCount} applicants</span>
+                  {j.newApplicantsCount > 0 && <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-caption font-semibold text-white tabular">{j.newApplicantsCount} new</span>}
                   <JobStatusBadge status={j.status} />
                 </Link>
               </li>

@@ -28,7 +28,7 @@ export default function CompanyDetail() {
       <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
         <div className="bg-hero relative h-24 sm:h-28"><div className="bg-grid absolute inset-0 opacity-60" aria-hidden /></div>
         <div className="px-5 pb-5 sm:px-6">
-          <span className={cn("-mt-9 flex h-16 w-16 items-center justify-center rounded-xl border-4 border-surface shadow-md", SECTOR_TINT[c.sector])}><Icon className="h-8 w-8" aria-hidden /></span>
+          <span className={cn("relative -mt-9 flex h-16 w-16 items-center justify-center rounded-xl border-4 border-surface shadow-md", SECTOR_TINT[c.sector])}><Icon className="h-8 w-8" aria-hidden /></span>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <h1 className="text-h1">{c.name}</h1>
             <VerifiedTick verified={c.verification === "approved"} />

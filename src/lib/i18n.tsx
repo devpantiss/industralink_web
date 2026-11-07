@@ -113,7 +113,7 @@ export function LangToggle({ className }: { className?: string }) {
   return (
     <div ref={ref} className={`relative ${className ?? ""}`}>
       <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="listbox" aria-label={`Language: ${now.english}`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-small font-semibold text-ink hover:bg-surface-muted">
+        className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 text-small sm:px-3 font-semibold text-ink hover:bg-surface-muted">
         <Languages className="h-4 w-4 text-primary" aria-hidden />{now.native}<ChevronDown className="h-3.5 w-3.5 text-ink-muted" aria-hidden />
       </button>
       {open && (

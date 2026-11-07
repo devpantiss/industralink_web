@@ -4,18 +4,28 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Button, IconButton } from "./Button";
 
+/* Page scroll lock shared by all open overlays. A count (not "remember the old value")
+   so a dialog opened on top of a drawer can't leave the page stuck without scroll. */
+let lockCount = 0;
+const stack: symbol[] = [];
+
 function useEscapeAndLock(open: boolean, onClose: () => void) {
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const id = Symbol();
+    stack.push(id);
+    // Escape closes only the top-most overlay.
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && stack[stack.length - 1] === id && closeRef.current();
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (lockCount++ === 0) document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      stack.splice(stack.indexOf(id), 1);
+      if (--lockCount === 0) document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open]);
 }
 
 function useAutoFocus(open: boolean) {
