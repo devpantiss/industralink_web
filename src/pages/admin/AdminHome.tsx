@@ -14,7 +14,7 @@ export default function AdminHome() {
   const s = q.data;
   return (
     <div className="space-y-6">
-      <Hero eyebrow="Admin" title="Platform overview" subtitle="Keep IndustriaLink trusted: approve real companies and remove bad jobs."
+      <Hero image="/media/hero-admin.jpg" eyebrow="Admin" title="Platform overview" subtitle="Keep IndustriaLink trusted: approve real companies and remove bad jobs."
         actions={s && s.pendingVerifications > 0 ? <LinkButton to="/admin/verifications" variant="accent" size="lg">Review {s.pendingVerifications} {s.pendingVerifications === 1 ? "company" : "companies"}</LinkButton> : undefined} />
       {q.isError ? <ErrorState onRetry={() => q.refetch()} /> : (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

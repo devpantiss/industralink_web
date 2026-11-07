@@ -3,6 +3,8 @@ import { LangToggle, t } from "@/lib/i18n";
 import { Link } from "react-router-dom";
 import { BadgeCheck, IndianRupee, ShieldCheck } from "lucide-react";
 
+const SECTORS = [["mining", "Mining"], ["aluminium", "Aluminium"], ["shipping", "Shipping"], ["petroleum", "Oil & Gas"], ["logistics", "Logistics"], ["automotive", "Automotive"]] as const;
+
 export function AuthLayout({ title, subtitle, children, side }: { title: string; subtitle?: ReactNode; children: ReactNode; side?: "worker" | "employer" | "admin" }) {
   const copy = side === "employer"
     ? { h: "Hire skilled industrial workers, faster.", points: ["Post a job in under 2 minutes", "See ITI, licences and experience at a glance", "Move candidates on a simple hiring board"] }
@@ -13,8 +15,9 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
   return (
     <div className="flex min-h-screen bg-surface">
       <aside className="bg-hero relative hidden w-[42%] max-w-xl flex-col justify-between overflow-hidden p-10 text-white lg:flex">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden />
-        <div className="animate-float pointer-events-none absolute -right-16 top-1/3 h-64 w-64 rounded-full bg-accent/20 blur-3xl" aria-hidden />
+        <img src="/media/login.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+        {/* Dark teal wash: keeps the photo visible but the text readable */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgb(var(--hero-from)/0.85)] via-[rgb(var(--hero-from)/0.6)] to-[rgb(var(--hero-from)/0.95)]" aria-hidden />
         <Link to="/login" className="relative flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/20">
             <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
@@ -35,15 +38,27 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
             })}
           </ul>
         </div>
-        <p className="relative text-small text-white/50">Mining · Metals · Shipping · Oil & Gas · Logistics · Automotive</p>
+        <ul className="relative flex flex-wrap gap-2">
+          {SECTORS.map(([file, name]) => (
+            <li key={file} className="flex items-center gap-2 rounded-full bg-black/30 py-1 pl-1 pr-3 text-small text-white/90 ring-1 ring-white/15 backdrop-blur">
+              <img src={`/media/sectors/${file}.jpg`} alt="" className="h-6 w-6 rounded-full object-cover" />
+              {name}
+            </li>
+          ))}
+        </ul>
       </aside>
       <main className="flex flex-1 items-start justify-center px-4 py-10 sm:px-6 sm:pt-[max(2.5rem,10vh)]">
         <div className="animate-page w-full max-w-[420px]">
-          <Link to="/login" className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-navy">
-              <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
+          {/* Phone: small photo banner in place of the side panel */}
+          <Link to="/login" className="relative mb-6 flex h-32 items-end overflow-hidden rounded-xl p-4 text-white shadow-md lg:hidden">
+            <img src="/media/login.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
+            <span className="absolute inset-0 bg-gradient-to-t from-[rgb(var(--hero-from)/0.9)] to-[rgb(var(--hero-from)/0.1)]" aria-hidden />
+            <span className="relative flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15 ring-1 ring-white/25 backdrop-blur">
+                <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
+              </span>
+              <span className="text-h3 font-semibold">IndustriaLink</span>
             </span>
-            <span className="text-h3 font-semibold">IndustriaLink</span>
           </Link>
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-h1 text-ink">{title}</h1>

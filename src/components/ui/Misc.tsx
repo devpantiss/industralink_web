@@ -136,9 +136,16 @@ export function StatCard({ label, value, icon, hint, to, highlight, tone = "blue
 }
 
 /** Coloured welcome band at the top of each Home page. */
-export function Hero({ eyebrow, title, subtitle, actions, children }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode }) {
+export function Hero({ eyebrow, title, subtitle, actions, children, image }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode; image?: string }) {
   return (
     <section className="bg-hero relative overflow-hidden rounded-xl px-5 py-6 text-white shadow-md sm:px-8 sm:py-8">
+      {image && (
+        <>
+          {/* Photo fades in from the right so the text side stays plain and readable */}
+          <img src={image} alt="" aria-hidden decoding="async" className="pointer-events-none absolute inset-y-0 right-0 h-full w-full object-cover opacity-30 sm:w-3/5 sm:opacity-90 [mask-image:linear-gradient(to_right,transparent,#000_55%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgb(var(--hero-from)/0.7)] via-transparent to-transparent" aria-hidden />
+        </>
+      )}
       <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden />
       <div className="animate-float pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/25 blur-2xl" aria-hidden />
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">

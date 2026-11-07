@@ -20,7 +20,7 @@ export default function EmployerHome() {
 
   return (
     <div className="space-y-6">
-      <Hero eyebrow="Hiring dashboard" title={`Welcome back${company.data ? `, ${company.data.name}` : ""}`}
+      <Hero image="/media/hero-employer.jpg" eyebrow="Hiring dashboard" title={`Welcome back${company.data ? `, ${company.data.name}` : ""}`}
         subtitle={s.data?.newApplicants ? `${s.data.newApplicants} new applicants are waiting for you.` : "Today's hiring at a glance."}
         actions={<>
           <LinkButton to="/employer/candidates" variant="secondary" size="lg" className="border-white/20 bg-white/10 text-white hover:bg-white/20">View candidates</LinkButton>

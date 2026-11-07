@@ -33,7 +33,7 @@ export default function WorkerHome() {
 
   return (
     <div className="space-y-6">
-      <Hero eyebrow={t("Your job search")} title={<>{greeting()}, {user.name.split(" ")[0]} 👋</>}
+      <Hero image="/media/hero-worker.jpg" eyebrow={t("Your job search")} title={<>{greeting()}, {user.name.split(" ")[0]} 👋</>}
         subtitle={s?.nextStep ? t("You have an interview coming up. Good luck!") : t("New verified jobs are added every day.")}
         actions={<LinkButton to="/worker/jobs" variant="accent" size="lg" icon={<Search className="h-5 w-5" />}>{t("Find jobs")}</LinkButton>}>
         <div className="grid grid-cols-3 gap-2 sm:max-w-lg sm:gap-3">
