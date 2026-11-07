@@ -175,7 +175,7 @@ function Stat({ to, tone, icon: Icon, label, value, note }: { to: string; tone: 
     <Link to={to} className="flex items-center gap-3.5 rounded-lg border border-border p-4 transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-md">
       <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", tone)}><Icon className="h-5 w-5" aria-hidden /></span>
       <span className="min-w-0">
-        <span className="block truncate text-small text-ink-secondary">{label}</span>
+        <span className="block text-small leading-tight text-ink-secondary">{label}</span>
         <span className="flex items-baseline gap-2"><b className="text-[26px] font-extrabold leading-tight tabular">{value}</b>{note && <span className="text-caption font-semibold text-success-fg">{note}</span>}</span>
       </span>
     </Link>
