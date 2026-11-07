@@ -57,7 +57,7 @@ export function JobCard({ job, onToggleSave, saving }: { job: JobForWorker; onTo
       <BenefitChips benefits={job.benefits} max={4} className="mt-3" />
 
       {job.jobType === "walk_in" && job.walkIn && (
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-sm bg-interview-bg px-2 py-1 text-small font-medium text-interview-fg">
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-interview-bg px-2 py-1 text-small font-medium text-interview-fg">
           <CalendarClock className="h-4 w-4" aria-hidden /> {t("Walk-in")} · {formatDate(job.walkIn.date)}, {job.walkIn.time}
         </p>
       )}

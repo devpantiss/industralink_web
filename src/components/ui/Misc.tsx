@@ -117,7 +117,7 @@ export function StatCard({ label, value, icon, hint, to, highlight, tone = "blue
     <>
       <div className="flex items-start justify-between gap-2">
         <span className="min-w-0 text-small font-medium text-ink-secondary">{label}</span>
-        {icon && <span className={cn("hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:flex", STAT_TONE[tone])} aria-hidden>{icon}</span>}
+        {icon && <span className={cn("hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:flex", STAT_TONE[tone])} aria-hidden>{icon}</span>}
       </div>
       <div className="mt-1 flex items-center gap-2">
         <span className="text-display text-ink tabular">{shown.toLocaleString("en-IN")}</span>
@@ -126,19 +126,15 @@ export function StatCard({ label, value, icon, hint, to, highlight, tone = "blue
       {hint && <div className="mt-1 text-caption text-ink-muted">{hint}</div>}
     </>
   );
-  const cls = cn("group relative block overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-xs sm:p-5",
-    "before:absolute before:inset-x-0 before:top-0 before:h-1", {
-      "before:bg-primary": tone === "blue", "before:bg-violet-500": tone === "purple", "before:bg-amber-500": tone === "amber",
-      "before:bg-green-500": tone === "green", "before:bg-teal-500": tone === "teal",
-    },
-    to && "transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md");
+  const cls = cn("group relative block overflow-hidden rounded-lg border border-border/70 bg-surface p-4 shadow-xs sm:p-5",
+    to && "transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md");
   return to ? <Link to={to} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
 }
 
 /** Coloured welcome band at the top of each Home page. */
 export function Hero({ eyebrow, title, subtitle, actions, children, image }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children?: ReactNode; image?: string }) {
   return (
-    <section className="bg-hero relative overflow-hidden rounded-xl px-5 py-6 text-white shadow-md sm:px-8 sm:py-8">
+    <section className="bg-hero relative overflow-hidden rounded-2xl px-5 py-6 text-white shadow-md sm:px-8 sm:py-8">
       {image && (
         <>
           {/* Photo fades in from the right so the text side stays plain and readable */}
@@ -147,7 +143,6 @@ export function Hero({ eyebrow, title, subtitle, actions, children, image }: { e
         </>
       )}
       <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden />
-      <div className="animate-float pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/25 blur-2xl" aria-hidden />
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           {eyebrow && <p className="text-caption font-semibold uppercase tracking-wider text-amber-300">{eyebrow}</p>}

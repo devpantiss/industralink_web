@@ -19,7 +19,7 @@ const tones: Record<Tone, string> = {
 /** Status is never shown by colour alone: always a word, plus a dot or icon. */
 export function Badge({ tone = "neutral", icon, children, className }: { tone?: Tone; icon?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-2 py-0.5 text-caption font-medium", tones[tone], className)}>
+    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-caption font-medium", tones[tone], className)}>
       {icon ?? <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />}
       {children}
     </span>

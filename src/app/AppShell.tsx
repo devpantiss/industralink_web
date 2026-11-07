@@ -10,6 +10,7 @@ import { notificationsApi } from "@/api/notifications";
 import { qk } from "@/api/keys";
 import { USE_MOCKS } from "@/api/client";
 import { Avatar } from "@/components/ui/Misc";
+import { LogoMark } from "@/components/ui/Logo";
 import { LinkButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth, useUser } from "./AuthContext";
@@ -17,13 +18,11 @@ import { ProfileNudge } from "@/components/domain/ProfileNudge";
 import { NAV, ROLE_LABEL } from "./nav";
 import { applyPalette, getPalette, PALETTES, type Palette } from "@/lib/palette";
 
-function Logo({ collapsed, dark }: { collapsed?: boolean; dark?: boolean }) {
+function Logo({ collapsed }: { collapsed?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", dark ? "bg-white/10 ring-1 ring-white/15" : "bg-navy")} aria-hidden>
-        <svg viewBox="0 0 32 32" className="h-5 w-5"><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
-      </span>
-      {!collapsed && <span className={cn("text-h3 font-semibold tracking-tight", dark ? "text-white" : "text-ink")}>IndustriaLink</span>}
+      <LogoMark />
+      {!collapsed && <span className="text-h3 font-semibold tracking-tight text-ink">IndustriaLink</span>}
     </span>
   );
 }
@@ -198,18 +197,18 @@ export function AppShell() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2">Skip to content</a>
 
       {/* Sidebar: tablet = icons, desktop = full (collapsible) */}
-      <aside className={cn("glass-dark fixed inset-y-0 left-0 z-30 hidden flex-col text-white transition-[width] duration-200 ease-brand sm:flex",
+      <aside className={cn("glass fixed inset-y-0 left-0 z-30 hidden flex-col border-r transition-[width] duration-200 ease-brand sm:flex",
         collapsed ? "w-[72px]" : "w-[72px] lg:w-60")} aria-label={`${ROLE_LABEL[user.role]} navigation`}>
-        <div className={cn("flex h-16 items-center border-b border-white/10 px-5", collapsed && "justify-center px-0")}>
-          <Link to={`/${user.role}`} aria-label="IndustriaLink home" className="lg:hidden"><Logo collapsed dark /></Link>
-          <Link to={`/${user.role}`} aria-label="IndustriaLink home" className="hidden lg:block"><Logo collapsed={collapsed} dark /></Link>
+        <div className={cn("flex h-16 items-center px-5", collapsed && "justify-center px-0")}>
+          <Link to={`/${user.role}`} aria-label="IndustriaLink home" className="lg:hidden"><Logo collapsed /></Link>
+          <Link to={`/${user.role}`} aria-label="IndustriaLink home" className="hidden lg:block"><Logo collapsed={collapsed} /></Link>
         </div>
-        {!collapsed && <p className="hidden px-5 pt-5 text-caption font-semibold uppercase tracking-wider text-amber-300/90 lg:block">{ROLE_LABEL[user.role]}</p>}
-        <nav className="flex flex-1 flex-col gap-1 p-3">
+        {!collapsed && <p className="hidden px-6 pt-4 text-caption font-medium uppercase tracking-wider text-ink-muted lg:block">{ROLE_LABEL[user.role]}</p>}
+        <nav className="flex flex-1 flex-col gap-0.5 p-3">
           {items.map((it) => (
             <NavLink key={it.to} to={it.to} end={it.end} title={t(it.label)}
-              className={({ isActive }) => cn("relative flex h-10 items-center gap-3 rounded-md px-3 text-body font-medium transition-colors",
-                isActive ? "bg-white/10 text-white before:absolute before:-left-3 before:top-2 before:h-6 before:w-[3px] before:rounded-r before:bg-accent" : "text-white/65 hover:bg-white/5 hover:text-white",
+              className={({ isActive }) => cn("relative flex h-10 items-center gap-3 rounded-xl px-3 text-body font-medium transition-colors",
+                isActive ? "bg-primary-soft text-primary shadow-[inset_0_0_0_1px_rgb(var(--primary)/.12)]" : "text-ink-secondary hover:bg-ink/[.04] hover:text-ink",
                 collapsed ? "justify-center" : "justify-center lg:justify-start")}>
               <it.icon className="h-5 w-5 shrink-0" aria-hidden />
               <span className={cn(collapsed ? "sr-only" : "sr-only lg:not-sr-only")}>{t(it.label)}</span>
@@ -217,7 +216,7 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <button onClick={() => setCollapsed(!collapsed)} className="m-3 hidden h-10 items-center gap-3 rounded-md px-3 text-small text-white/50 hover:bg-white/5 hover:text-white lg:flex" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+        <button onClick={() => setCollapsed(!collapsed)} className="m-3 hidden h-10 items-center gap-3 rounded-xl px-3 text-small text-ink-muted hover:bg-ink/[.04] hover:text-ink lg:flex" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
           {collapsed ? <ChevronsRight className="mx-auto h-5 w-5" /> : <><ChevronsLeft className="h-5 w-5" /> Collapse</>}
         </button>
       </aside>
@@ -253,8 +252,8 @@ export function AppShell() {
       <nav className="glass fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 flex h-16 rounded-2xl border sm:hidden" aria-label="Main">
         {items.filter((it) => it.mobile !== false).map((it) => (
           <NavLink key={it.to} to={it.to} end={it.end}
-            className={({ isActive }) => cn("relative flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-medium transition-colors", isActive ? "text-primary before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-primary" : "text-ink-muted")}>
-            <span className="relative"><it.icon className="h-6 w-6" aria-hidden />{it.to.endsWith("/messages") && <NavCount n={unread} className="absolute -right-2.5 -top-1.5" />}</span>
+            className={({ isActive }) => cn("group relative flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-medium transition-colors", isActive ? "active text-primary" : "text-ink-muted")}>
+            <span className="relative flex h-7 w-12 items-center justify-center rounded-full transition-colors group-[.active]:bg-primary-soft"><it.icon className="h-[22px] w-[22px]" aria-hidden />{it.to.endsWith("/messages") && <NavCount n={unread} className="absolute -right-2.5 -top-1.5" />}</span>
             <span className="block w-full truncate px-0.5 text-center leading-tight">{t(it.short ?? it.label)}</span>
           </NavLink>
         ))}

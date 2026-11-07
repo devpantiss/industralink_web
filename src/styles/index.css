@@ -98,14 +98,16 @@
     @apply bg-bg font-sans text-body text-ink antialiased;
     /* Soft colour washes behind everything, so the glass layers have something to refract. */
     background-image:
-      radial-gradient(900px 500px at 100% -10%, rgb(var(--primary) / .07), transparent 60%),
-      radial-gradient(700px 420px at -10% 110%, rgb(var(--accent) / .07), transparent 60%);
+      radial-gradient(1000px 520px at 100% -15%, rgb(var(--hero-glow) / .10), transparent 60%),
+      radial-gradient(800px 460px at -10% 110%, rgb(var(--primary) / .05), transparent 60%);
     background-attachment: fixed;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-surface;
   }
   .tabular { font-variant-numeric: tabular-nums; }
+  /* Thinner line icons read as more modern; also applies to every lucide icon. */
+  svg.lucide { stroke-width: 1.75; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -190,9 +192,9 @@
     radial-gradient(500px 240px at 0% 120%, rgb(var(--hero-glow) / .28), transparent 60%),
     linear-gradient(120deg, rgb(var(--hero-from)) 0%, rgb(var(--hero-via)) 55%, rgb(var(--hero-to)) 100%);
 }
+/* Was a square grid; now a soft top sheen, which reads cleaner. */
 .bg-grid {
-  background-image: linear-gradient(rgb(255 255 255 / .06) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .06) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background: linear-gradient(180deg, rgb(255 255 255 / .07), transparent 40%);
 }
 
 @keyframes shimmer { 100% { transform: translateX(100%); } }

@@ -137,7 +137,7 @@ function ProfileDetails({ p }: { p: WorkerProfile }) {
           <div className="mt-4">
             <p className="text-caption text-ink-muted">{t("Skills")}</p>
             {p.skills.length ? (
-              <ul className="mt-1.5 flex flex-wrap gap-1.5">{p.skills.map((s) => <li key={s} className="rounded-sm bg-surface-muted px-2 py-1 text-small text-ink">{s}</li>)}</ul>
+              <ul className="mt-1.5 flex flex-wrap gap-1.5">{p.skills.map((s) => <li key={s} className="rounded-full bg-surface-muted px-2 py-1 text-small text-ink">{s}</li>)}</ul>
             ) : <p className="text-body text-ink-muted">—</p>}
           </div>
         </CardBody>
@@ -236,7 +236,7 @@ function EditDrawer({ section, profile, onClose }: { section: Exclude<Section, n
               </div>
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {d.skills.map((s) => (
-                  <li key={s}><button onClick={() => setD({ ...d, skills: d.skills.filter((x) => x !== s) })} className="rounded-sm bg-surface-muted px-2 py-1 text-small text-ink hover:bg-danger-bg hover:text-danger-fg" aria-label={`Remove ${s}`}>{s} ✕</button></li>
+                  <li key={s}><button onClick={() => setD({ ...d, skills: d.skills.filter((x) => x !== s) })} className="rounded-full bg-surface-muted px-2 py-1 text-small text-ink hover:bg-danger-bg hover:text-danger-fg" aria-label={`Remove ${s}`}>{s} ✕</button></li>
                 ))}
               </ul>
             </div>

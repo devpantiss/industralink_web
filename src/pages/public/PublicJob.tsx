@@ -1,4 +1,5 @@
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { LogoMark } from "@/components/ui/Logo";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, Clock, Factory, GraduationCap, MapPin, ShieldCheck, Users, Wallet } from "lucide-react";
 import { publicApi } from "@/api/extra";
@@ -39,9 +40,7 @@ export default function PublicJob() {
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
           <Link to="/login" className="flex items-center gap-2.5" aria-label="IndustriaLink">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-navy">
-              <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
-            </span>
+            <LogoMark />
             <span className="text-h3 font-semibold">IndustriaLink</span>
           </Link>
           {!user && <Link to="/login" className="text-body font-medium text-primary hover:underline">Log in</Link>}

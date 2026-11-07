@@ -21,12 +21,12 @@ export function BenefitChips({ benefits, max, className }: { benefits: Benefit[]
       {shown.map((b) => {
         const Icon = BENEFIT_ICON[b];
         return (
-          <li key={b} className="inline-flex items-center gap-1 rounded-sm bg-success-bg px-2 py-0.5 text-caption font-medium text-success-fg">
+          <li key={b} className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2 py-0.5 text-caption font-medium text-success-fg">
             <Icon className="h-3 w-3" aria-hidden /> {t(BENEFIT_LABEL[b])}
           </li>
         );
       })}
-      {rest > 0 && <li className="rounded-sm bg-surface-muted px-2 py-0.5 text-caption text-ink-muted">{t("+{n} more", { n: rest })}</li>}
+      {rest > 0 && <li className="rounded-full bg-surface-muted px-2 py-0.5 text-caption text-ink-muted">{t("+{n} more", { n: rest })}</li>}
     </ul>
   );
 }

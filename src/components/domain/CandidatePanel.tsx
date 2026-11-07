@@ -166,7 +166,7 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
             {w.skills.length > 0 && (
               <div>
                 <p className="text-caption text-ink-muted">Skills</p>
-                <ul className="mt-1.5 flex flex-wrap gap-1.5">{w.skills.map((s) => <li key={s} className="rounded-sm bg-surface-muted px-2 py-1 text-small">{s}</li>)}</ul>
+                <ul className="mt-1.5 flex flex-wrap gap-1.5">{w.skills.map((s) => <li key={s} className="rounded-full bg-surface-muted px-2 py-1 text-small">{s}</li>)}</ul>
               </div>
             )}
             {w.about && <div><p className="text-caption text-ink-muted">About</p><p className="mt-1 text-body text-ink">{w.about}</p></div>}

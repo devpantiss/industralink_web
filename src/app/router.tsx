@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
+import { LogoMark } from "@/components/ui/Logo";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { FullPageLoader, GuestOnly, RequireRole } from "./guards";
@@ -52,9 +53,7 @@ function WelcomeFrame() {
   return (
     <div className="min-h-screen bg-bg px-4 py-8 sm:px-6">
       <div className="mx-auto mb-8 flex max-w-2xl items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-navy">
-          <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
-        </span>
+        <LogoMark />
         <span className="text-h3 font-semibold">IndustriaLink</span>
       </div>
       <Suspense fallback={<FullPageLoader />}><Outlet /></Suspense>

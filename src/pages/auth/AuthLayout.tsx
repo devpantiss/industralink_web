@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LogoMark } from "@/components/ui/Logo";
 import { LangToggle, t } from "@/lib/i18n";
 import { Link } from "react-router-dom";
 import { BadgeCheck, IndianRupee, ShieldCheck } from "lucide-react";
@@ -19,9 +20,7 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
         {/* Dark teal wash: keeps the photo visible but the text readable */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgb(var(--hero-from)/0.85)] via-[rgb(var(--hero-from)/0.6)] to-[rgb(var(--hero-from)/0.95)]" aria-hidden />
         <Link to="/login" className="relative flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/20">
-            <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
-          </span>
+          <LogoMark />
           <span className="text-h2">IndustriaLink</span>
         </Link>
         <div key={side} className="animate-page relative">
@@ -54,9 +53,7 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
             <img src="/media/login.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-[rgb(var(--hero-from)/0.9)] to-[rgb(var(--hero-from)/0.1)]" aria-hidden />
             <span className="relative flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15 ring-1 ring-white/25 backdrop-blur">
-                <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden><path d="M9 22V10h4v12zM15 22V14h4v8zM21 22v-6h4v6z" fill="rgb(var(--accent))" /></svg>
-              </span>
+              <LogoMark />
               <span className="text-h3 font-semibold">IndustriaLink</span>
             </span>
           </Link>
