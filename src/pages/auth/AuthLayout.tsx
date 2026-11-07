@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { LogoMark } from "@/components/ui/Logo";
+import { BannerArt } from "@/components/ui/Misc";
 import { LangToggle, t } from "@/lib/i18n";
 import { Link } from "react-router-dom";
 import { BadgeCheck, IndianRupee, ShieldCheck } from "lucide-react";
@@ -15,50 +16,49 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
   const icons = [BadgeCheck, IndianRupee, ShieldCheck];
   return (
     <div className="flex min-h-screen bg-surface">
-      <aside className="bg-hero relative hidden w-[42%] max-w-xl flex-col justify-between overflow-hidden p-10 text-white lg:flex">
-        <img src="/media/login.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
-        {/* Dark teal wash: keeps the photo visible but the text readable */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgb(var(--hero-from)/0.85)] via-[rgb(var(--hero-from)/0.6)] to-[rgb(var(--hero-from)/0.95)]" aria-hidden />
+      <aside className="relative hidden w-[44%] max-w-xl flex-col justify-between overflow-hidden bg-surface-muted p-10 lg:flex">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[30%] overflow-hidden" aria-hidden><BannerArt className="w-full" /></div>
         <Link to="/login" className="relative flex items-center gap-2.5">
           <LogoMark />
-          <span className="text-h2">IndustriaLink</span>
+          <span className="text-[19px] font-extrabold tracking-tight text-ink">IndustriaLink</span>
         </Link>
         <div key={side} className="animate-page relative">
-          <h2 className="text-[34px] font-semibold leading-tight">{copy.h}</h2>
-          <ul className="stagger mt-8 space-y-4 text-body-lg text-white/85">
+          <h2 className="max-w-md text-[36px] font-extrabold leading-[1.1] tracking-[-0.03em] text-ink">{copy.h}</h2>
+          <ul className="mt-7 space-y-3.5 text-body-lg text-ink-secondary">
             {copy.points.map((p, i) => {
               const Icon = icons[i]!;
+              const tone = ["bg-tile-blue text-tile-blue-ink", "bg-tile-green text-tile-green-ink", "bg-tile-yellow text-tile-yellow-ink"][i];
               return (
                 <li key={p} className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15"><Icon className="h-5 w-5 text-amber-300" aria-hidden /></span>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon className="h-5 w-5" aria-hidden /></span>
                   {p}
                 </li>
               );
             })}
           </ul>
+          <ul className="mt-8 flex max-w-md flex-wrap gap-2">
+            {SECTORS.map(([file, name]) => (
+              <li key={file} className="flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-small font-semibold text-ink-secondary">
+                <img src={`/media/sectors/${file}.jpg`} alt="" className="h-6 w-6 rounded-full object-cover" />
+                {name}
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="relative flex flex-wrap gap-2">
-          {SECTORS.map(([file, name]) => (
-            <li key={file} className="flex items-center gap-2 rounded-full bg-black/30 py-1 pl-1 pr-3 text-small text-white/90 ring-1 ring-white/15 backdrop-blur">
-              <img src={`/media/sectors/${file}.jpg`} alt="" className="h-6 w-6 rounded-full object-cover" />
-              {name}
-            </li>
-          ))}
-        </ul>
+        <div className="relative h-24" aria-hidden />
       </aside>
       <main className="flex flex-1 items-start justify-center px-4 py-10 sm:px-6 sm:pt-[max(2.5rem,10vh)]">
         <div className="animate-page w-full max-w-[420px]">
-          {/* Phone: small photo banner in place of the side panel */}
-          <Link to="/login" className="relative mb-6 flex h-32 items-end overflow-hidden rounded-xl p-4 text-white shadow-md lg:hidden">
-            <img src="/media/login.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
-            <span className="absolute inset-0 bg-gradient-to-t from-[rgb(var(--hero-from)/0.9)] to-[rgb(var(--hero-from)/0.1)]" aria-hidden />
+          {/* Phone: small light banner in place of the side panel */}
+          <Link to="/login" className="relative mb-6 flex h-28 items-end overflow-hidden rounded-xl bg-surface-muted p-4 lg:hidden">
+            <BannerArt className="w-[48%]" />
             <span className="relative flex items-center gap-2.5">
               <LogoMark />
-              <span className="text-h3 font-semibold">IndustriaLink</span>
+              <span className="text-h3 font-extrabold text-ink">IndustriaLink</span>
             </span>
           </Link>
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-h1 text-ink">{title}</h1>
+            <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-ink">{title}</h1>
             {side !== "admin" && <LangToggle className="shrink-0" />}
           </div>
           {subtitle && <p className="mt-1 text-body text-ink-secondary">{subtitle}</p>}
