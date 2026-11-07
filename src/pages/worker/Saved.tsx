@@ -20,7 +20,7 @@ export default function Saved() {
           <EmptyState icon={<Heart className="h-6 w-6" />} title={t("No saved jobs yet")} description={t("Tap ♡ on any job to save it here.")} action={<LinkButton to="/worker/jobs">{t("Find jobs")}</LinkButton>} />
         )}>
         {(jobs) => (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {[...jobs].sort((a, b) => Number(a.status !== "active") - Number(b.status !== "active")).map((j) => (
               <JobCard key={j.id} job={j} onToggleSave={toggle} saving={pendingId === j.id} />
             ))}

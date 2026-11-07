@@ -9,9 +9,9 @@ import { VerifiedTick } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
 import { JobCard } from "@/components/domain/JobCard";
-import { SECTOR_ICON, SECTOR_TINT } from "@/components/domain/JobBits";
+import { CompanyLogo } from "@/components/domain/JobBits";
+import { BannerArt } from "@/components/ui/Misc";
 import { useSaveJob } from "@/hooks/useSaveJob";
-import { cn } from "@/lib/cn";
 
 export default function CompanyDetail() {
   const { id = "" } = useParams();
@@ -21,14 +21,13 @@ export default function CompanyDetail() {
   if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState title="Company not found" action={<LinkButton to="/worker/jobs">Find jobs</LinkButton>} />;
   if (q.isError || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const { company: c, jobs } = q.data;
-  const Icon = SECTOR_ICON[c.sector];
 
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
-        <div className="bg-hero relative h-24 sm:h-28"><div className="bg-grid absolute inset-0 opacity-60" aria-hidden /></div>
+        <div className="relative h-24 overflow-hidden bg-surface-muted sm:h-28"><BannerArt className="w-[70%] sm:w-[45%]" /></div>
         <div className="px-5 pb-5 sm:px-6">
-          <span className={cn("relative -mt-9 flex h-16 w-16 items-center justify-center rounded-xl border-4 border-surface shadow-md", SECTOR_TINT[c.sector])}><Icon className="h-8 w-8" aria-hidden /></span>
+          <CompanyLogo job={{ companyName: c.name, sector: c.sector }} size="lg" className="relative -mt-9 h-16 w-16 border-4 border-surface" />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <h1 className="text-h1">{c.name}</h1>
             <VerifiedTick verified={c.verification === "approved"} />
@@ -46,7 +45,7 @@ export default function CompanyDetail() {
       <section>
         <h2 className="mb-3 text-h2">Open jobs <span className="text-ink-muted">({jobs.length})</span></h2>
         {jobs.length === 0 ? <EmptyState title="No open jobs right now" description="Save a job you like elsewhere, and check back later." /> : (
-          <div className="stagger grid gap-4 lg:grid-cols-2">{jobs.map((j) => <JobCard key={j.id} job={j} onToggleSave={toggle} saving={pendingId === j.id} />)}</div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{jobs.map((j) => <JobCard key={j.id} job={j} onToggleSave={toggle} saving={pendingId === j.id} />)}</div>
         )}
       </section>
     </div>

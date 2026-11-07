@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/Misc";
 import { VerifiedTick } from "@/components/ui/Badge";
 import { Chip, Input } from "@/components/ui/Field";
 import { EmptyState, QueryState } from "@/components/ui/States";
-import { SECTOR_ICON, SECTOR_TINT } from "@/components/domain/JobBits";
+import { CompanyLogo } from "@/components/domain/JobBits";
 
 /** All verified companies, so workers can look up an employer before applying. */
 export default function Companies() {
@@ -37,11 +37,10 @@ export default function Companies() {
         {(rows) => (
           <ul className="stagger grid grid-cols-1 gap-3 md:grid-cols-2">
             {rows.map(({ company: c, openJobs }) => {
-              const Icon = SECTOR_ICON[c.sector];
               return (
                 <li key={c.id} className="min-w-0">
                   <Link to={`/worker/companies/${c.id}`} className="flex h-full items-center gap-3 rounded-lg sm:gap-4 border border-border bg-surface p-4 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                    <span className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", SECTOR_TINT[c.sector])}><Icon className="h-6 w-6" aria-hidden /></span>
+                    <CompanyLogo job={{ companyName: c.name, sector: c.sector }} className="h-12 w-12" />
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-1.5 text-h3 text-ink"><span className="min-w-0 truncate">{c.name}</span> <span className="shrink-0"><VerifiedTick verified /></span></p>
                       <p className="truncate text-small text-ink-secondary">{t(SECTOR_LABEL[c.sector])}</p>

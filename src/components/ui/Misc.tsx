@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useSlideIndicator } from "@/hooks/useSlideIndicator";
 import { initials } from "@/lib/format";
 
 const avatarColors = ["bg-tile-green text-tile-green-ink", "bg-tile-blue text-tile-blue-ink", "bg-tile-orange text-tile-orange-ink", "bg-tile-purple text-tile-purple-ink", "bg-tile-rose text-tile-rose-ink", "bg-tile-yellow text-tile-yellow-ink"];
@@ -48,21 +49,23 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
 }
 
 export function Tabs<T extends string>({ tabs, value, onChange, className }: { tabs: { value: T; label: string; count?: number }[]; value: T; onChange: (v: T) => void; className?: string }) {
+  const { box, ind } = useSlideIndicator<HTMLDivElement>("x", [value, tabs.length]);
   return (
-    <div role="tablist" className={cn("flex gap-1 overflow-x-auto border-b border-border", className)}>
+    <div ref={box} role="tablist" className={cn("scrollbar-none relative flex gap-1 overflow-x-auto border-b border-border", className)}>
       {tabs.map((t) => {
         const active = t.value === value;
         return (
           <button key={t.value} role="tab" aria-selected={active} onClick={() => onChange(t.value)}
-            className={cn("-mb-px flex h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-body font-medium transition-colors duration-200",
-              active ? "border-primary text-primary" : "border-transparent text-ink-secondary hover:text-ink")}>
+            className={cn("flex h-11 shrink-0 items-center gap-2 px-3 text-body font-semibold transition-colors duration-200",
+              active ? "text-primary" : "text-ink-secondary hover:text-ink")}>
             {t.label}
             {t.count !== undefined && (
-              <span className={cn("rounded-full px-2 py-px text-caption tabular", active ? "bg-primary-soft text-primary" : "bg-surface-muted text-ink-muted")}>{t.count}</span>
+              <span className={cn("rounded-full px-2 py-px text-caption tabular transition-colors", active ? "bg-primary-soft text-primary" : "bg-surface-strong text-ink-muted")}>{t.count}</span>
             )}
           </button>
         );
       })}
+      <span ref={ind} className="slide-ind absolute bottom-0 left-0 h-[3px] w-0 rounded-t-full bg-primary" aria-hidden />
     </div>
   );
 }
@@ -76,7 +79,7 @@ export function PageHeader({ title, description, actions, breadcrumb }: { title:
             {breadcrumb.label} <ChevronRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
         )}
-        <h1 className="text-h1 text-ink">{title}</h1>
+        <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-ink">{title}</h1>
         {description && <p className="mt-1 text-body text-ink-secondary">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
