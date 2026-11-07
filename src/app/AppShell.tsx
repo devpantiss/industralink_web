@@ -181,7 +181,7 @@ function WorkerTopBar({ items, unread }: { items: NavItem[]; unread: number }) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface">
       <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-4 sm:px-6 lg:h-[72px] lg:px-8">
-        <Brand to="/worker" />
+        <Brand to="/worker" compact />
         <nav ref={box} className="relative hidden h-full items-stretch gap-6 lg:flex" aria-label="Main">
           {items.filter((it) => it.top !== false).map((it) => (
             <NavLink key={it.to} to={it.to} end={it.end}

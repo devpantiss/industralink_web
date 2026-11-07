@@ -109,7 +109,7 @@ export function JobRow({ job, onToggleSave, saving }: { job: JobForWorker; onTog
         </div>
         {job.responsibilities.length > 0 && (
           <ul className="list-disc space-y-0.5 pl-[18px] text-small text-ink-secondary">
-            {job.responsibilities.slice(0, 2).map((r) => <li key={r} className="line-clamp-1">{r}</li>)}
+            {job.responsibilities.slice(0, 2).map((r) => <li key={r}><span className="line-clamp-1">{r}</span></li>)}
           </ul>
         )}
         <p className="text-small text-ink-secondary">
