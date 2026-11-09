@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { t } from "@/lib/i18n";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, Building2, ChevronDown, MapPin, Mic, Search, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import type { JobSearchParams, Sector, Shift, Trade } from "@/types";
 import { SECTOR_LABEL, SHIFT_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { formatNumber } from "@/lib/format";
 import { workerApi } from "@/api/worker";
+import { publicApi } from "@/api/extra";
+import { useAuth } from "@/app/AuthContext";
+import { setNext } from "@/lib/next";
+import { PLACES } from "@/lib/places";
+import type { JobForWorker } from "@/types";
 import { qk } from "@/api/keys";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
@@ -57,16 +62,27 @@ export default function FindJobs() {
   const [city, setCity] = useState(filters.city ?? "");
   const [drawer, setDrawer] = useState(false);
   const toast = useToast();
-  const profile = useQuery({ queryKey: qk.worker.profile, queryFn: workerApi.profile });
-  const { toggle, pendingId } = useSaveJob();
+  // Works logged in (worker) or not (public /jobs page, e.g. from the landing site search).
+  const { user } = useAuth();
+  const isWorker = user?.role === "worker";
+  const navigate = useNavigate();
+  const location = useLocation();
+  const profile = useQuery({ queryKey: qk.worker.profile, queryFn: workerApi.profile, enabled: isWorker });
+  const save = useSaveJob();
+  const pendingId = isWorker ? save.pendingId : undefined;
+  /** Guests: saving a job asks them to log in, then brings them back to the same search. */
+  const toggle = isWorker ? save.toggle : user ? undefined : (_job: JobForWorker) => {
+    setNext(`/worker/jobs${location.search}`);
+    navigate("/login?as=worker");
+  };
   const voice = useVoiceSearch((text) => { setQ(text); update({ q: text }); }, (msg) => toast.error(t(msg)));
 
   // Keep the boxes in step when the URL changes (e.g. "Clear all", or a link from the dashboard).
   useEffect(() => { setQ(filters.q ?? ""); setCity(filters.city ?? ""); }, [filters.q, filters.city]);
 
   const query = useInfiniteQuery({
-    queryKey: qk.worker.jobs(filters),
-    queryFn: ({ pageParam }) => workerApi.searchJobs({ ...filters, page: pageParam }),
+    queryKey: isWorker ? qk.worker.jobs(filters) : qk.publicJobs(filters),
+    queryFn: ({ pageParam }) => (isWorker ? workerApi.searchJobs : publicApi.searchJobs)({ ...filters, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.pageSize < last.total ? last.page + 1 : undefined),
   });
@@ -89,7 +105,7 @@ export default function FindJobs() {
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-small font-semibold text-ink-secondary">
             <span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-primary" aria-hidden />{t("Verified employers")}</span>
             <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-primary" aria-hidden />{t("Always free for workers")}</span>
-            <Link to="/worker/companies" className="inline-flex items-center gap-1.5 text-primary hover:underline"><Building2 className="h-4 w-4" aria-hidden />{t("Browse companies")}</Link>
+            {isWorker && <Link to="/worker/companies" className="inline-flex items-center gap-1.5 text-primary hover:underline"><Building2 className="h-4 w-4" aria-hidden />{t("Browse companies")}</Link>}
           </div>
         </div>
       </section>
@@ -109,7 +125,8 @@ export default function FindJobs() {
         <label className="flex h-12 min-w-0 flex-1 items-center gap-2.5 border-t border-border px-3 text-ink-muted sm:border-0">
           <MapPin className="h-5 w-5 shrink-0" aria-hidden />
           <span className="sr-only">{t("City")}</span>
-          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("City or state")} className="min-w-0 flex-1 bg-transparent text-body-lg text-ink outline-none placeholder:text-ink-muted" />
+          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("City, district or state")} list="place-suggestions" autoComplete="off" className="min-w-0 flex-1 bg-transparent text-body-lg text-ink outline-none placeholder:text-ink-muted" />
+          <datalist id="place-suggestions">{PLACES.map((p) => <option key={`${p.kind}-${p.name}`} value={p.name}>{p.kind === "State" ? t("State") : `${p.kind}, ${p.state}`}</option>)}</datalist>
           {homeCity && city !== homeCity && (
             <button type="button" onClick={() => { setCity(homeCity); update({ city: homeCity }); }} className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-caption font-semibold text-primary hover:bg-primary-soft/70">{t("Near me")}</button>
           )}
@@ -161,7 +178,7 @@ export default function FindJobs() {
           ) : (
             <>
               <div className="space-y-3">
-                {items.map((j) => <div key={j.id} className="animate-rise"><JobRow job={j} onToggleSave={toggle} saving={pendingId === j.id} /></div>)}
+                {items.map((j) => <div key={j.id} className="animate-rise"><JobRow job={j} onToggleSave={toggle} saving={pendingId === j.id} href={isWorker ? undefined : `/jobs/${j.id}`} /></div>)}
               </div>
               {query.hasNextPage && (
                 <div className="mt-6 flex justify-center">

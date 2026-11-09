@@ -44,4 +44,5 @@ export const qk = {
   settings: ["settings"] as const,
   companies: (p: object) => ["companies", p] as const,
   publicJob: (id: string) => ["public-job", id] as const,
+  publicJobs: (p: object) => ["public-jobs", p] as const,
 };

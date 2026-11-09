@@ -14,6 +14,7 @@ const AdminLoginPage = lazy(() => import("@/pages/auth/AdminLoginPage"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword").then((m) => ({ default: m.ForgotPassword })));
 const ResetPassword = lazy(() => import("@/pages/auth/ForgotPassword").then((m) => ({ default: m.ResetPassword })));
 const PublicJob = lazy(() => import("@/pages/public/PublicJob"));
+const PublicJobs = lazy(() => import("@/pages/public/PublicJobs"));
 const HelpPage = lazy(() => import("@/pages/public/HelpPage"));
 const WorkerWelcome = lazy(() => import("@/pages/auth/WorkerWelcome"));
 const EmployerWelcome = lazy(() => import("@/pages/auth/EmployerWelcome"));
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
     ],
   },
   // Open to everyone, logged in or not.
+  { path: "/jobs", element: page(<PublicJobs />) },
   { path: "/jobs/:id", element: page(<PublicJob />) },
   { path: "/help", element: page(<HelpPage />) },
   {

@@ -43,13 +43,16 @@ export default function PublicJob() {
             <LogoMark />
             <span className="text-h3 font-semibold">IndustriaLink</span>
           </Link>
-          {!user && <Link to="/login" className="text-body font-medium text-primary hover:underline">Log in</Link>}
+          <div className="flex items-center gap-4">
+            <Link to="/jobs" className="text-body font-medium text-ink-secondary hover:text-ink">All jobs</Link>
+            {!user && <Link to="/login" className="text-body font-medium text-primary hover:underline">Log in</Link>}
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:pb-10">
         {q.isLoading ? <ListSkeleton count={2} lines={5} /> : q.isError && errorCode(q.error) === "NOT_FOUND" ? (
-          <EmptyState title="Job not found" description="This job was removed or the link is wrong." action={<LinkButton to="/login?as=worker">See other jobs</LinkButton>} />
+          <EmptyState title="Job not found" description="This job was removed or the link is wrong." action={<LinkButton to="/jobs">See other jobs</LinkButton>} />
         ) : q.isError || !q.data ? <ErrorState onRetry={() => q.refetch()} /> : (() => {
           const job = q.data;
           const closed = job.status !== "active" || (!!job.deadline && new Date(job.deadline) < new Date());

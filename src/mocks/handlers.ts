@@ -183,13 +183,19 @@ route("GET", "/worker/summary", (req): WorkerSummary => {
   };
 });
 
-route("GET", "/jobs", (req): Paginated<JobForWorker> => {
-  const u = need(req, "worker");
-  const q = req.query;
+/** Job search shared by the worker page and the public (no login) page. */
+function searchJobs(q: MockRequest["query"], workerId: string | null): Paginated<JobForWorker> {
   const blockedCompanies = new Set(db().companies.filter((c) => c.status === "blocked").map((c) => c.id));
   let list = db().jobs.filter((j) => j.status === "active" && !blockedCompanies.has(j.companyId));
   const text = q.q?.trim().toLowerCase();
-  if (text) list = list.filter((j) => [j.title, j.companyName, TRADE_LABEL[j.trade], SECTOR_LABEL[j.sector]].join(" ").toLowerCase().includes(text));
+  if (text) {
+    // Every word must match somewhere: "welder odisha" finds welder jobs in Odisha.
+    const words = text.split(/\s+/).filter(Boolean);
+    list = list.filter((j) => {
+      const hay = [j.title, j.companyName, TRADE_LABEL[j.trade], SECTOR_LABEL[j.sector], j.location.city, j.location.state, j.siteName ?? ""].join(" ").toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
+  }
   if (q.city) list = list.filter((j) => `${j.location.city} ${j.location.state}`.toLowerCase().includes(q.city!.toLowerCase()));
   if (q.trade) list = list.filter((j) => j.trade === q.trade);
   if (q.sector) list = list.filter((j) => j.sector === q.sector);
@@ -206,7 +212,7 @@ route("GET", "/jobs", (req): Paginated<JobForWorker> => {
   if (q.walkInOnly === "true") list = list.filter((j) => j.jobType === "walk_in");
   if (q.verifiedOnly === "true") list = list.filter((j) => j.companyVerified);
 
-  const home = workerOf(u.id).location?.city;
+  const home = workerId ? workerOf(workerId).location?.city : undefined;
   const monthly = (j: Job) => ((j.payMax ?? j.payMin ?? 0) * (j.payPeriod === "day" ? 26 : 1));
   if (q.sort === "pay") list.sort((a, b) => monthly(b) - monthly(a));
   else if (q.sort === "nearest" && home) list.sort((a, b) => Number(b.location.city === home) - Number(a.location.city === home));
@@ -217,10 +223,15 @@ route("GET", "/jobs", (req): Paginated<JobForWorker> => {
   const page = Math.max(1, Number(q.page ?? 1));
   const pageSize = 10;
   return {
-    items: list.slice((page - 1) * pageSize, page * pageSize).map((j) => forWorker(j, u.id)),
+    items: list.slice((page - 1) * pageSize, page * pageSize).map((j) => forWorker(j, workerId ?? "")),
     total: list.length, page, pageSize,
   };
-});
+}
+
+route("GET", "/jobs", (req) => searchJobs(req.query, need(req, "worker").id));
+
+/** Anyone can search jobs, logged in or not (links from the landing site open this). */
+route("GET", "/public/jobs", (req) => searchJobs(req.query, null));
 
 route("GET", "/jobs/:id", (req) => {
   const u = need(req, "worker");

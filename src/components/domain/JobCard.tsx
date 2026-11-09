@@ -87,14 +87,15 @@ export function JobCard({ job, onToggleSave, saving, selected, onSelect }: {
 }
 
 /** Wide search-result row (Find jobs). */
-export function JobRow({ job, onToggleSave, saving }: { job: JobForWorker; onToggleSave?: (job: JobForWorker) => void; saving?: boolean }) {
+/** `href` overrides the link (the public jobs page opens the no-login job page). */
+export function JobRow({ job, onToggleSave, saving, href }: { job: JobForWorker; onToggleSave?: (job: JobForWorker) => void; saving?: boolean; href?: string }) {
   const closed = job.status !== "active";
   const pay = payLong(job);
   const fresh = Date.now() - new Date(job.postedAt).getTime() < 86_400_000;
   return (
     <article className={cn("group relative grid grid-cols-[auto_minmax(0,1fr)] gap-4 rounded-lg border border-border bg-surface p-4 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:p-5",
       closed && "opacity-70")}>
-      <Link to={`/worker/jobs/${job.id}`} aria-label={`${job.title}, ${job.companyName}`} className="absolute inset-0 rounded-[inherit]" />
+      <Link to={href ?? `/worker/jobs/${job.id}`} aria-label={`${job.title}, ${job.companyName}`} className="absolute inset-0 rounded-[inherit]" />
       <CompanyLogo job={job} size="lg" className="h-12 w-12" />
       <div className="min-w-0 space-y-2">
         <h3 className="text-[16.5px] font-bold tracking-tight text-ink group-hover:text-primary">{job.title}</h3>

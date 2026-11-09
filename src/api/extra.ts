@@ -1,5 +1,6 @@
 /** Endpoints added after the gap review. See API_CONTRACT.md, section "Added". */
 import type {
+  JobForWorker, JobSearchParams, Paginated,
   Company, EmployerAnalytics, ExperienceBand, Job, JobReport, Message, MessageThread, PlatformSettings, ReportReason, ReportStatus, Sector,
   SupportTicket, TalentProfile, Trade, UserSettings, WorkerApplication,
 } from "@/types";
@@ -28,6 +29,8 @@ export const passwordApi = {
 
 export const publicApi = {
   job: (id: string) => get<Job>(`/public/jobs/${id}`),
+  /** Job search without logging in. Same filters as the worker search. */
+  searchJobs: (params: JobSearchParams) => get<Paginated<JobForWorker>>("/public/jobs", params),
   support: (body: { topic: string; message: string; name?: string; contact?: string }) => post("/support", body),
 };
 
