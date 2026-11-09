@@ -192,7 +192,8 @@ function searchJobs(q: MockRequest["query"], workerId: string | null): Paginated
     // Every word must match somewhere: "welder odisha" finds welder jobs in Odisha.
     const words = text.split(/\s+/).filter(Boolean);
     list = list.filter((j) => {
-      const hay = [j.title, j.companyName, TRADE_LABEL[j.trade], SECTOR_LABEL[j.sector], j.location.city, j.location.state, j.siteName ?? ""].join(" ").toLowerCase();
+      const hay = [j.title, j.companyName, TRADE_LABEL[j.trade], SECTOR_LABEL[j.sector], j.location.city, j.location.state, j.siteName ?? "",
+        ...j.qualifications, ...j.requirements].join(" ").toLowerCase(); // certificates like DGMS, ITI, HMV
       return words.every((w) => hay.includes(w));
     });
   }
