@@ -139,7 +139,7 @@ export default function FindJobs() {
         {QUICK_TRADES.map((tr) => (
           <button key={tr} type="button" onClick={() => update({ trade: filters.trade === tr ? "" : tr })} aria-pressed={filters.trade === tr}
             className={cn("h-9 shrink-0 rounded-full border px-4 text-small font-semibold transition-colors",
-              filters.trade === tr ? "border-ink bg-ink text-white" : "border-border bg-surface text-ink-secondary hover:border-border-strong hover:text-ink")}>
+              filters.trade === tr ? "border-ink-fill bg-ink-fill text-on-ink" : "border-border bg-surface text-ink-secondary hover:border-border-strong hover:text-ink")}>
             {t(TRADE_LABEL[tr])}
           </button>
         ))}

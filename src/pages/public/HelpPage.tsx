@@ -124,7 +124,7 @@ export default function HelpPage() {
             <CardHeader title="Contact us" description={SUPPORT.hours} />
             <CardBody className="space-y-3 text-body">
               <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">Toll-free</span><span className="select-all font-medium text-ink">{SUPPORT.phone}</span></span></p>
-              <a href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-primary"><MessageCircle className="h-4 w-4 text-green-600" aria-hidden /><span><span className="block text-caption text-ink-muted">WhatsApp</span><span className="font-medium">Chat with us</span></span></a>
+              <a href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-primary"><MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden /><span><span className="block text-caption text-ink-muted">WhatsApp</span><span className="font-medium">Chat with us</span></span></a>
               <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">Email</span><span className="select-all font-medium text-ink">{SUPPORT.email}</span></span></p>
             </CardBody>
           </Card>

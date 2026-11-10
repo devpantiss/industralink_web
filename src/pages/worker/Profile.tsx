@@ -330,8 +330,8 @@ function Documents() {
   return (
     <div className="space-y-6">
       {!q.isLoading && !hasResume && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <FileUp className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden />
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-warning-fg/25 dark:bg-warning-bg">
+          <FileUp className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-warning-fg" aria-hidden />
           <div>
             <p className="text-body font-semibold text-ink">Add your resume</p>
             <p className="text-small text-ink-secondary">Employers shortlist people with a resume much faster. A clear photo of a printed resume is fine too.</p>

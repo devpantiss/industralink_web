@@ -4,13 +4,17 @@ const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  /* dark: classes apply only when dark mode is picked (lib/theme.ts). */
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
         bg: v("bg"),
         surface: { DEFAULT: v("surface"), muted: v("surface-muted"), strong: v("surface-strong") },
         border: { DEFAULT: v("border"), strong: v("border-strong") },
-        ink: { DEFAULT: v("text"), secondary: v("text-secondary"), muted: v("text-muted") },
+        /* ink-fill: solid "dark" pills and buttons (near-black in light, raised slate in dark). */
+        ink: { DEFAULT: v("text"), secondary: v("text-secondary"), muted: v("text-muted"), fill: v("ink-fill") },
+        "on-ink": v("on-ink"),
         primary: { DEFAULT: v("primary"), hover: v("primary-hover"), soft: v("primary-soft") },
         navy: v("brand-navy"),
         accent: { DEFAULT: v("accent"), on: v("on-accent") },

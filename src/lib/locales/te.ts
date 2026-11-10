@@ -395,6 +395,13 @@ const te: Record<string, string> = {
   "Settings saved": "సెట్టింగ్స్ సేవ్ అయ్యాయి",
   "just now": "ఇప్పుడే",
   "in a moment": "కాసేపట్లో",
+  "Switch to light mode": "లైట్ మోడ్‌కు మారండి",
+  "Switch to dark mode": "డార్క్ మోడ్‌కు మారండి",
+  "Light": "లైట్",
+  "Dark": "డార్క్",
+  "Same as my phone": "ఫోన్ లాగే",
+  "Appearance": "రూపం",
+  "Dark mode is easier on the eyes at night.": "రాత్రి డార్క్ మోడ్ కళ్లకు సౌకర్యంగా ఉంటుంది.",
 };
 
 export default te;

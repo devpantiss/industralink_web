@@ -1,7 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Eye, KeyRound, Languages, LifeBuoy, ShieldAlert, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Bell, Eye, KeyRound, Languages, LifeBuoy, Monitor, Moon, Palette, ShieldAlert, SlidersHorizontal, Sun, Trash2 } from "lucide-react";
+import { setThemeChoice, useThemeChoice, type ThemeChoice } from "@/lib/theme";
 import type { PlatformSettings, UserSettings } from "@/types";
 import { accountApi, passwordApi, platformApi } from "@/api/extra";
 import { qk } from "@/api/keys";
@@ -68,6 +69,7 @@ export default function Settings() {
             </Section>
           )}
 
+          <AppearanceSection />
           {user.role === "admin" && <PlatformSection />}
           {!worker && <PasswordSection />}
 
@@ -103,6 +105,29 @@ function Toggle({ label, hint, checked, onChange, disabled }: { label: string; h
         <span className={cn("absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform", checked ? "translate-x-[22px]" : "translate-x-0.5")} />
       </button>
     </label>
+  );
+}
+
+/** Light, dark, or follow the device. Saved on this device only. */
+function AppearanceSection() {
+  const choice = useThemeChoice();
+  const options: { key: ThemeChoice; label: string; icon: ReactNode }[] = [
+    { key: "light", label: t("Light"), icon: <Sun className="h-5 w-5" aria-hidden /> },
+    { key: "dark", label: t("Dark"), icon: <Moon className="h-5 w-5" aria-hidden /> },
+    { key: "system", label: t("Same as my phone"), icon: <Monitor className="h-5 w-5" aria-hidden /> },
+  ];
+  return (
+    <Section icon={<Palette className="h-5 w-5" />} title={t("Appearance")} description={t("Dark mode is easier on the eyes at night.")}>
+      <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t("Appearance")}>
+        {options.map((o) => (
+          <button key={o.key} type="button" role="radio" aria-checked={choice === o.key} onClick={() => setThemeChoice(o.key)}
+            className={cn("flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-body-lg font-semibold transition-colors",
+              choice === o.key ? "border-primary bg-primary-soft text-primary" : "border-border text-ink hover:border-border-strong")}>
+            {o.icon}{o.label}
+          </button>
+        ))}
+      </div>
+    </Section>
   );
 }
 

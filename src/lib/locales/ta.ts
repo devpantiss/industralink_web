@@ -395,6 +395,13 @@ const ta: Record<string, string> = {
   "Settings saved": "அமைப்புகள் சேமிக்கப்பட்டன",
   "just now": "இப்போது",
   "in a moment": "சிறிது நேரத்தில்",
+  "Switch to light mode": "லைட் மோடுக்கு மாறவும்",
+  "Switch to dark mode": "டார்க் மோடுக்கு மாறவும்",
+  "Light": "லைட்",
+  "Dark": "டார்க்",
+  "Same as my phone": "ஃபோன் போலவே",
+  "Appearance": "தோற்றம்",
+  "Dark mode is easier on the eyes at night.": "இரவில் டார்க் மோடு கண்களுக்கு இதமானது.",
 };
 
 export default ta;

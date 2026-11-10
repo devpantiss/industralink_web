@@ -12,8 +12,10 @@ import { captureHandoff } from "@/lib/handoff";
 captureHandoff();
 await initLang();
 import { initPalette } from "@/lib/palette";
+import { initTheme } from "@/lib/theme";
 
 initPalette();
+initTheme();
 
 const queryClient = new QueryClient({
   defaultOptions: {

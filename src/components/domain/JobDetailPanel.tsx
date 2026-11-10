@@ -69,10 +69,10 @@ export function JobDetailPanel({ job, onToggleSave, saving, onApply, onReport, c
       </dl>
 
       <div ref={box} role="tablist" aria-label={t("Job information")} className="relative grid grid-cols-2 gap-2">
-        <span ref={ind} className="slide-ind absolute left-0 top-0 h-[46px] w-0 rounded-full bg-ink" aria-hidden />
+        <span ref={ind} className="slide-ind absolute left-0 top-0 h-[46px] w-0 rounded-full bg-ink-fill" aria-hidden />
         {(["description", "company"] as Tab[]).map((v) => (
           <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)}
-            className={cn("relative z-10 h-[46px] rounded-full text-body font-semibold transition-colors", tab === v ? "text-white" : "bg-surface text-ink-secondary hover:text-ink")}>
+            className={cn("relative z-10 h-[46px] rounded-full text-body font-semibold transition-colors", tab === v ? "text-on-ink" : "bg-surface text-ink-secondary hover:text-ink")}>
             {v === "description" ? t("Description") : t("Company")}
           </button>
         ))}

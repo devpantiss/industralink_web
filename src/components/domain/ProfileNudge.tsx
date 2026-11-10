@@ -36,7 +36,7 @@ export function ProfileNudge() {
             <div className="mt-1.5 max-w-xs"><ProgressBar value={s.profileStrength} label={t("Profile complete")} /></div>
           </div>
         </div>
-        <Link to={first.link} className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-md bg-ink px-4 text-body font-medium text-white transition-transform hover:bg-ink/90 active:scale-[0.98]">
+        <Link to={first.link} className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-md bg-ink-fill px-4 text-body font-medium text-on-ink transition-transform hover:bg-ink-fill/90 active:scale-[0.98]">
           {onProfile ? t(first.label) : needsResume ? t("Upload resume") : t("Complete profile")} <ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>

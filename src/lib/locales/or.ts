@@ -408,6 +408,13 @@ const or: Record<string, string> = {
   "in {n} months": "{n} ମାସରେ",
   "in {n} years": "{n} ବର୍ଷରେ",
   "in a moment": "କିଛି ସମୟରେ",
+  "Switch to light mode": "ଲାଇଟ୍ ମୋଡ୍‌କୁ ଯାଆନ୍ତୁ",
+  "Switch to dark mode": "ଡାର୍କ ମୋଡ୍‌କୁ ଯାଆନ୍ତୁ",
+  "Light": "ଲାଇଟ୍",
+  "Dark": "ଡାର୍କ",
+  "Same as my phone": "ଫୋନ୍ ପରି",
+  "Appearance": "ଦେଖାଯିବା ଢଙ୍ଗ",
+  "Dark mode is easier on the eyes at night.": "ରାତିରେ ଡାର୍କ ମୋଡ୍ ଆଖି ପାଇଁ ଆରାମଦାୟକ।",
 };
 
 export default or;

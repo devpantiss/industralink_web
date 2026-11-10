@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { Button } from "./Button";
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("relative overflow-hidden rounded-md bg-surface-muted before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.4s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent", className)} aria-hidden />;
+  return <div className={cn("relative overflow-hidden rounded-md bg-surface-muted before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.4s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/[.06] before:to-transparent", className)} aria-hidden />;
 }
 
 export function CardSkeleton({ lines = 3 }: { lines?: number }) {

@@ -395,6 +395,13 @@ const bn: Record<string, string> = {
   "Settings saved": "সেটিংস সেভ হয়েছে",
   "just now": "এইমাত্র",
   "in a moment": "একটু পরে",
+  "Switch to light mode": "লাইট মোডে যান",
+  "Switch to dark mode": "ডার্ক মোডে যান",
+  "Light": "লাইট",
+  "Dark": "ডার্ক",
+  "Same as my phone": "ফোনের মতো",
+  "Appearance": "চেহারা",
+  "Dark mode is easier on the eyes at night.": "রাতে ডার্ক মোড চোখের জন্য আরামদায়ক।",
 };
 
 export default bn;

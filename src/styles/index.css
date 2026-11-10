@@ -48,8 +48,70 @@
   --pr: 252 229 235;  --pr-ink: 163 36 75;
   --py: 255 242 220;  --py-ink: 163 91 5;
 
+  /* Text on an ink-coloured background (dark pills, "dark" buttons). */
+  --on-ink: 255 255 255;
+  --ink-fill: 21 25 30;          /* same as --text in light */
+  /* Blue used for text and links. Same as primary in light mode. */
+  --primary-text: 36 84 230;
+
   color-scheme: light;
 }
+
+/* ------------------------------------------------------------------
+   Dark mode ("Cobalt night"), same colours as the landing site:
+   deep slate canvas, raised cards, cobalt actions, light-blue links,
+   safety yellow accent. Picked in Settings or the top bar (lib/theme.ts);
+   light stays the default. Only token values change here.
+------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --primary: 61 106 245;         /* #3D6AF5, white text still passes AA */
+  --primary-hover: 84 125 250;   /* #547DFA */
+  --primary-soft: 30 42 77;      /* #1E2A4D */
+  --primary-text: 125 162 255;   /* #7DA2FF, landing "primary-light" */
+  --brand-navy: 10 12 16;        /* #0A0C10 */
+  --hero-from: 26 59 168;
+  --hero-via: 36 84 230;
+  --hero-to: 61 106 245;
+
+  --bg: 17 19 26;                /* #11131A, landing background */
+  --surface: 24 27 34;           /* #181B22, landing surface */
+  --surface-muted: 31 35 44;     /* #1F232C, grey cards */
+  --surface-strong: 39 44 55;    /* #272C37, hover on cards */
+  --border: 44 49 61;            /* #2C313D */
+  --border-strong: 58 64 80;     /* #3A4050 */
+  --text: 241 245 249;           /* #F1F5F9 */
+  --text-secondary: 168 180 198; /* #A8B4C6 */
+  --text-muted: 136 150 171;     /* #8896AB, AA on surface */
+  --ink-fill: 47 54 72;          /* #2F3648, raised slate pill */
+  --on-ink: 255 255 255;
+
+  --neutral-fg: 168 180 198;  --neutral-bg: 39 44 55;
+  --info-fg: 125 162 255;     --info-bg: 30 42 77;
+  --interview-fg: 190 175 255; --interview-bg: 46 38 78;
+  --success-fg: 110 214 155;  --success-bg: 22 52 39;
+  --warning-fg: 245 192 112;  --warning-bg: 62 43 20;
+  --danger-fg: 255 145 165;   --danger-bg: 68 27 38;
+
+  --pg: 22 52 39;   --pg-ink: 110 214 155;
+  --pb: 25 44 70;   --pb-ink: 140 190 245;
+  --po: 62 43 20;   --po-ink: 245 192 112;
+  --pp: 46 38 78;   --pp-ink: 190 175 255;
+  --pr: 68 27 38;   --pr-ink: 255 150 178;
+  --py: 60 47 18;   --py-ink: 245 202 100;
+
+  color-scheme: dark;
+}
+
+/* Blue text uses the lighter link blue in dark mode, so it stays readable. */
+:root[data-theme="dark"] .text-primary,
+:root[data-theme="dark"] .hover\:text-primary:hover,
+:root[data-theme="dark"] .group:hover .group-hover\:text-primary { color: rgb(var(--primary-text)); }
+:root[data-theme="dark"] .glass-thick,
+:root[data-theme="dark"] .glass-menu { box-shadow: 0 24px 60px -18px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .04); }
+:root[data-theme="dark"] .glass-scrim { background: rgb(0 0 0 / .6); }
+:root[data-theme="dark"] .bg-grid { background: linear-gradient(180deg, rgb(255 255 255 / .05), transparent 45%); }
+/* Theme switch: no colour fades on every element while it flips. */
+.theme-switching, .theme-switching * { transition: none !important; }
 
 @layer base {
   html { -webkit-text-size-adjust: 100%; }

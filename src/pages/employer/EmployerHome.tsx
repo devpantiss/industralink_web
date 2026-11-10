@@ -197,8 +197,8 @@ function BarChart({ data }: { data: { day: string; count: number }[] }) {
           const last = i === data.length - 1;
           return (
             <div key={d.day} className="group relative flex h-full flex-1 items-end">
-              <div className={cn("relative w-full origin-bottom rounded-t-md transition-colors", last ? "bg-primary" : "bg-tile-blue group-hover:bg-[#BFD9F2]")} style={{ height: `${(d.count / top) * 100}%`, minHeight: d.count ? 4 : 0 }}>
-                <span className={cn("absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-1.5 py-0.5 text-[11px] font-bold text-white transition-opacity", last ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>{d.count}</span>
+              <div className={cn("relative w-full origin-bottom rounded-t-md transition-colors", last ? "bg-primary" : "bg-tile-blue group-hover:bg-[#BFD9F2] dark:group-hover:bg-tile-blue-ink/40")} style={{ height: `${(d.count / top) * 100}%`, minHeight: d.count ? 4 : 0 }}>
+                <span className={cn("absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink-fill px-1.5 py-0.5 text-[11px] font-bold text-on-ink transition-opacity", last ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>{d.count}</span>
               </div>
             </div>
           );

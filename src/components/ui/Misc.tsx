@@ -122,11 +122,11 @@ export function BannerArt({ className }: { className?: string }) {
     <svg viewBox="0 0 600 260" preserveAspectRatio="xMaxYMid slice" aria-hidden className={cn("pointer-events-none absolute inset-y-0 right-0 h-full", className)}>
       <defs>
         <pattern id="il-hazard" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="22" height="22" fill="rgb(var(--accent))" /><rect width="11" height="22" fill="rgb(var(--text))" />
+          <rect width="22" height="22" fill="rgb(var(--accent))" /><rect width="11" height="22" fill="rgb(var(--ink-fill))" />
         </pattern>
       </defs>
       <polygon points="70,40 230,40 175,150 15,150" fill="rgb(var(--primary))" />
-      <polygon points="250,0 400,0 530,130 400,260 250,260 380,130" fill="rgb(var(--text))" />
+      <polygon points="250,0 400,0 530,130 400,260 250,260 380,130" fill="rgb(var(--ink-fill))" />
       <polygon points="330,0 365,0 495,130 365,260 330,260 460,130" fill="rgb(var(--surface-muted))" />
       <polygon points="455,0 600,0 600,150" fill="rgb(var(--accent))" />
       <polygon points="495,200 600,200 600,260 460,260" fill="url(#il-hazard)" />

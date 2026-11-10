@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { LogoMark } from "@/components/ui/Logo";
 import { Avatar, BannerArt } from "@/components/ui/Misc";
 import { LangToggle, t } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Link } from "react-router-dom";
 import { BadgeCheck, CalendarClock, CheckCircle2, Flag, Flame, IndianRupee, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 
@@ -18,7 +19,7 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
 
   return (
     <div className="flex min-h-screen bg-surface">
-      <aside className="sticky top-0 hidden h-screen w-[46%] max-w-[640px] overflow-hidden bg-ink lg:block">
+      <aside className="sticky top-0 hidden h-screen w-[46%] max-w-[640px] overflow-hidden bg-ink dark:bg-navy lg:block">
         <img src="/media/login.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-[35%_30%]" />
         {/* Shade top and bottom so the logo and headline stay readable */}
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/50 to-transparent" aria-hidden />
@@ -62,7 +63,10 @@ export function AuthLayout({ title, subtitle, children, side }: { title: string;
           </Link>
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-ink">{title}</h1>
-            {side !== "admin" && <LangToggle className="shrink-0" />}
+            <div className="flex shrink-0 items-center gap-2">
+              <ThemeToggle className="h-9 w-9" />
+              {side !== "admin" && <LangToggle className="shrink-0" />}
+            </div>
           </div>
           {subtitle && <p className="mt-1 text-body text-ink-secondary">{subtitle}</p>}
           <div className="mt-6">{children}</div>

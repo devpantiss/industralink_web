@@ -85,9 +85,9 @@ export default function WorkerHome() {
       )}
 
       <form onSubmit={submit} role="search" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[320px_minmax(0,1fr)_auto]">
-        <div className="hidden h-[50px] items-center justify-between gap-3 rounded-full bg-ink px-5 text-white lg:flex">
+        <div className="hidden h-[50px] items-center justify-between gap-3 rounded-full bg-ink-fill px-5 text-on-ink lg:flex">
           <b className="text-[15px]">{q ? t("Search result") : t("Jobs for you")}</b>
-          <span className="text-caption text-white/70" aria-live="polite">{loading ? t("Searching…") : t(list.length === 1 ? "{n} job found" : "{n} jobs found", { n: list.length })}</span>
+          <span className="text-caption text-on-ink/70" aria-live="polite">{loading ? t("Searching…") : t(list.length === 1 ? "{n} job found" : "{n} jobs found", { n: list.length })}</span>
         </div>
         <label className="flex h-[50px] min-w-0 items-center gap-2.5 rounded-full border border-transparent bg-surface-muted pl-5 pr-1.5 transition-colors focus-within:border-primary focus-within:bg-surface">
           <Search className="h-5 w-5 shrink-0 text-ink-muted" aria-hidden />

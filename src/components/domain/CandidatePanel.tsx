@@ -86,7 +86,7 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
       <div className="space-y-5">
         <div className="flex flex-wrap gap-2">
           <a href={`tel:+91${w.phone}`} className={buttonClass("secondary")}><Phone className="h-4 w-4" aria-hidden /> +91 {w.phone}</a>
-          <a href={`https://wa.me/91${w.phone}`} target="_blank" rel="noreferrer" className={buttonClass("secondary")}><MessageCircle className="h-4 w-4 text-green-600" aria-hidden /> WhatsApp</a>
+          <a href={`https://wa.me/91${w.phone}`} target="_blank" rel="noreferrer" className={buttonClass("secondary")}><MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden /> WhatsApp</a>
           {["shortlisted", "interview", "offer", "hired"].includes(c.stage) && (
             <Link to={`/employer/messages?c=${c.id}`} className={buttonClass("secondary")}><MessageSquare className="h-4 w-4 text-primary" aria-hidden /> Message</Link>
           )}

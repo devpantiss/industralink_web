@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { t, LangToggle } from "@/lib/i18n";
 import { LogoMark } from "@/components/ui/Logo";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LinkButton } from "@/components/ui/Button";
 import { ListSkeleton } from "@/components/ui/States";
 import { useAuth, homeFor } from "@/app/AuthContext";
@@ -36,6 +37,7 @@ export default function PublicJobs() {
           {LANDING_URL ? <a href={LANDING_URL} aria-label="IndustriaLink home">{logo}</a> : <Link to="/jobs" aria-label="IndustriaLink jobs">{logo}</Link>}
           <div className="flex items-center gap-2">
             <LangToggle className="hidden sm:flex" />
+            <ThemeToggle className="h-9 w-9" />
             {user ? (
               <LinkButton to={homeFor(user.role)} size="sm">{t("Go to dashboard")}</LinkButton>
             ) : (

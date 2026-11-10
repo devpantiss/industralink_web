@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, HelpCircle, LifeBuoy, LogOut, MoreVertical, Plus, RotateCcw, Search, Settings as SettingsIcon, User as UserIcon, WifiOff } from "lucide-react";
 import { LangToggle, t } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { messagesApi } from "@/api/extra";
 import { cn } from "@/lib/cn";
 import { timeAgo } from "@/lib/format";
@@ -195,6 +196,7 @@ function WorkerTopBar({ items, unread }: { items: NavItem[]; unread: number }) {
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <LangToggle />
+          <ThemeToggle className="hidden sm:flex" />
           <Notifications />
           <ProfileMenu />
         </div>
@@ -261,6 +263,7 @@ function StaffTopBar({ role }: { role: "employer" | "admin" }) {
       </form>
       <div className="flex-1" />
       {role === "employer" && <LinkButton to="/employer/jobs/new" size="sm" icon={<Plus className="h-4 w-4" />} className="hidden h-10 sm:inline-flex">Post a job</LinkButton>}
+      <ThemeToggle />
       <Link to="/help" aria-label="Help" className={cn(roundBtn, "hidden sm:flex")}><HelpCircle className="h-[18px] w-[18px]" /></Link>
       <Notifications />
       <div className="lg:hidden"><ProfileMenu /></div>

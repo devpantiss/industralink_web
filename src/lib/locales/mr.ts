@@ -395,6 +395,13 @@ const mr: Record<string, string> = {
   "Settings saved": "सेटिंग्ज सेव्ह झाल्या",
   "just now": "आत्ताच",
   "in a moment": "थोड्या वेळात",
+  "Switch to light mode": "लाइट मोडवर जा",
+  "Switch to dark mode": "डार्क मोडवर जा",
+  "Light": "लाइट",
+  "Dark": "डार्क",
+  "Same as my phone": "फोनप्रमाणे",
+  "Appearance": "दिसणे",
+  "Dark mode is easier on the eyes at night.": "रात्री डार्क मोड डोळ्यांना आरामदायक असतो.",
 };
 
 export default mr;

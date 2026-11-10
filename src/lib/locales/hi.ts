@@ -434,6 +434,13 @@ const hi: Record<string, string> = {
   // ---- time
   "just now": "अभी",
   "in a moment": "थोड़ी देर में",
+  "Switch to light mode": "लाइट मोड पर जाएँ",
+  "Switch to dark mode": "डार्क मोड पर जाएँ",
+  "Light": "लाइट",
+  "Dark": "डार्क",
+  "Same as my phone": "फ़ोन जैसा",
+  "Appearance": "दिखावट",
+  "Dark mode is easier on the eyes at night.": "रात में डार्क मोड आँखों के लिए आरामदायक है।",
 };
 
 export default hi;
