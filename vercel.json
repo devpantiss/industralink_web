@@ -1,3 +1,12 @@
 {
-  "rewrites": [{ "source": "/((?!assets/|media/|demo/|favicon).*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/((?!assets/|media/|demo/|favicon|feed\\.json).*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/feed.json",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    }
+  ]
 }

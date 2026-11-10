@@ -14,10 +14,12 @@ import { Stepper } from "@/components/ui/Misc";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
+import { getHandoff } from "@/lib/handoff";
 
 export default function EmployerWelcome() {
   const [step, setStep] = useState(0);
-  const [c, setC] = useState<Partial<Company>>({ sector: "metals", size: "50–200", location: { city: "", state: "" } });
+  const draft = getHandoff().draft; // job post started on the landing site
+  const [c, setC] = useState<Partial<Company>>({ sector: "metals", size: "50–200", location: { city: draft?.city ?? "", state: draft?.state ?? "" } });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [docName, setDocName] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,7 @@ export default function EmployerWelcome() {
       await employerApi.updateCompany(c);
       setUser(await authApi.completeOnboarding());
       qc.invalidateQueries();
-      navigate("/employer", { replace: true });
+      navigate(draft ? "/employer/jobs/new" : "/employer", { replace: true });
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -95,7 +97,7 @@ export default function EmployerWelcome() {
           {step > 0 && step < 2 ? <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button> : <span />}
           {step === 0 && <Button onClick={() => validate() && setStep(1)}>Continue</Button>}
           {step === 1 && <Button onClick={() => setStep(2)}>{docName ? "Submit for review" : "Skip for now"}</Button>}
-          {step === 2 && <Button onClick={finish} loading={busy}>Go to dashboard</Button>}
+          {step === 2 && <Button onClick={finish} loading={busy}>{draft ? "Continue to your job post" : "Go to dashboard"}</Button>}
         </div>
       </Card>
     </div>

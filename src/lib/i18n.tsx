@@ -38,8 +38,14 @@ const loaders: Record<Exclude<Lang, "en">, () => Promise<{ default: Record<strin
 const KEY = "industrialink.lang";
 const isLang = (v: unknown): v is Lang => LANGS.some((l) => l.code === v);
 
+/** A ?lang= from the landing site wins and is remembered; otherwise the saved choice. */
 function read(): Lang {
-  try { const v = localStorage.getItem(KEY); return isLang(v) ? v : "en"; } catch { return "en"; }
+  try {
+    const fromLink = new URLSearchParams(window.location.search).get("lang");
+    if (isLang(fromLink)) { localStorage.setItem(KEY, fromLink); return fromLink; }
+    const v = localStorage.getItem(KEY);
+    return isLang(v) ? v : "en";
+  } catch { return "en"; }
 }
 
 let current: Lang = read();

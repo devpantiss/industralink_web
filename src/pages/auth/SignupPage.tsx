@@ -10,10 +10,12 @@ import { Field, Input } from "@/components/ui/Field";
 import { AuthLayout } from "./AuthLayout";
 import { OtpForm } from "./OtpForm";
 import { lastAudience, RolePicker, type Audience } from "./RolePicker";
+import { getHandoff } from "@/lib/handoff";
 
 export default function SignupPage() {
   const [sp] = useSearchParams();
-  const [as, setAs] = useState<Audience>((sp.get("as") as Audience) || lastAudience());
+  const handoff = getHandoff(); // details typed on the landing site
+  const [as, setAs] = useState<Audience>((sp.get("as") as Audience) || (handoff.draft ? "employer" : lastAudience()));
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const done = (res: AuthResponse) => {
@@ -26,8 +28,8 @@ export default function SignupPage() {
       <RolePicker value={as} onChange={setAs} />
       <div key={as} className="animate-page mt-6">
         {as === "worker"
-          ? <WorkerSignup onSuccess={done} initialPhone={sp.get("phone") ?? ""} onExisting={(phone) => navigate(`/login?as=worker&phone=${phone}`)} />
-          : <EmployerSignup onSuccess={done} />}
+          ? <WorkerSignup onSuccess={done} initialName={handoff.name ?? ""} initialPhone={sp.get("phone") ?? handoff.phone ?? ""} onExisting={(phone) => navigate(`/login?as=worker&phone=${phone}`)} />
+          : <EmployerSignup onSuccess={done} initial={{ name: handoff.name, companyName: handoff.company, email: handoff.email }} />}
         <p className="mt-8 text-center text-body text-ink-secondary">
           Already have an account? <Link to={`/login?as=${as}`} className="font-semibold text-primary hover:underline">Log in</Link>
         </p>
@@ -36,8 +38,8 @@ export default function SignupPage() {
   );
 }
 
-function WorkerSignup({ onSuccess, initialPhone, onExisting }: { onSuccess: (r: AuthResponse) => void; initialPhone: string; onExisting: (phone: string) => void }) {
-  const [name, setName] = useState("");
+function WorkerSignup({ onSuccess, initialName, initialPhone, onExisting }: { onSuccess: (r: AuthResponse) => void; initialName: string; initialPhone: string; onExisting: (phone: string) => void }) {
+  const [name, setName] = useState(initialName);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string>();
   if (!confirmed) {
@@ -61,8 +63,8 @@ function WorkerSignup({ onSuccess, initialPhone, onExisting }: { onSuccess: (r: 
   );
 }
 
-function EmployerSignup({ onSuccess }: { onSuccess: (r: AuthResponse) => void }) {
-  const [f, setF] = useState({ name: "", companyName: "", email: "", password: "" });
+function EmployerSignup({ onSuccess, initial = {} }: { onSuccess: (r: AuthResponse) => void; initial?: { name?: string; companyName?: string; email?: string } }) {
+  const [f, setF] = useState({ name: initial.name ?? "", companyName: initial.companyName ?? "", email: initial.email ?? "", password: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof typeof f | "form", string>>>({});
   const [exists, setExists] = useState(false);
   const [busy, setBusy] = useState(false);

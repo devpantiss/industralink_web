@@ -16,6 +16,7 @@ import { Chip, Field, Input } from "@/components/ui/Field";
 import { Stepper } from "@/components/ui/Misc";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
+import { getHandoff } from "@/lib/handoff";
 
 const TRADE_ICON: Record<Trade, LucideIcon> = {
   welder: Flame, electrician: Bolt, fitter: Wrench, machine_operator: Cog, driver: Car,
@@ -25,7 +26,15 @@ const TRADE_ICON: Record<Trade, LucideIcon> = {
 /** Tap-based onboarding, almost no typing (plan section 7). Every step can be skipped. */
 export default function WorkerWelcome() {
   const [step, setStep] = useState(0);
-  const [p, setP] = useState<Partial<WorkerProfile>>({ qualifications: [], licences: [], willingToRelocate: true, expectedPay: 18000 });
+  // Trade and place picked on the landing site come pre-selected; the person can still change them.
+  const [p, setP] = useState<Partial<WorkerProfile>>(() => {
+    const h = getHandoff();
+    return {
+      qualifications: [], licences: [], willingToRelocate: true, expectedPay: 18000,
+      ...(h.trade && { trade: h.trade }),
+      ...(h.city && { location: { city: h.city, state: h.state ?? "" } }),
+    };
+  });
   const [busy, setBusy] = useState(false);
   const { setUser } = useAuth();
   const navigate = useNavigate();

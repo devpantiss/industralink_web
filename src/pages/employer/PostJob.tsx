@@ -11,7 +11,8 @@ import { useCompany } from "@/hooks/useCompany";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Checkbox, Chip, Field, Input, Select } from "@/components/ui/Field";
-import { PageHeader, Stepper } from "@/components/ui/Misc";
+import { Banner, PageHeader, Stepper } from "@/components/ui/Misc";
+import { clearHandoff, draftToJob, getHandoff } from "@/lib/handoff";
 import { ErrorState, ListSkeleton } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Overlay";
@@ -50,9 +51,11 @@ export default function PostJob() {
 
 function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?: Job; copyOf?: Job; verified: boolean; defaults: Pick<JobInput, "sector" | "location">; sites?: string[] }) {
   const base = editing ?? copyOf;
+  // A new post picks up the job the employer started writing on the landing site.
+  const [fromLanding] = useState(() => (base ? undefined : getHandoff().draft));
   const [f, setF] = useState<JobInput>(() => base
     ? { ...pick(base), title: copyOf ? `Copy of ${base.title}` : base.title, status: copyOf ? "draft" : base.status }
-    : { ...EMPTY, ...defaults });
+    : { ...EMPTY, ...defaults, ...(fromLanding && draftToJob(fromLanding)) });
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
   const [noFee, setNoFee] = useState(!!editing);
@@ -80,6 +83,7 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
       return editing ? employerApi.updateJob(editing.id, body) : employerApi.createJob(body);
     },
     onSuccess: (job, status) => {
+      if (fromLanding) clearHandoff("draft");
       setDirty(false);
       dirtyRef.current = false;
       qc.invalidateQueries({ queryKey: qk.employer.all });
@@ -123,6 +127,9 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
         <Card>
           <CardBody className="space-y-6 p-5 sm:p-6">
             <Stepper steps={["Basics", "Pay & requirements", "Review"]} current={step} />
+            {fromLanding && step === 0 && (
+              <Banner tone="info">We filled this in from the job you started on our website. Check it, add the rest, and save.</Banner>
+            )}
 
             {step === 0 && (
               <div className="space-y-5">

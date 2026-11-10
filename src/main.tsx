@@ -7,7 +7,9 @@ import { router } from "@/app/router";
 import { ToastProvider } from "@/components/ui/Toast";
 import "@/styles/index.css";
 import { initLang, LangProvider } from "@/lib/i18n";
+import { captureHandoff } from "@/lib/handoff";
 
+captureHandoff();
 await initLang();
 import { initPalette } from "@/lib/palette";
 
