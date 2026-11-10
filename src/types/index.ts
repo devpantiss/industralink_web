@@ -17,6 +17,7 @@ export type PayPeriod = "day" | "month";
 export type JobType = "full_time" | "contract" | "walk_in";
 export type Benefit = "food" | "stay" | "transport" | "pf_esi" | "overtime" | "hazard_pay";
 export type JobStatus = "active" | "draft" | "closed";
+export type PayType = "in_hand" | "ctc";
 export type Availability = "immediate" | "15_days" | "30_days";
 
 export type ApplicationStage =
@@ -69,6 +70,17 @@ export interface WorkerProfile {
   employmentType?: "permanent" | "contract" | "any";
   /** Profile photo (data URL in the demo, storage URL in production). */
   photoUrl?: string;
+  /** Past jobs, newest first. Many workers have no resume, so this is their work record. */
+  workHistory?: WorkHistoryItem[];
+}
+
+export interface WorkHistoryItem {
+  company: string;
+  role: string;
+  /** Year started, e.g. "2019". */
+  from: string;
+  /** Year left. Empty means still working there. */
+  to?: string;
 }
 
 export interface Company {
@@ -83,18 +95,51 @@ export interface Company {
   /** Main HR contact shown to admin during approval. */
   hrName?: string;
   hrDesignation?: string;
+  /** HR mobile. Shown to admin only; pre-fills the HR number on new jobs. */
+  hrPhone?: string;
   /** Plants / sites, used as quick picks when posting a job. */
   sites?: string[];
+  /** Street / area of the main office or plant (city and state are in location). */
+  address?: string;
+  pincode?: string;
+  /** Logo image (data URL in the demo, storage URL in production). */
+  logoUrl?: string;
+  /** Hiring for themselves, or a labour contractor / placement agency hiring for others. */
+  hiringType?: HiringType;
   verification: VerificationStatus;
   rejectionReason?: string;
   status: AccountStatus;
   createdAt: string;
 }
 
+export type HiringType = "direct" | "agency";
+
+export type CompanyDocType = "gst" | "udyam" | "cin" | "other";
+
+/** Verification proof uploaded by the employer. Only admins see it. */
+export interface CompanyDocument {
+  id: string;
+  companyId: string;
+  name: string;
+  type: CompanyDocType;
+  sizeBytes: number;
+  mimeType: string;
+  uploadedAt: string;
+  url?: string;
+}
+
 export interface WalkIn {
   date: string; // ISO date
+  /** Last day, when the walk-in runs for several days. */
+  endDate?: string;
   time: string; // "09:00"
+  /** Gate closes at, e.g. "13:00". */
+  endTime?: string;
   address: string;
+  /** Person to ask for at the gate. */
+  contactPerson?: string;
+  /** Documents to bring, e.g. "Aadhaar copy, ITI certificate, 2 photos". */
+  bring?: string;
 }
 
 export interface Job {
@@ -102,6 +147,8 @@ export interface Job {
   companyId: string;
   companyName: string;
   companyVerified: boolean;
+  /** Copied from the company, like companyName. */
+  companyLogoUrl?: string;
   title: string;
   trade: Trade;
   sector: Sector;
@@ -109,12 +156,20 @@ export interface Job {
   payMin?: number;
   payMax?: number;
   payPeriod: PayPeriod;
+  /** "in_hand" = what the worker gets after PF/ESI; "ctc" = before deductions. */
+  payType?: PayType;
   shift: Shift;
+  /** e.g. "8 hours, 6 days a week". */
+  workHours?: string;
   jobType: JobType;
+  /** Contract jobs only, e.g. "6 months". */
+  contractLength?: string;
   walkIn?: WalkIn;
   openings: number;
   experience: ExperienceBand;
   qualifications: string[];
+  /** Licences the worker must hold, from the same list workers pick from (LICENCES). */
+  licences?: string[];
   benefits: Benefit[];
   responsibilities: string[];
   requirements: string[];
@@ -122,6 +177,9 @@ export interface Job {
   postedAt: string;
   deadline?: string;
   siteName?: string; // plant / site, e.g. "Smelter Plant 2"
+  /** Street / area of the work site, for a Maps link. */
+  address?: string;
+  pincode?: string;
   /** HR number. Only sent to workers once they are shortlisted AND allowCalls is on. */
   hrPhone?: string;
   allowCalls: boolean;
@@ -146,6 +204,10 @@ export interface TimelineEvent {
 export interface Interview {
   at: string; // ISO datetime
   place: string;
+  /** Person to ask for at the gate. */
+  contactPerson?: string;
+  /** What to bring, e.g. "Aadhaar, ITI certificate". */
+  bring?: string;
   /** Worker's reply to the invite. */
   response?: "attending" | "cant_attend";
   responseNote?: string;
@@ -164,8 +226,21 @@ export interface Application {
   sentWith: "profile" | "document";
   documentId?: string;
   rejectionNote?: string;
+  /** What the employer offered. Set when the stage moves to "offer". */
+  offer?: Offer;
   /** Worker's reply to an offer. Declining also closes the application (stage "withdrawn"). */
   offerResponse?: "accepted" | "declined";
+}
+
+export interface Offer {
+  pay: number;
+  payPeriod: PayPeriod;
+  payType?: PayType;
+  joiningDate: string; // ISO date
+  /** Where to report on the first day. */
+  place: string;
+  note?: string;
+  sentAt: string;
 }
 
 /** Application as seen by the worker (job embedded). */
@@ -223,7 +298,7 @@ export interface VerificationItem {
   submittedAt: string;
   status: VerificationStatus;
   details: Record<string, string>;
-  documents: Pick<WorkerDocument, "id" | "name" | "type" | "url" | "mimeType">[];
+  documents: Pick<CompanyDocument, "id" | "name" | "type" | "url" | "mimeType" | "uploadedAt">[];
 }
 
 export interface AdminUserRow {
@@ -425,5 +500,5 @@ export interface AuthResponse {
 
 export type JobInput = Omit<
   Job,
-  "id" | "companyId" | "companyName" | "companyVerified" | "postedAt" | "applicantsCount" | "newApplicantsCount"
+  "id" | "companyId" | "companyName" | "companyVerified" | "companyLogoUrl" | "postedAt" | "applicantsCount" | "newApplicantsCount"
 >;

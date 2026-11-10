@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useBlocker, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
-import type { Benefit, ExperienceBand, Job, JobInput, JobType, PayPeriod, Shift, Trade } from "@/types";
-import { BENEFIT_LABEL, EXPERIENCE_LABEL, JOB_TYPE_LABEL, QUALIFICATIONS, SHIFT_LABEL, TRADE_LABEL } from "@/lib/labels";
+import type { Benefit, ExperienceBand, Job, JobInput, JobType, PayPeriod, PayType, Shift, Trade } from "@/types";
+import { BENEFIT_LABEL, EXPERIENCE_LABEL, JOB_TYPE_LABEL, LICENCES, PAY_TYPE_LABEL, QUALIFICATIONS, SHIFT_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { employerApi } from "@/api/employer";
 import { qk } from "@/api/keys";
 import { errorCode, errorMessage } from "@/api/client";
@@ -35,7 +35,7 @@ const EMPTY: JobInput = {
 
 const CALL_HOURS = ["9 AM – 5 PM", "10 AM – 6 PM", "11 AM – 7 PM", "Anytime"];
 
-type Errors = Partial<Record<"title" | "city" | "pay" | "walkIn" | "phone" | "openings" | "fee", string>>;
+type Errors = Partial<Record<"title" | "city" | "state" | "pincode" | "pay" | "walkIn" | "phone" | "openings" | "fee", string>>;
 
 export default function PostJob() {
   const { id } = useParams();
@@ -46,10 +46,10 @@ export default function PostJob() {
 
   if ((sourceId && source.isLoading) || company.isLoading) return <ListSkeleton count={2} lines={5} />;
   if (source.isError || company.isError) return <ErrorState onRetry={() => { source.refetch(); company.refetch(); }} />;
-  return <JobForm key={sourceId ?? "new"} editing={id ? source.data : undefined} copyOf={!id ? source.data : undefined} verified={company.data?.verification === "approved"} defaults={{ sector: company.data!.sector, location: company.data!.location }} sites={company.data?.sites ?? []} />;
+  return <JobForm key={sourceId ?? "new"} editing={id ? source.data : undefined} copyOf={!id ? source.data : undefined} verified={company.data?.verification === "approved"} defaults={{ sector: company.data!.sector, location: company.data!.location, hrPhone: company.data!.hrPhone ?? "" }} sites={company.data?.sites ?? []} />;
 }
 
-function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?: Job; copyOf?: Job; verified: boolean; defaults: Pick<JobInput, "sector" | "location">; sites?: string[] }) {
+function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?: Job; copyOf?: Job; verified: boolean; defaults: Pick<JobInput, "sector" | "location" | "hrPhone">; sites?: string[] }) {
   const base = editing ?? copyOf;
   // A new post picks up the job the employer started writing on the landing site.
   const [fromLanding] = useState(() => (base ? undefined : getHandoff().draft));
@@ -101,9 +101,12 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
     if (s >= 0) {
       if (!f.title.trim()) e.title = "Enter a job title.";
       if (!f.location.city.trim()) e.city = "Enter the work site city.";
+      if (!f.location.state.trim()) e.state = "Enter the state.";
+      if (f.pincode && !/^\d{6}$/.test(f.pincode)) e.pincode = "Pincode has 6 digits.";
       if (f.openings < 1) e.openings = "At least 1 opening.";
       if (f.jobType === "walk_in" && (!f.walkIn?.date || !f.walkIn.address)) e.walkIn = "Add the walk-in date and address.";
       if (f.walkIn?.date && new Date(`${f.walkIn.date}T23:59`) < new Date()) e.walkIn = "Walk-in date can't be in the past.";
+      if (f.walkIn?.date && f.walkIn.endDate && f.walkIn.endDate < f.walkIn.date) e.walkIn = "The last walk-in day can't be before the first.";
     }
     if (s >= 1) {
       if (!f.payMin && !f.payMax) e.pay = "Add the pay. Jobs without pay get far fewer applicants.";
@@ -155,19 +158,29 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
                   </>}</Field>
                   <Field label="Number of openings" error={errors.openings}>{(id, d) => <Input id={id} aria-describedby={d} type="number" min={1} value={f.openings} onChange={(e) => set({ openings: Number(e.target.value) })} />}</Field>
                   <Field label="Work site city" required error={errors.city}>{(id, d) => <Input id={id} aria-describedby={d} value={f.location.city} invalid={!!errors.city} onChange={(e) => set({ location: { ...f.location, city: e.target.value } })} />}</Field>
-                  <Field label="State">{(id) => <Input id={id} value={f.location.state} onChange={(e) => set({ location: { ...f.location, state: e.target.value } })} />}</Field>
+                  <Field label="State" required error={errors.state}>{(id, d) => <Input id={id} aria-describedby={d} value={f.location.state} invalid={!!errors.state} onChange={(e) => set({ location: { ...f.location, state: e.target.value } })} />}</Field>
+                  <Field label="Work site address" hint="Optional. Area, road or gate, so workers can find it on Maps.">{(id, d) => <Input id={id} aria-describedby={d} value={f.address ?? ""} onChange={(e) => set({ address: e.target.value || undefined })} />}</Field>
+                  <Field label="Pincode" error={errors.pincode}>{(id, d) => <Input id={id} aria-describedby={d} inputMode="numeric" maxLength={6} value={f.pincode ?? ""} invalid={!!errors.pincode} onChange={(e) => set({ pincode: e.target.value.replace(/\D/g, "") || undefined })} />}</Field>
                 </div>
                 <div>
                   <p className="mb-2 text-small font-medium text-ink">How will workers apply?</p>
                   <div className="flex flex-wrap gap-2">
-                    {(["full_time", "contract", "walk_in"] as JobType[]).map((t) => <Chip key={t} selected={f.jobType === t} onClick={() => set({ jobType: t, walkIn: t === "walk_in" ? f.walkIn ?? { date: "", time: "09:00", address: "" } : undefined })}>{JOB_TYPE_LABEL[t]}</Chip>)}
+                    {(["full_time", "contract", "walk_in"] as JobType[]).map((t) => <Chip key={t} selected={f.jobType === t} onClick={() => set({ jobType: t, walkIn: t === "walk_in" ? f.walkIn ?? { date: "", time: "09:00", address: "" } : undefined, contractLength: t === "contract" ? f.contractLength : undefined })}>{JOB_TYPE_LABEL[t]}</Chip>)}
                   </div>
                 </div>
+                {f.jobType === "contract" && (
+                  <Field label="Contract length" hint="Workers ask this first, e.g. 6 months or 1 year.">{(id, d) => <Input id={id} aria-describedby={d} className="sm:w-64" list="contract-lengths" value={f.contractLength ?? ""} onChange={(e) => set({ contractLength: e.target.value || undefined })} placeholder="e.g. 6 months" />}</Field>
+                )}
+                <datalist id="contract-lengths">{["3 months", "6 months", "11 months", "1 year", "2 years"].map((x) => <option key={x} value={x} />)}</datalist>
                 {f.jobType === "walk_in" && (
                   <div className="grid gap-4 rounded-lg bg-surface-muted p-4 sm:grid-cols-2">
                     <Field label="Walk-in date" required>{(id) => <Input id={id} type="date" min={new Date().toISOString().slice(0, 10)} value={f.walkIn?.date ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, date: e.target.value } })} />}</Field>
-                    <Field label="Time">{(id) => <Input id={id} type="time" value={f.walkIn?.time ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, time: e.target.value } })} />}</Field>
+                    <Field label="Last day" hint="Optional, if it runs for several days">{(id, d) => <Input id={id} aria-describedby={d} type="date" min={f.walkIn?.date || new Date().toISOString().slice(0, 10)} value={f.walkIn?.endDate ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, endDate: e.target.value || undefined } })} />}</Field>
+                    <Field label="From">{(id) => <Input id={id} type="time" value={f.walkIn?.time ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, time: e.target.value } })} />}</Field>
+                    <Field label="Until" hint="Optional">{(id, d) => <Input id={id} aria-describedby={d} type="time" value={f.walkIn?.endTime ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, endTime: e.target.value || undefined } })} />}</Field>
                     <Field label="Address" required error={errors.walkIn} className="sm:col-span-2">{(id, d) => <Input id={id} aria-describedby={d} value={f.walkIn?.address ?? ""} invalid={!!errors.walkIn} onChange={(e) => set({ walkIn: { ...f.walkIn!, address: e.target.value } })} placeholder="Gate no., plant name, area" />}</Field>
+                    <Field label="Ask for" hint="Optional. Person at the gate">{(id, d) => <Input id={id} aria-describedby={d} value={f.walkIn?.contactPerson ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, contactPerson: e.target.value || undefined } })} placeholder="e.g. Mr. Rao, security office" />}</Field>
+                    <Field label="What to bring" hint="Optional">{(id, d) => <Input id={id} aria-describedby={d} value={f.walkIn?.bring ?? ""} onChange={(e) => set({ walkIn: { ...f.walkIn!, bring: e.target.value || undefined } })} placeholder="e.g. Aadhaar copy, ITI certificate, 2 photos" />}</Field>
                   </div>
                 )}
               </div>
@@ -186,11 +199,18 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
                     </Select>
                   </div>
                   {errors.pay && <p role="alert" className="mt-1.5 text-small text-danger-fg">{errors.pay}</p>}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-small text-ink-secondary">This pay is</span>
+                    {(Object.keys(PAY_TYPE_LABEL) as PayType[]).map((p) => <Chip key={p} selected={f.payType === p} onClick={() => set({ payType: f.payType === p ? undefined : p })}>{PAY_TYPE_LABEL[p]}</Chip>)}
+                  </div>
                 </div>
                 <Group label="Shift">{(["day", "night", "rotational"] as Shift[]).map((s) => <Chip key={s} selected={f.shift === s} onClick={() => set({ shift: s })}>{SHIFT_LABEL[s]}</Chip>)}</Group>
+                <Field label="Working hours" hint="Optional. Workers ask this right after pay.">{(id, d) => <Input id={id} aria-describedby={d} className="sm:w-80" list="work-hours" value={f.workHours ?? ""} onChange={(e) => set({ workHours: e.target.value || undefined })} placeholder="e.g. 8 hours, 6 days a week" />}</Field>
+                <datalist id="work-hours">{["8 hours, 6 days a week", "9 hours, 6 days a week", "12 hours, 6 days a week", "8 hours, 5 days a week"].map((x) => <option key={x} value={x} />)}</datalist>
                 <Group label="Benefits">{(Object.keys(BENEFIT_LABEL) as Benefit[]).map((b) => <Chip key={b} selected={f.benefits.includes(b)} onClick={() => set({ benefits: f.benefits.includes(b) ? f.benefits.filter((x) => x !== b) : [...f.benefits, b] })}>{BENEFIT_LABEL[b]}</Chip>)}</Group>
                 <Group label="Experience needed">{(Object.keys(EXPERIENCE_LABEL) as ExperienceBand[]).map((x) => <Chip key={x} selected={f.experience === x} onClick={() => set({ experience: x })}>{EXPERIENCE_LABEL[x]}</Chip>)}</Group>
                 <Group label="Qualification">{QUALIFICATIONS.map((q) => <Chip key={q} selected={f.qualifications.includes(q)} onClick={() => set({ qualifications: f.qualifications.includes(q) ? f.qualifications.filter((x) => x !== q) : [...f.qualifications, q] })}>{q}</Chip>)}</Group>
+                <Group label="Licence needed (optional)">{LICENCES.map((l) => { const list = f.licences ?? []; return <Chip key={l} selected={list.includes(l)} onClick={() => set({ licences: list.includes(l) ? list.filter((x) => x !== l) : [...list, l] })}>{l}</Chip>; })}</Group>
                 <ListEditor label="What they'll do" items={f.responsibilities} onChange={(v) => set({ responsibilities: v })} placeholder="e.g. Weld steel structures" />
                 <ListEditor label="What they need" items={f.requirements} onChange={(v) => set({ requirements: v })} placeholder="e.g. ITI in Welder trade" />
                 <div className="space-y-3 rounded-lg border border-border p-4">
@@ -250,7 +270,7 @@ function JobForm({ editing, copyOf, verified, defaults, sites = [] }: { editing?
 }
 
 function pick(j: Job): JobInput {
-  const { id: _id, companyId: _c, companyName: _n, companyVerified: _v, postedAt: _p, applicantsCount: _a, newApplicantsCount: _na, ...rest } = j;
+  const { id: _id, companyId: _c, companyName: _n, companyVerified: _v, companyLogoUrl: _l, postedAt: _p, applicantsCount: _a, newApplicantsCount: _na, ...rest } = j;
   return rest;
 }
 

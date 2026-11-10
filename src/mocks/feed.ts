@@ -59,7 +59,7 @@ const bump = <K extends string>(m: Partial<Record<K, number>>, k: K) => { m[k] =
 export function buildFeed(db: MockDb): Feed {
   const live = new Set(db.companies.filter((c) => c.status !== "blocked").map((c) => c.id));
   const jobs = db.jobs
-    .filter((j) => j.status === "active" && !j.removedByAdmin && live.has(j.companyId))
+    .filter((j) => j.status === "active" && !j.removedByAdmin && live.has(j.companyId) && !(j.deadline && new Date(j.deadline) < new Date()))
     .sort((a, b) => b.postedAt.localeCompare(a.postedAt));
 
   const feed: Feed = {

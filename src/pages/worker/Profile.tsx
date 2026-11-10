@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
+import { resizeImage } from "@/lib/image";
 import { t } from "@/lib/i18n";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Camera, Eye, FileImage, FileText, FileUp, Pencil, Star, Trash2 } from "lucide-react";
-import type { Availability, DocType, ExperienceBand, Shift, Trade, WorkerDocument, WorkerProfile } from "@/types";
+import type { Availability, DocType, ExperienceBand, Shift, Trade, WorkHistoryItem, WorkerDocument, WorkerProfile } from "@/types";
 import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EMPLOYMENT_TYPE_LABEL, EXPERIENCE_LABEL, LANGUAGES, LICENCES, QUALIFICATIONS, SHIFT_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { formatBytes, formatDate, formatNumber } from "@/lib/format";
 import { DocumentPreview } from "@/components/domain/CandidatePanel";
@@ -60,24 +61,6 @@ export default function Profile() {
       )}
     </div>
   );
-}
-
-/** Shrinks the photo on the phone before upload, so it stays small on slow networks. */
-function resizeImage(file: File, max = 320): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(img.src);
-      resolve(c.toDataURL("image/jpeg", 0.85));
-    };
-    img.onerror = () => reject(new Error("bad image"));
-    img.src = URL.createObjectURL(file);
-  });
 }
 
 function PhotoPicker({ profile }: { profile: WorkerProfile }) {
@@ -139,6 +122,12 @@ function ProfileDetails({ p }: { p: WorkerProfile }) {
             {p.skills.length ? (
               <ul className="mt-1.5 flex flex-wrap gap-1.5">{p.skills.map((s) => <li key={s} className="rounded-full bg-surface-muted px-2 py-1 text-small text-ink">{s}</li>)}</ul>
             ) : <p className="text-body text-ink-muted">—</p>}
+          </div>
+          <div className="mt-4">
+            <p className="text-caption text-ink-muted">{t("Past jobs")}</p>
+            {p.workHistory?.length ? (
+              <ul className="mt-1.5 space-y-1">{p.workHistory.map((h, i) => <li key={`${h.company}-${i}`} className="text-body text-ink"><span className="font-medium">{h.role}</span> · {h.company} · {h.from}–{h.to || t("now")}</li>)}</ul>
+            ) : <p className="text-body text-ink-muted">{t("Add where you worked before. Employers check this first.")}</p>}
           </div>
         </CardBody>
       </Card>
@@ -228,6 +217,7 @@ function EditDrawer({ section, profile, onClose }: { section: Exclude<Section, n
             <Group label="Languages I speak">
               {LANGUAGES.map((l) => <Chip key={l} selected={(d.languages ?? []).includes(l)} onClick={() => toggle("languages", l)}>{l}</Chip>)}
             </Group>
+            <WorkHistoryEditor items={d.workHistory ?? []} onChange={(workHistory) => setD({ ...d, workHistory })} />
             <div>
               <p className="mb-1.5 text-small font-medium text-ink">Skills</p>
               <div className="flex gap-2">
@@ -384,6 +374,46 @@ function Documents() {
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} onConfirm={() => toDelete && remove.mutate(toDelete.id)} loading={remove.isPending}
         title="Delete this document?" confirmLabel="Delete"
         message={onlyResume ? "This is your only resume. Employers you already applied to keep the copy you sent. Future applications will use your profile." : "You can upload it again later."} />
+    </div>
+  );
+}
+
+/** Past jobs: company, role, years. Many workers have no resume, so this is their work record. */
+function WorkHistoryEditor({ items, onChange }: { items: WorkHistoryItem[]; onChange: (v: WorkHistoryItem[]) => void }) {
+  const [row, setRow] = useState<WorkHistoryItem>({ company: "", role: "", from: "", to: "" });
+  const [error, setError] = useState<string>();
+  const year = new Date().getFullYear();
+  const add = () => {
+    const from = Number(row.from);
+    const to = row.to ? Number(row.to) : undefined;
+    if (!row.company.trim() || !row.role.trim()) return setError(t("Add the company and your job."));
+    if (!from || from < 1970 || from > year) return setError(t("Enter the year you started, e.g. 2019."));
+    if (to !== undefined && (to < from || to > year)) return setError(t("The year you left can't be before the year you started."));
+    setError(undefined);
+    onChange([{ company: row.company.trim(), role: row.role.trim(), from: String(from), to: to ? String(to) : undefined }, ...items]);
+    setRow({ company: "", role: "", from: "", to: "" });
+  };
+  return (
+    <div>
+      <p className="mb-1.5 text-small font-medium text-ink">{t("Past jobs")}</p>
+      {items.length > 0 && (
+        <ul className="mb-2 space-y-1.5">
+          {items.map((h, i) => (
+            <li key={`${h.company}-${i}`} className="flex items-center gap-2 rounded-md bg-surface-muted px-3 py-2 text-body">
+              <span className="min-w-0 flex-1"><span className="font-medium">{h.role}</span> · {h.company} · {h.from}–{h.to || t("now")}</span>
+              <button type="button" onClick={() => onChange(items.filter((_, j) => j !== i))} className="text-small text-ink-muted hover:text-danger-fg" aria-label={`${t("Remove")} ${h.company}`}>✕</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <Input aria-label={t("Company")} placeholder={t("Company, e.g. Hindalco")} value={row.company} onChange={(e) => setRow({ ...row, company: e.target.value })} />
+        <Input aria-label={t("Your job")} placeholder={t("Your job, e.g. Welder")} value={row.role} onChange={(e) => setRow({ ...row, role: e.target.value })} />
+        <Input aria-label={t("From year")} inputMode="numeric" maxLength={4} placeholder={t("From (year)")} value={row.from} onChange={(e) => setRow({ ...row, from: e.target.value.replace(/\D/g, "") })} />
+        <Input aria-label={t("To year")} inputMode="numeric" maxLength={4} placeholder={t("To (empty = still there)")} value={row.to ?? ""} onChange={(e) => setRow({ ...row, to: e.target.value.replace(/\D/g, "") })} />
+      </div>
+      {error && <p role="alert" className="mt-1.5 text-small text-danger-fg">{error}</p>}
+      <Button variant="secondary" size="sm" className="mt-2" onClick={add}>{t("Add past job")}</Button>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Globe, MapPin, Users } from "lucide-react";
+import { Briefcase, Building2, Globe, MapPin, Users } from "lucide-react";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
 import { errorCode } from "@/api/client";
-import { SECTOR_LABEL } from "@/lib/labels";
+import { HIRING_TYPE_LABEL, SECTOR_LABEL } from "@/lib/labels";
 import { VerifiedTick } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
@@ -27,7 +27,7 @@ export default function CompanyDetail() {
       <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
         <div className="relative h-24 overflow-hidden bg-surface-muted sm:h-28"><BannerArt className="w-[70%] sm:w-[45%]" /></div>
         <div className="px-5 pb-5 sm:px-6">
-          <CompanyLogo job={{ companyName: c.name, sector: c.sector }} size="lg" className="relative -mt-9 h-16 w-16 border-4 border-surface" />
+          <CompanyLogo job={{ companyName: c.name, sector: c.sector, companyLogoUrl: c.logoUrl }} size="lg" className="relative -mt-9 h-16 w-16 border-4 border-surface" />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <h1 className="text-h1">{c.name}</h1>
             <VerifiedTick verified={c.verification === "approved"} />
@@ -37,8 +37,15 @@ export default function CompanyDetail() {
             <li className="flex items-center gap-1.5"><MapPin className="h-4 w-4" aria-hidden /> {c.location.city}{c.location.state ? `, ${c.location.state}` : ""}</li>
             <li className="flex items-center gap-1.5"><Users className="h-4 w-4" aria-hidden /> {c.size} people</li>
             {c.website && <li className="flex items-center gap-1.5"><Globe className="h-4 w-4" aria-hidden /> {c.website}</li>}
+            {c.hiringType === "agency" && <li className="flex items-center gap-1.5"><Building2 className="h-4 w-4" aria-hidden /> {HIRING_TYPE_LABEL.agency}</li>}
           </ul>
           {c.about && <p className="mt-4 max-w-3xl text-body text-ink">{c.about}</p>}
+          {c.address && (
+            <a className="mt-3 inline-flex items-center gap-1 text-small font-semibold text-primary hover:underline" target="_blank" rel="noreferrer"
+              href={`https://maps.google.com/?q=${encodeURIComponent([c.address, c.location.city, c.location.state, c.pincode].filter(Boolean).join(", "))}`}>
+              <MapPin className="h-4 w-4" aria-hidden /> {[c.address, c.pincode].filter(Boolean).join(", ")} · Open in Maps
+            </a>
+          )}
         </div>
       </section>
 

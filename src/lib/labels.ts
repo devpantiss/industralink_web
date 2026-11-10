@@ -3,7 +3,7 @@
  * can be added later in one place.
  */
 import type {
-  ApplicationStage, Availability, Benefit, DocType, ExperienceBand, JobType, Sector, Shift, Trade,
+  ApplicationStage, Availability, Benefit, CompanyDocType, DocType, ExperienceBand, HiringType, JobType, PayType, Sector, Shift, Trade,
 } from "@/types";
 
 export const TRADE_LABEL: Record<Trade, string> = {
@@ -106,3 +106,20 @@ export const EMPLOYMENT_TYPE_LABEL: Record<"permanent" | "contract" | "any", str
 };
 
 export const LANGUAGES = ["Hindi", "English", "Odia", "Bengali", "Telugu", "Tamil", "Marathi", "Gujarati", "Punjabi", "Kannada", "Malayalam", "Assamese"];
+
+export const PAY_TYPE_LABEL: Record<PayType, string> = {
+  in_hand: "In-hand",
+  ctc: "Before PF/ESI",
+};
+
+export const COMPANY_DOC_LABEL: Record<CompanyDocType, string> = {
+  gst: "GST certificate",
+  udyam: "Udyam certificate",
+  cin: "Company registration (CIN)",
+  other: "Other document",
+};
+
+export const HIRING_TYPE_LABEL: Record<HiringType, string> = {
+  direct: "Direct employer",
+  agency: "Contractor / placement agency",
+};

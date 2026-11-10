@@ -6,6 +6,13 @@ export type Audience = "worker" | "employer";
 
 const KEY = "industrialink.audience";
 export const rememberAudience = (a: Audience) => { try { localStorage.setItem(KEY, a); } catch { /* ignore */ } };
+/** The form to open: ?as= from the link wins, then a hint (e.g. a job draft means employer), then the last choice. */
+export function audienceFromUrl(sp: URLSearchParams, hint?: Audience): Audience {
+  const as = sp.get("as");
+  if (as === "worker" || as === "employer") return as;
+  return hint ?? lastAudience();
+}
+
 export const lastAudience = (): Audience => { try { return localStorage.getItem(KEY) === "employer" ? "employer" : "worker"; } catch { return "worker"; } };
 
 /** Big, clear choice so workers and HR never land on the wrong form. */

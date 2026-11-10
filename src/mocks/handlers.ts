@@ -4,10 +4,10 @@
  * and nothing in the UI needs to change.
  */
 import type {
-  AdminJobRow, AdminSummary, AdminUserRow, Application, ApplicationStage, Candidate, Company, CompanyForWorker, EmployerAnalytics, EmployerSummary, Job,
+  AdminJobRow, AdminSummary, AdminUserRow, Application, ApplicationStage, Candidate, Company, CompanyDocument, CompanyForWorker, EmployerAnalytics, EmployerSummary, Job,
   JobForWorker, JobReport, Message, MessageThread, Paginated, TalentProfile, User, UserSettings, VerificationItem, WorkerApplication, WorkerDocument, WorkerProfile, WorkerSummary,
 } from "@/types";
-import { SECTOR_LABEL, TRADE_LABEL } from "@/lib/labels";
+import { HIRING_TYPE_LABEL, SECTOR_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { getDb, newId, now, saveDb } from "./db";
 import { DEFAULT_SETTINGS } from "./seed";
 import { HttpError, route, type MockRequest } from "./router";
@@ -50,6 +50,18 @@ function forWorker(job: Job, workerId: string): JobForWorker {
   const { hrPhone: _private, ...publicJob } = job; // HR number stays private until shortlisted
   return { ...publicJob, saved: (db().saved[workerId] ?? []).includes(job.id), appliedApplicationId: app?.id };
 }
+
+/** Open for applications: active and the last date hasn't passed. */
+const isOpenJob = (j: Job) => j.status === "active" && !(j.deadline && new Date(j.deadline) < new Date());
+
+/** Company as workers see it: no GST number, no HR mobile. */
+function publicCompany(c: Company): Company {
+  const { gstNumber: _gst, hrPhone: _phone, ...rest } = c;
+  return rest as Company;
+}
+
+/** Company verification files. Older saved demo data has no list yet. */
+const companyDocs = () => (db().companyDocs ??= []);
 
 function notify(userId: string, title: string, body: string, link?: string) {
   db().notifications.unshift({ id: newId("n"), userId, title, body, at: now(), read: false, link });
@@ -186,14 +198,15 @@ route("GET", "/worker/summary", (req): WorkerSummary => {
 /** Job search shared by the worker page and the public (no login) page. */
 function searchJobs(q: MockRequest["query"], workerId: string | null): Paginated<JobForWorker> {
   const blockedCompanies = new Set(db().companies.filter((c) => c.status === "blocked").map((c) => c.id));
-  let list = db().jobs.filter((j) => j.status === "active" && !blockedCompanies.has(j.companyId));
+  // Jobs past their last date are hidden, not shown and then "closed" when opened.
+  let list = db().jobs.filter((j) => isOpenJob(j) && !blockedCompanies.has(j.companyId));
   const text = q.q?.trim().toLowerCase();
   if (text) {
     // Every word must match somewhere: "welder odisha" finds welder jobs in Odisha.
     const words = text.split(/\s+/).filter(Boolean);
     list = list.filter((j) => {
       const hay = [j.title, j.companyName, TRADE_LABEL[j.trade], SECTOR_LABEL[j.sector], j.location.city, j.location.state, j.siteName ?? "",
-        ...j.qualifications, ...j.requirements].join(" ").toLowerCase(); // certificates like DGMS, ITI, HMV
+        ...j.qualifications, ...(j.licences ?? []), ...j.requirements].join(" ").toLowerCase(); // certificates like DGMS, ITI, HMV
       return words.every((w) => hay.includes(w));
     });
   }
@@ -297,7 +310,10 @@ function withJob(a: Application): WorkerApplication | null {
   if (!job) return null;
   const { hrPhone, ...publicJob } = job;
   const canCall = job.allowCalls && !!hrPhone && ["shortlisted", "interview", "offer", "hired"].includes(a.stage);
-  return { ...a, job: publicJob, contact: canCall ? { phone: hrPhone!, hours: job.callHours } : undefined };
+  // The reject reason is for HR only ("only you see this"), so it never goes to the worker.
+  const { rejectionNote: _private, ...rest } = a;
+  const timeline = a.timeline.map((e) => (e.stage === "rejected" ? { stage: e.stage, at: e.at } : e));
+  return { ...rest, timeline, job: publicJob, contact: canCall ? { phone: hrPhone!, hours: job.callHours } : undefined };
 }
 
 route("GET", "/worker/applications", (req): WorkerApplication[] => {
@@ -326,7 +342,7 @@ route("POST", "/worker/applications/:id/withdraw", (req) => {
   a.updatedAt = now();
   a.timeline.push({ stage: "withdrawn", at: a.updatedAt });
   saveDb();
-  return a;
+  return withJob(a);
 });
 
 route("GET", "/worker/profile", (req) => workerOf(need(req, "worker").id));
@@ -401,10 +417,9 @@ route("GET", "/companies/:id", (req): CompanyForWorker => {
   const u = need(req, "worker");
   const company = db().companies.find((c) => c.id === req.params.id && c.status !== "blocked");
   if (!company) throw new HttpError(404, "Company not found.", "NOT_FOUND");
-  const { gstNumber: _gst, ...publicCompany } = company;
   return {
-    company: publicCompany,
-    jobs: db().jobs.filter((j) => j.companyId === company.id && j.status === "active").map((j) => forWorker(j, u.id)),
+    company: publicCompany(company),
+    jobs: db().jobs.filter((j) => j.companyId === company.id && isOpenJob(j)).map((j) => forWorker(j, u.id)),
   };
 });
 
@@ -460,6 +475,8 @@ function validateJob(body: any) {
   if (!body?.title?.trim()) throw new HttpError(422, "Job title is required.", "VALIDATION");
   if (body.payMin && body.payMax && Number(body.payMin) > Number(body.payMax)) throw new HttpError(422, "Minimum pay must be less than maximum.", "VALIDATION");
   if (body.status === "active" && !body.payMin && !body.payMax) throw new HttpError(422, "Add a pay range before publishing.", "VALIDATION");
+  if (body.status === "active" && !body.location?.state?.trim()) throw new HttpError(422, "Add the state of the work site before publishing.", "VALIDATION");
+  if (body.pincode && !/^\d{6}$/.test(body.pincode)) throw new HttpError(422, "Pincode has 6 digits.", "VALIDATION");
   if (body.allowCalls && body.hrPhone && !/^[6-9]\d{9}$/.test(body.hrPhone)) throw new HttpError(422, "Enter a valid 10-digit HR number.", "VALIDATION");
 }
 
@@ -470,7 +487,7 @@ route("POST", "/employer/jobs", (req) => {
   if (req.body.status === "active" && company.verification !== "approved")
     throw new HttpError(403, "You can publish jobs after your company is verified. Saved as draft instead?", "NOT_VERIFIED");
   const job: Job = {
-    ...req.body, id: newId("j"), companyId: company.id, companyName: company.name,
+    ...req.body, id: newId("j"), companyId: company.id, companyName: company.name, companyLogoUrl: company.logoUrl,
     companyVerified: company.verification === "approved", postedAt: now(), applicantsCount: 0, newApplicantsCount: 0,
   };
   db().jobs.push(job);
@@ -482,11 +499,13 @@ route("PATCH", "/employer/jobs/:id", (req) => {
   const u = need(req, "employer");
   const j = ownJob(u, req.params.id!);
   const company = db().companies.find((c) => c.id === j.companyId)!;
-  const next = { ...j, ...req.body };
+  // These come from the company or the system, never from the job form.
+  const { id: _id, companyId: _c, companyName: _n, companyVerified: _v, companyLogoUrl: _l, applicantsCount: _a, newApplicantsCount: _na, ...changes } = req.body ?? {};
+  const next = { ...j, ...changes };
   validateJob(next);
   if (next.status === "active" && j.status !== "active" && company.verification !== "approved")
     throw new HttpError(403, "You can publish jobs after your company is verified.", "NOT_VERIFIED");
-  Object.assign(j, req.body);
+  Object.assign(j, changes);
   if (req.body.status === "active" && !req.body.postedAt && j.applicantsCount === 0) j.postedAt = now();
   saveDb();
   return j;
@@ -528,6 +547,19 @@ route("GET", "/employer/jobs/:id/candidates", (req) => {
   return db().applications.filter((a) => a.jobId === j.id).map(toCandidate).sort((a, b) => b.appliedAt.localeCompare(a.appliedAt));
 });
 
+/** HR opened the candidate. Adds "Seen by employer" to the worker's progress, once. */
+route("POST", "/employer/applications/:id/view", (req) => {
+  const u = need(req, "employer");
+  const a = db().applications.find((x) => x.id === req.params.id);
+  if (!a) throw new HttpError(404, "Candidate not found.", "NOT_FOUND");
+  ownJob(u, a.jobId);
+  if (!a.timeline.some((e) => e.stage === "viewed")) {
+    a.timeline.push({ stage: "viewed", at: now() });
+    saveDb();
+  }
+  return { ok: true };
+});
+
 route("PATCH", "/employer/applications/:id", (req) => {
   const u = need(req, "employer");
   const a = db().applications.find((x) => x.id === req.params.id);
@@ -539,10 +571,28 @@ route("PATCH", "/employer/applications/:id", (req) => {
     const at = req.body?.interview?.at;
     if (!at || new Date(at) < new Date()) throw new HttpError(422, "Choose an interview time in the future.", "VALIDATION");
     const rescheduled = a.stage === "interview";
-    a.interview = { at, place: req.body.interview.place || j.location.city };
+    const iv = req.body.interview;
+    a.interview = { at, place: iv.place || j.location.city, contactPerson: iv.contactPerson?.trim() || undefined, bring: iv.bring?.trim() || undefined };
     if (rescheduled) notify(a.workerId, "Interview time changed", `${j.companyName} moved your ${j.title} interview. Please check the new time.`, `/worker/applications/${a.id}`);
   }
+  if (stage === "offer") {
+    const o = req.body?.offer;
+    if (!o || !(Number(o.pay) > 0)) throw new HttpError(422, "Add the pay you are offering.", "VALIDATION");
+    if (!o.joiningDate || new Date(`${o.joiningDate}T23:59`) < new Date()) throw new HttpError(422, "Choose a joining date from today onwards.", "VALIDATION");
+    if (!o.place?.trim()) throw new HttpError(422, "Add where the worker should report on the first day.", "VALIDATION");
+    const changed = a.stage === "offer";
+    a.offer = {
+      pay: Number(o.pay), payPeriod: o.payPeriod === "day" ? "day" : "month", payType: o.payType, joiningDate: o.joiningDate,
+      place: o.place.trim(), note: o.note?.trim() || undefined, sentAt: now(),
+    };
+    if (changed) {
+      a.offerResponse = undefined;
+      notify(a.workerId, "Offer updated", `${j.companyName} changed your offer for ${j.title}. Please check it again.`, `/worker/applications/${a.id}`);
+    }
+  }
   if (stage && stage !== a.stage) {
+    // Any decision means HR has looked at the profile.
+    if (!a.timeline.some((e) => e.stage === "viewed")) a.timeline.push({ stage: "viewed", at: now() });
     a.stage = stage;
     a.updatedAt = now();
     a.timeline.push({ stage, at: a.updatedAt, note: req.body?.note });
@@ -550,7 +600,9 @@ route("PATCH", "/employer/applications/:id", (req) => {
     const msg: Partial<Record<ApplicationStage, string>> = {
       shortlisted: `You were shortlisted for ${j.title}.`,
       interview: `${j.companyName} invited you for an interview for ${j.title}.`,
-      offer: `${j.companyName} sent you an offer for ${j.title}! 🎉`,
+      offer: a.offer
+        ? `${j.companyName} offered you ${j.title} at ₹${a.offer.pay.toLocaleString("en-IN")}/${a.offer.payPeriod}, joining ${new Date(a.offer.joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}. Please reply.`
+        : `${j.companyName} sent you an offer for ${j.title}! 🎉`,
       hired: `You are hired for ${j.title}. Congratulations!`,
       rejected: req.body?.notify === false ? undefined : `${j.companyName} did not select you this time for ${j.title}.`,
     };
@@ -565,15 +617,55 @@ route("GET", "/employer/company", (req) => db().companies.find((c) => c.id === m
 route("PATCH", "/employer/company", (req) => {
   const u = need(req, "employer");
   const c = db().companies.find((x) => x.id === myCompanyId(u))!;
-  const { id: _id, verification: _v, status: _s, ...changes } = req.body ?? {};
+  const { id: _id, verification: _v, status: _s, rejectionReason: _r, createdAt: _c, resubmit: _re, ...changes } = req.body ?? {};
+  if (changes.hrPhone && !/^[6-9]\d{9}$/.test(changes.hrPhone)) throw new HttpError(422, "Enter a valid 10-digit HR mobile number.", "VALIDATION");
+  if (changes.pincode && !/^\d{6}$/.test(changes.pincode)) throw new HttpError(422, "Pincode has 6 digits.", "VALIDATION");
+  if (typeof changes.logoUrl === "string" && changes.logoUrl.length > 300_000) throw new HttpError(413, "Logo is too big. Try a smaller image.", "TOO_BIG");
   Object.assign(c, changes);
   if (c.verification === "rejected" && req.body?.resubmit) {
     c.verification = "pending";
     c.rejectionReason = undefined;
   }
-  db().jobs.forEach((j) => j.companyId === c.id && (j.companyName = c.name));
+  db().jobs.forEach((j) => { if (j.companyId === c.id) { j.companyName = c.name; j.companyLogoUrl = c.logoUrl; } });
   saveDb();
   return c;
+});
+
+/* ---------- company verification documents ---------- */
+
+route("GET", "/employer/company/documents", (req) => {
+  const cid = myCompanyId(need(req, "employer"));
+  return companyDocs().filter((d) => d.companyId === cid).sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+});
+
+route("POST", "/employer/company/documents", async (req) => {
+  const cid = myCompanyId(need(req, "employer"));
+  const form = req.body as FormData;
+  const file = form?.get?.("file");
+  const type = String(form?.get?.("type") ?? "gst") as CompanyDocument["type"];
+  if (!(file instanceof File)) throw new HttpError(400, "Please choose a file.", "NO_FILE");
+  if (!/^(application\/pdf|image\/(jpeg|png|webp))$/.test(file.type)) throw new HttpError(415, "Please upload a photo (JPG/PNG) or a PDF.", "BAD_TYPE");
+  if (file.size > 5 * 1024 * 1024) throw new HttpError(413, "File is too big. Max size is 5 MB.", "TOO_BIG");
+  const doc: CompanyDocument = {
+    id: newId("cd"), companyId: cid, name: file.name, type: ["gst", "udyam", "cin", "other"].includes(type) ? type : "other",
+    sizeBytes: file.size, mimeType: file.type, uploadedAt: now(),
+    // Demo only, as with worker documents. The real API returns a storage URL.
+    url: file.size < 700_000 ? await readAsDataUrl(file) : URL.createObjectURL(file),
+  };
+  companyDocs().push(doc);
+  saveDb();
+  return doc;
+});
+
+route("DELETE", "/employer/company/documents/:id", (req) => {
+  const cid = myCompanyId(need(req, "employer"));
+  const c = db().companies.find((x) => x.id === cid)!;
+  if (c.verification === "approved") throw new HttpError(409, "Your company is already verified, so its documents can't be removed.", "LOCKED");
+  const doc = companyDocs().find((d) => d.id === req.params.id && d.companyId === cid);
+  if (!doc) throw new HttpError(404, "Document not found.", "NOT_FOUND");
+  db().companyDocs = companyDocs().filter((d) => d !== doc);
+  saveDb();
+  return { ok: true };
 });
 
 /* ---------------- admin ---------------- */
@@ -621,11 +713,15 @@ route("GET", "/admin/verifications", (req): VerificationItem[] => {
       id: c.id, kind: "company", title: c.name, subtitle: `${SECTOR_LABEL[c.sector]} · ${c.location.city || "City not set"}`,
       submittedAt: c.createdAt, status: c.verification,
       details: {
-        "GST number": c.gstNumber ?? "Not given", "Company size": c.size, Website: c.website ?? "—",
+        "GST number": c.gstNumber || "Not given", "Company size": c.size,
+        "Hiring as": c.hiringType ? HIRING_TYPE_LABEL[c.hiringType] : "Not given", Website: c.website || "—",
         "HR contact": hr ? `${c.hrName ?? hr.name}${c.hrDesignation ? ` (${c.hrDesignation})` : ""} · ${hr.email}` : "—",
-        "Plants / sites": c.sites?.length ? c.sites.join(", ") : "—", About: c.about ?? "—",
+        "HR mobile": c.hrPhone ? `+91 ${c.hrPhone}` : "Not given",
+        Address: [c.address, c.location.city, c.location.state, c.pincode].filter(Boolean).join(", ") || "—",
+        "Plants / sites": c.sites?.length ? c.sites.join(", ") : "—", About: c.about || "—",
       },
-      documents: [],
+      documents: companyDocs().filter((d) => d.companyId === c.id)
+        .map(({ id, name, type, url, mimeType, uploadedAt }) => ({ id, name, type, url, mimeType, uploadedAt })),
     };
   });
 });
@@ -910,7 +1006,7 @@ route("POST", "/me/delete", (req) => {
     });
     // Keep an empty shell so old applications still render for HR, but remove all personal data.
     const w = d.workers.find((x) => x.userId === u.id);
-    if (w) Object.assign(w, { name: "Deleted user", phone: "", email: undefined, dob: undefined, address: undefined, pincode: undefined, about: undefined, photoUrl: undefined, skills: [], licences: [], qualifications: [], languages: [] });
+    if (w) Object.assign(w, { name: "Deleted user", phone: "", email: undefined, dob: undefined, address: undefined, pincode: undefined, about: undefined, photoUrl: undefined, skills: [], licences: [], qualifications: [], languages: [], workHistory: [] });
     d.documents = d.documents.filter((x) => x.ownerId !== u.id);
     delete d.saved[u.id];
   } else if (u.companyId) {
@@ -935,10 +1031,7 @@ route("GET", "/companies", (req) => {
     .filter((c) => c.verification === "approved" && c.status === "active")
     .filter((c) => !text || `${c.name} ${c.location.city} ${SECTOR_LABEL[c.sector]}`.toLowerCase().includes(text))
     .filter((c) => !req.query.sector || c.sector === req.query.sector)
-    .map((c) => {
-      const { gstNumber: _gst, ...company } = c;
-      return { company: company as Company, openJobs: db().jobs.filter((j) => j.companyId === c.id && j.status === "active").length };
-    })
+    .map((c) => ({ company: publicCompany(c), openJobs: db().jobs.filter((j) => j.companyId === c.id && isOpenJob(j)).length }))
     .sort((a, b) => b.openJobs - a.openJobs);
 });
 

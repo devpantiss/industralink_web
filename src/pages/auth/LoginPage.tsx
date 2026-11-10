@@ -7,11 +7,12 @@ import { errorMessage, USE_MOCKS } from "@/api/client";
 import type { AuthResponse } from "@/types";
 import { homeFor, useAuth } from "@/app/AuthContext";
 import { takeNext } from "@/lib/next";
+import { landingFor } from "@/app/guards";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { AuthLayout } from "./AuthLayout";
 import { OtpForm } from "./OtpForm";
-import { lastAudience, RolePicker, type Audience } from "./RolePicker";
+import { audienceFromUrl, RolePicker, type Audience } from "./RolePicker";
 
 export function useFinishLogin() {
   const { signIn } = useAuth();
@@ -21,13 +22,13 @@ export function useFinishLogin() {
     signIn(res);
     const home = homeFor(res.user.role);
     const saved = takeNext(res.user.role);
-    navigate(from?.startsWith(home) ? from : saved ?? home, { replace: true });
+    navigate(from?.startsWith(home) ? from : saved ?? landingFor(res.user.role), { replace: true });
   };
 }
 
 export default function LoginPage() {
   const [sp] = useSearchParams();
-  const [as, setAs] = useState<Audience>((sp.get("as") as Audience) || lastAudience());
+  const [as, setAs] = useState<Audience>(() => audienceFromUrl(sp));
   const done = useFinishLogin();
   const navigate = useNavigate();
 

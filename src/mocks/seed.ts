@@ -3,7 +3,7 @@
  * UI code never imports it directly.
  */
 import type {
-  Application, AppNotification, AuditEntry, Company, Job, JobReport, Message, PlatformSettings, SupportTicket, User, UserSettings, WorkerDocument, WorkerProfile,
+  Application, AppNotification, AuditEntry, Company, CompanyDocument, Job, JobReport, Message, PlatformSettings, SupportTicket, User, UserSettings, WorkerDocument, WorkerProfile,
 } from "@/types";
 
 const DAY = 86_400_000;
@@ -21,6 +21,8 @@ export interface MockDb {
   jobs: Job[];
   applications: Application[];
   documents: WorkerDocument[];
+  /** Company verification proof. Added later, so older saved demo data may not have it. */
+  companyDocs?: CompanyDocument[];
   saved: Record<string, string[]>; // workerId -> jobIds
   notifications: AppNotification[];
   audit: AuditEntry[];
@@ -61,6 +63,10 @@ export function createSeed(): MockDb {
       skills: ["Arc welding", "MIG welding", "Gas cutting", "Blueprint reading"], email: "rajan.mehta@gmail.demo", dob: "1996-04-12", gender: "male", pincode: "768201",
       languages: ["Hindi", "Odia"], safetyTrainingHours: 40, employmentType: "permanent",
       about: "ITI welder with 4 years in an aluminium smelter. Comfortable with night shifts.",
+      workHistory: [
+        { company: "Hindalco, Hirakud", role: "Welder", from: "2021" },
+        { company: "Sai Fabricators, Sambalpur", role: "Helper welder", from: "2019", to: "2021" },
+      ],
     },
     {
       userId: "u-w2", name: "Suresh Kumar", phone: "9811122233", trade: "machine_operator", experience: "5_plus",
@@ -85,6 +91,7 @@ export function createSeed(): MockDb {
       qualifications: ["12th", "Diploma"], licences: ["Crane licence"], location: { city: "Visakhapatnam", state: "Andhra Pradesh" },
       willingToRelocate: true, expectedPay: 30000, shiftPreference: "rotational", availability: "30_days",
       skills: ["Gantry crane", "Mobile crane", "Rigging"], languages: ["Telugu", "Hindi", "English"], safetyTrainingHours: 60,
+      workHistory: [{ company: "Visakhapatnam Port Trust contractor", role: "Mobile crane operator", from: "2020", to: "2024" }],
     },
     {
       userId: "u-w6", name: "Manoj Das", phone: "9855566677", trade: "helper", experience: "1_2",
@@ -101,10 +108,10 @@ export function createSeed(): MockDb {
   ];
 
   const companies: Company[] = [
-    { id: "c-1", name: "Vedanta Aluminium", sector: "metals", size: "1000+", location: { city: "Jharsuguda", state: "Odisha" }, website: "vedanta.demo", gstNumber: "21AAACV1234F1Z5", about: "Large aluminium smelter and power plant in western Odisha.", hrName: "Priya Sharma", hrDesignation: "HR Manager", sites: ["Smelter Plant 2", "Power Plant", "Main Gate Workshop"], verification: "approved", status: "active", createdAt: ago(120) },
+    { id: "c-1", name: "Vedanta Aluminium", sector: "metals", size: "1000+", location: { city: "Jharsuguda", state: "Odisha" }, website: "vedanta.demo", gstNumber: "21AAACV1234F1Z5", about: "Large aluminium smelter and power plant in western Odisha.", hrName: "Priya Sharma", hrDesignation: "HR Manager", hrPhone: "9000000001", address: "Bhurkamunda, PO Sripura", pincode: "768202", hiringType: "direct", sites: ["Smelter Plant 2", "Power Plant", "Main Gate Workshop"], verification: "approved", status: "active", createdAt: ago(120) },
     { id: "c-2", name: "Coastal Port Services", sector: "shipping", size: "200–1000", location: { city: "Visakhapatnam", state: "Andhra Pradesh" }, gstNumber: "37AABCC5678K1Z2", about: "Cargo handling and stevedoring at Vizag port.", verification: "approved", status: "active", createdAt: ago(90) },
-    { id: "c-3", name: "Eastline Logistics", sector: "logistics", size: "50–200", location: { city: "Kolkata", state: "West Bengal" }, gstNumber: "19AAECE9012L1Z8", about: "Truck fleet and warehousing across East India.", verification: "pending", status: "pending", createdAt: ago(2) },
-    { id: "c-4", name: "PetroSafe Contractors", sector: "petroleum", size: "50–200", location: { city: "Jamnagar", state: "Gujarat" }, gstNumber: "24AAFCP3456M1Z1", about: "Maintenance contractor for refineries.", verification: "pending", status: "pending", createdAt: ago(1) },
+    { id: "c-3", name: "Eastline Logistics", sector: "logistics", size: "50–200", location: { city: "Kolkata", state: "West Bengal" }, gstNumber: "19AAECE9012L1Z8", about: "Truck fleet and warehousing across East India.", hrName: "Anita Roy", hrDesignation: "HR Executive", hrPhone: "9000000003", address: "Plot 14, Dankuni Industrial Area", pincode: "712311", hiringType: "direct", verification: "pending", status: "pending", createdAt: ago(2) },
+    { id: "c-4", name: "PetroSafe Contractors", sector: "petroleum", size: "50–200", location: { city: "Jamnagar", state: "Gujarat" }, gstNumber: "24AAFCP3456M1Z1", about: "Maintenance contractor for refineries.", hrPhone: "9000000004", hiringType: "agency", verification: "pending", status: "pending", createdAt: ago(1) },
     { id: "c-5", name: "BlackRock Mining Co.", sector: "mining", size: "1000+", location: { city: "Dhanbad", state: "Jharkhand" }, gstNumber: "20AABCB7890N1Z4", about: "Open-cast coal mining.", verification: "approved", status: "active", createdAt: ago(150) },
     { id: "c-6", name: "Pune Auto Components", sector: "automotive", size: "200–1000", location: { city: "Pune", state: "Maharashtra" }, gstNumber: "27AACCP1122P1Z9", about: "Pressed and welded parts for car makers.", verification: "approved", status: "active", createdAt: ago(100) },
   ];
@@ -140,6 +147,7 @@ export function createSeed(): MockDb {
       openings: 10, experience: "1_2", qualifications: ["ITI"], benefits: ["food", "stay", "pf_esi", "overtime"],
       responsibilities: ["Weld steel structures and pot lines", "Do gas cutting as per drawing", "Follow safety permits on every job"],
       requirements: ["ITI in Welder trade", "1+ year experience in plant or fabrication", "Ready for rotational shifts"],
+      licences: ["Welding cert"], payType: "in_hand", workHours: "8 hours, 6 days a week", address: "Smelter Plant 2, Bhurkamunda", pincode: "768202",
       postedAt: ago(2), deadline: ahead(20), applicantsCount: 24, newApplicantsCount: 12,
     }),
     job({
@@ -174,7 +182,7 @@ export function createSeed(): MockDb {
     }),
     job({
       id: "j-7", companyId: "c-2", title: "Forklift Operator – Walk-in", trade: "machine_operator", payMin: 700, payPeriod: "day", jobType: "walk_in",
-      walkIn: { date: ahead(4).slice(0, 10), time: "09:00", address: "Gate 3, Coastal Port Services, Vizag Port Area" },
+      walkIn: { date: ahead(4).slice(0, 10), endDate: ahead(6).slice(0, 10), time: "09:00", endTime: "13:00", address: "Gate 3, Coastal Port Services, Vizag Port Area", contactPerson: "Mr. Rao, security office", bring: "Aadhaar copy, 2 photos, forklift licence if you have one" },
       openings: 20, experience: "1_2", benefits: ["food", "transport"], postedAt: ago(1),
       responsibilities: ["Move cargo inside the yard"], requirements: ["Forklift licence or experience", "Bring Aadhaar and 2 photos"],
       applicantsCount: 8, newApplicantsCount: 8, hrPhone: "9000000002",
@@ -182,7 +190,7 @@ export function createSeed(): MockDb {
     job({
       id: "j-8", companyId: "c-5", title: "Dumper Operator", trade: "driver", payMin: 26000, payMax: 32000, shift: "rotational",
       openings: 12, experience: "3_5", qualifications: ["10th"], benefits: ["stay", "food", "pf_esi", "hazard_pay"],
-      responsibilities: ["Operate 60T dumpers in open-cast mine"], requirements: ["HMV licence", "DGMS certificate preferred"],
+      responsibilities: ["Operate 60T dumpers in open-cast mine"], requirements: ["HMV licence", "DGMS certificate preferred"], licences: ["HMV licence"], workHours: "12 hours, 6 days a week",
       postedAt: ago(5), applicantsCount: 31, newApplicantsCount: 4, hrPhone: "9000000005",
     }),
     job({
@@ -206,7 +214,7 @@ export function createSeed(): MockDb {
     job({
       id: "j-12", companyId: "c-3", title: "Truck Driver (HMV)", trade: "driver", payMin: 22000, payMax: 26000,
       openings: 10, experience: "3_5", benefits: ["food", "overtime"], postedAt: ago(1),
-      responsibilities: ["Long-route trips across East India"], requirements: ["HMV licence, 3+ years"],
+      responsibilities: ["Long-route trips across East India"], requirements: ["HMV licence, 3+ years"], licences: ["HMV licence"], jobType: "contract", contractLength: "11 months",
       hrPhone: "9000000003",
     }),
     job({
@@ -234,7 +242,7 @@ export function createSeed(): MockDb {
   };
 
   const applications: Application[] = [
-    app({ id: "a-1", jobId: "j-2", workerId: "u-w1", stage: "interview", interview: { at: ahead(1, 10), place: "Admin Building, Vedanta Aluminium, Jharsuguda" } }, 6),
+    app({ id: "a-1", jobId: "j-2", workerId: "u-w1", stage: "interview", interview: { at: ahead(1, 10), place: "Admin Building, Vedanta Aluminium, Jharsuguda", contactPerson: "Priya at reception", bring: "ITI certificate, Aadhaar, 2 passport photos" } }, 6),
     app({ id: "a-2", jobId: "j-6", workerId: "u-w1", stage: "shortlisted" }, 4),
     app({ id: "a-3", jobId: "j-10", workerId: "u-w1", stage: "applied" }, 2),
     app({ id: "a-4", jobId: "j-11", workerId: "u-w1", stage: "rejected", rejectionNote: "Position filled" }, 9),
@@ -242,7 +250,7 @@ export function createSeed(): MockDb {
     app({ id: "a-6", jobId: "j-1", workerId: "u-w3", stage: "shortlisted" }, 2),
     app({ id: "a-7", jobId: "j-1", workerId: "u-w5", stage: "interview", sentWith: "document", documentId: "d-7", interview: { at: ahead(2, 11), place: "HR Office, Gate 1" } }, 2),
     app({ id: "a-8", jobId: "j-1", workerId: "u-w7", stage: "applied" }, 0.2),
-    app({ id: "a-9", jobId: "j-1", workerId: "u-w4", stage: "offer" }, 2),
+    app({ id: "a-9", jobId: "j-1", workerId: "u-w4", stage: "offer", offer: { pay: 21000, payPeriod: "month", payType: "in_hand", joiningDate: ahead(10).slice(0, 10), place: "HR Office, Gate 1, Smelter Plant 2", note: "Bring your bank passbook for salary account.", sentAt: ago(0, 12) } }, 2),
     app({ id: "a-10", jobId: "j-1", workerId: "u-w6", stage: "rejected", rejectionNote: "Experience below requirement" }, 2),
     app({ id: "a-11", jobId: "j-2", workerId: "u-w2", stage: "shortlisted" }, 5),
     app({ id: "a-12", jobId: "j-3", workerId: "u-w5", stage: "applied" }, 1),
@@ -260,6 +268,12 @@ export function createSeed(): MockDb {
     { id: "d-7", ownerId: "u-w5", name: "Karthik_CV.pdf", type: "resume", sizeBytes: 380_000, mimeType: "application/pdf", uploadedAt: ago(15), url: "/demo/resume-generic.pdf", isDefaultResume: true },
   ];
 
+
+  // Verification proof for the companies waiting for approval.
+  const companyDocs: CompanyDocument[] = [
+    { id: "cd-1", companyId: "c-3", name: "GST_Certificate_Eastline.png", type: "gst", sizeBytes: 410_000, mimeType: "image/svg+xml", uploadedAt: ago(2), url: "/demo/certificate.svg" },
+    { id: "cd-2", companyId: "c-4", name: "Udyam_PetroSafe.pdf", type: "udyam", sizeBytes: 220_000, mimeType: "application/pdf", uploadedAt: ago(1), url: "/demo/resume-generic.pdf" },
+  ];
 
   const notifications: AppNotification[] = [
     { id: "n-1", userId: "u-w1", title: "Interview scheduled", body: "Vedanta Aluminium invited you for an interview tomorrow at 10:00 AM.", at: ago(0, 3), read: false, link: "/worker/applications/a-1" },
@@ -292,7 +306,7 @@ export function createSeed(): MockDb {
   ];
 
   return {
-    users, workers, companies, jobs, applications, documents, notifications, audit, reports, tickets, messages,
+    users, workers, companies, jobs, applications, documents, companyDocs, notifications, audit, reports, tickets, messages,
     saved: { "u-w1": ["j-1", "j-8", "j-14"] },
     settings: {},
     invites: [],

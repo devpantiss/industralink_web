@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { AuthLayout } from "./AuthLayout";
 import { OtpForm } from "./OtpForm";
-import { lastAudience, RolePicker, type Audience } from "./RolePicker";
+import { audienceFromUrl, RolePicker, type Audience } from "./RolePicker";
 import { getHandoff } from "@/lib/handoff";
 
 export default function SignupPage() {
   const [sp] = useSearchParams();
   const handoff = getHandoff(); // details typed on the landing site
-  const [as, setAs] = useState<Audience>((sp.get("as") as Audience) || (handoff.draft ? "employer" : lastAudience()));
+  const [as, setAs] = useState<Audience>(() => audienceFromUrl(sp, handoff.draft || handoff.company ? "employer" : undefined));
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const done = (res: AuthResponse) => {

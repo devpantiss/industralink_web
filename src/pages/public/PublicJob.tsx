@@ -6,14 +6,14 @@ import { publicApi } from "@/api/extra";
 import { qk } from "@/api/keys";
 import { errorCode } from "@/api/client";
 import { useAuth } from "@/app/AuthContext";
-import { EXPERIENCE_LABEL, JOB_TYPE_LABEL, SECTOR_LABEL, SHIFT_LABEL } from "@/lib/labels";
+import { EXPERIENCE_LABEL, PAY_TYPE_LABEL, SECTOR_LABEL, SHIFT_LABEL } from "@/lib/labels";
 import { formatDate, formatPay, timeAgo } from "@/lib/format";
 import { setNext } from "@/lib/next";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { VerifiedTick } from "@/components/ui/Badge";
 import { Banner } from "@/components/ui/Misc";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
-import { BenefitChips, CompanyLogo } from "@/components/domain/JobBits";
+import { BenefitChips, CompanyLogo, jobTypeText } from "@/components/domain/JobBits";
 import { FullPageLoader } from "@/app/guards";
 
 /**
@@ -45,7 +45,7 @@ export default function PublicJob() {
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/jobs" className="text-body font-medium text-ink-secondary hover:text-ink">All jobs</Link>
-            {!user && <Link to="/login" className="text-body font-medium text-primary hover:underline">Log in</Link>}
+            {!user && <Link to="/login?as=worker" className="text-body font-medium text-primary hover:underline">Log in</Link>}
           </div>
         </div>
       </header>
@@ -70,12 +70,14 @@ export default function PublicJob() {
                   </div>
                 </div>
                 <dl className="mt-6 grid gap-4 rounded-lg bg-surface-muted p-4 sm:grid-cols-2">
-                  <Fact icon={Wallet} label="Pay" value={formatPay(job.payMin, job.payMax, job.payPeriod, true)} />
-                  <Fact icon={MapPin} label="Work location" value={`${job.location.city}, ${job.location.state}`} />
+                  <Fact icon={Wallet} label={job.payType && (job.payMin || job.payMax) ? `Pay · ${PAY_TYPE_LABEL[job.payType]}` : "Pay"} value={formatPay(job.payMin, job.payMax, job.payPeriod, true)} />
+                  <Fact icon={MapPin} label="Work location" value={[job.address, job.location.city, job.location.state, job.pincode].filter(Boolean).join(", ")} />
                   {job.siteName && <Fact icon={Factory} label="Site / plant" value={job.siteName} />}
-                  <Fact icon={Clock} label="Shift" value={`${SHIFT_LABEL[job.shift]} · ${JOB_TYPE_LABEL[job.jobType]}`} />
+                  <Fact icon={Clock} label="Shift" value={`${SHIFT_LABEL[job.shift]} · ${jobTypeText(job)}`} />
+                  {job.workHours && <Fact icon={Clock} label="Working hours" value={job.workHours} />}
                   <Fact icon={Users} label="Openings" value={`${job.openings} people · ${EXPERIENCE_LABEL[job.experience]}`} />
                   {job.qualifications.length > 0 && <Fact icon={GraduationCap} label="Qualification" value={job.qualifications.join(", ")} />}
+                  {!!job.licences?.length && <Fact icon={GraduationCap} label="Licence needed" value={job.licences.join(", ")} />}
                   {job.deadline && <Fact icon={CalendarClock} label="Last date to apply" value={formatDate(job.deadline)} />}
                 </dl>
                 {job.benefits.length > 0 && <div className="mt-5"><h2 className="mb-2 text-h3">Benefits</h2><BenefitChips benefits={job.benefits} /></div>}

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgeCheck, Building2, CalendarClock, CheckCircle2, Flag, Globe, MapPin, MessageCircle, Phone, Share2, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, Building2, CalendarClock, CheckCircle2, Clock, Flag, Globe, MapPin, MessageCircle, Phone, Share2, ShieldCheck, Users } from "lucide-react";
 import type { JobForWorker } from "@/types";
-import { EXPERIENCE_LABEL, JOB_TYPE_LABEL, SECTOR_LABEL, SHIFT_LABEL } from "@/lib/labels";
+import { EXPERIENCE_LABEL, HIRING_TYPE_LABEL, PAY_TYPE_LABEL, SECTOR_LABEL, SHIFT_LABEL } from "@/lib/labels";
 import { formatDate, formatPay, timeAgo } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
@@ -12,7 +12,7 @@ import { qk } from "@/api/keys";
 import { useSlideIndicator } from "@/hooks/useSlideIndicator";
 import { useToast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/States";
-import { BenefitChips, CompanyLogo } from "./JobBits";
+import { BenefitChips, CompanyLogo, jobTypeText, walkInWhen } from "./JobBits";
 import { payShort, SaveButton } from "./JobCard";
 
 type Tab = "description" | "company";
@@ -62,7 +62,7 @@ export function JobDetailPanel({ job, onToggleSave, saving, onApply, onReport, c
       </header>
 
       <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Tile tone="bg-tile-green text-tile-green-ink" label={t("Salary")} value={pay ? <>{pay.range}<small className="ml-0.5 text-[11px] font-semibold opacity-75">{pay.per}</small></> : t("Not shown")} />
+        <Tile tone="bg-tile-green text-tile-green-ink" label={job.payType && pay ? `${t("Salary")} · ${t(PAY_TYPE_LABEL[job.payType])}` : t("Salary")} value={pay ? <>{pay.range}<small className="ml-0.5 text-[11px] font-semibold opacity-75">{pay.per}</small></> : t("Not shown")} />
         <Tile tone="bg-tile-blue text-tile-blue-ink" label={t("Shift")} value={t(SHIFT_LABEL[job.shift]).replace(/ shift$/i, "")} />
         <Tile tone="bg-tile-orange text-tile-orange-ink" label={t("Openings")} value={<>{job.openings}<small className="ml-1 text-[11px] font-semibold opacity-75">{t("{n} applied", { n: job.applicantsCount })}</small></>} />
         <Tile tone="bg-tile-purple text-tile-purple-ink" label={t("Experience")} value={t(EXPERIENCE_LABEL[job.experience])} />
@@ -131,7 +131,8 @@ function List({ title, items }: { title: string; items: string[] }) {
 }
 
 function DescriptionTab({ job }: { job: JobForWorker }) {
-  const walkInOver = job.jobType === "walk_in" && job.walkIn && new Date(`${job.walkIn.date}T23:59`) < new Date();
+  const walkInOver = job.jobType === "walk_in" && job.walkIn && new Date(`${job.walkIn.endDate || job.walkIn.date}T23:59`) < new Date();
+  const place = [job.siteName, job.address, job.location.city, job.location.state, job.pincode].filter(Boolean).join(", ");
   return (
     <>
       {job.jobType === "walk_in" && job.walkIn && (
@@ -140,14 +141,18 @@ function DescriptionTab({ job }: { job: JobForWorker }) {
           <div className="min-w-0">
             <p className="font-bold">{t("Walk-in interview")}{walkInOver ? ` · ${t("The walk-in date is over.")}` : ""}</p>
             {!walkInOver && <>
-              <p>{formatDate(job.walkIn.date)}, {job.walkIn.time} · {job.walkIn.address}</p>
+              <p>{walkInWhen(job.walkIn)} · {job.walkIn.address}</p>
+              {job.walkIn.contactPerson && <p>{t("Ask for")}: {job.walkIn.contactPerson}</p>}
+              {job.walkIn.bring && <p>{t("Bring")}: {job.walkIn.bring}</p>}
               <a className="mt-1 inline-block font-semibold underline underline-offset-2" target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${encodeURIComponent(job.walkIn.address)}`}>{t("Open in Maps")}</a>
             </>}
           </div>
         </div>
       )}
       <List title={t("Job description")} items={job.responsibilities} />
-      <List title={t("Requirements")} items={[...job.requirements, ...(job.qualifications.length ? [`${t("Qualification")}: ${job.qualifications.join(", ")}`] : [])]} />
+      <List title={t("Requirements")} items={[...job.requirements,
+        ...(job.qualifications.length ? [`${t("Qualification")}: ${job.qualifications.join(", ")}`] : []),
+        ...(job.licences?.length ? [`${t("Licence needed")}: ${job.licences.join(", ")}`] : [])]} />
       {job.benefits.length > 0 && (
         <div>
           <h3 className="mb-2 text-h3 font-bold text-ink">{t("Facilities")}</h3>
@@ -155,8 +160,10 @@ function DescriptionTab({ job }: { job: JobForWorker }) {
         </div>
       )}
       <div className="grid gap-2 sm:grid-cols-2">
-        <Fact icon={MapPin} label={t("Work location")} value={`${job.siteName ? `${job.siteName}, ` : ""}${job.location.city}, ${job.location.state}`} />
-        <Fact icon={Building2} label={t("Job type")} value={t(JOB_TYPE_LABEL[job.jobType])} />
+        <Fact icon={MapPin} label={t("Work location")} value={place}
+          link={job.address ? { href: `https://maps.google.com/?q=${encodeURIComponent(place)}`, label: t("Open in Maps") } : undefined} />
+        <Fact icon={Building2} label={t("Job type")} value={jobTypeText(job)} />
+        {job.workHours && <Fact icon={Clock} label={t("Working hours")} value={job.workHours} />}
         {job.deadline && <Fact icon={CalendarClock} label={t("Last date to apply")} value={formatDate(job.deadline)} />}
         <Fact icon={Phone} label={t("HR contact")} value={job.allowCalls ? `${t("After you're shortlisted")}${job.callHours ? ` · ${job.callHours}` : ""}` : t("The employer will contact you if you're shortlisted.")} />
       </div>
@@ -164,13 +171,14 @@ function DescriptionTab({ job }: { job: JobForWorker }) {
   );
 }
 
-function Fact({ icon: Icon, label, value }: { icon: typeof MapPin; label: string; value: string }) {
+function Fact({ icon: Icon, label, value, link }: { icon: typeof MapPin; label: string; value: string; link?: { href: string; label: string } }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-secondary"><Icon className="h-4 w-4" aria-hidden /></span>
       <div className="min-w-0">
         <p className="text-caption text-ink-muted">{label}</p>
         <p className="text-small font-semibold text-ink">{value}</p>
+        {link && <a href={link.href} target="_blank" rel="noreferrer" className="text-caption font-semibold text-primary hover:underline">{link.label}</a>}
       </div>
     </div>
   );
@@ -192,6 +200,7 @@ function CompanyTab({ job }: { job: JobForWorker }) {
         <CoFact label={t("Industry")} value={t(SECTOR_LABEL[c.sector])} />
         <CoFact label={t("Workers")} value={<span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4 text-ink-muted" aria-hidden />{c.size}</span>} />
         <CoFact label={t("Location")} value={`${c.location.city}, ${c.location.state}`} />
+        {c.hiringType && <CoFact label={t("Hiring as")} value={t(HIRING_TYPE_LABEL[c.hiringType])} />}
         <CoFact label={t("Verified")} value={c.verification === "approved"
           ? <span className="inline-flex items-center gap-1.5 text-success-fg"><CheckCircle2 className="h-4 w-4" aria-hidden />{t("Verified by IndustriaLink")}</span>
           : <span className="text-warning-fg">{t("Not yet verified")}</span>} />

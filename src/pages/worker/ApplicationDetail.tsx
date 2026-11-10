@@ -8,7 +8,9 @@ import { Field, Textarea } from "@/components/ui/Field";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
 import { errorCode, errorMessage } from "@/api/client";
-import { formatDate, formatDateTime, formatPay } from "@/lib/format";
+import { formatDate, formatDateTime, formatNumber, formatPay } from "@/lib/format";
+import { PAY_TYPE_LABEL } from "@/lib/labels";
+import type { Offer } from "@/types";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { StageBadge } from "@/components/ui/Badge";
 import { Banner } from "@/components/ui/Misc";
@@ -70,7 +72,8 @@ export default function ApplicationDetail() {
           {t("Not selected this time. Don't worry, there are more jobs like this waiting.")}
         </Banner>
       )}
-      {a.stage === "offer" && <OfferCard appId={a.id} accepted={a.offerResponse === "accepted"} company={job.companyName} />}
+      {a.stage === "offer" && <OfferCard appId={a.id} accepted={a.offerResponse === "accepted"} company={job.companyName} offer={a.offer} />}
+      {a.stage === "hired" && a.offer && <Banner tone="success" icon={<PartyPopper className="h-5 w-5" />}>{t("Joining date")}: <b>{formatDate(a.offer.joiningDate)}</b> · {a.offer.place}</Banner>}
       {a.stage === "withdrawn" && a.offerResponse === "declined" && <Banner tone="info">{t("You declined this offer. The employer has been told.")}</Banner>}
 
       {a.stage === "interview" && a.interview && (
@@ -79,7 +82,8 @@ export default function ApplicationDetail() {
           <CardBody className="space-y-3">
             <p className="text-h3">{formatDateTime(a.interview.at)}</p>
             <p className="flex items-start gap-2 text-body text-ink-secondary"><MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {a.interview.place}</p>
-            <p className="text-small text-ink-muted">{t("Bring your Aadhaar, certificates and 2 passport photos.")}</p>
+            {a.interview.contactPerson && <p className="text-body text-ink-secondary">{t("Ask for")}: <span className="font-medium text-ink">{a.interview.contactPerson}</span></p>}
+            <p className="text-small text-ink-muted">{a.interview.bring ? `${t("Bring")}: ${a.interview.bring}` : t("Bring your Aadhaar, certificates and 2 passport photos.")}</p>
             <InterviewReply appId={a.id} response={a.interview.response} note={a.interview.responseNote} />
             <div className="flex flex-wrap gap-2 pt-1">
               <a className={buttonClass("secondary", "md")} target="_blank" rel="noreferrer" href={calendarLink(`Interview: ${job.title}`, a.interview.at, a.interview.place)}>{t("Add to calendar")}</a>
@@ -172,7 +176,18 @@ function InterviewReply({ appId, response, note }: { appId: string; response?: "
   );
 }
 
-function OfferCard({ appId, accepted, company }: { appId: string; accepted: boolean; company: string }) {
+function OfferDetails({ offer }: { offer: Offer }) {
+  return (
+    <dl className="grid gap-2 rounded-lg bg-surface-muted p-3 text-body sm:grid-cols-3">
+      <div><dt className="text-caption text-ink-muted">{t("Pay")}</dt><dd className="font-semibold text-ink">₹{formatNumber(offer.pay)} / {t(offer.payPeriod)}{offer.payType ? ` · ${t(PAY_TYPE_LABEL[offer.payType])}` : ""}</dd></div>
+      <div><dt className="text-caption text-ink-muted">{t("Joining date")}</dt><dd className="font-semibold text-ink">{formatDate(offer.joiningDate)}</dd></div>
+      <div><dt className="text-caption text-ink-muted">{t("Report at")}</dt><dd className="font-semibold text-ink">{offer.place}</dd></div>
+      {offer.note && <div className="sm:col-span-3"><dt className="text-caption text-ink-muted">{t("Note from HR")}</dt><dd className="text-ink">{offer.note}</dd></div>}
+    </dl>
+  );
+}
+
+function OfferCard({ appId, accepted, company, offer }: { appId: string; accepted: boolean; company: string; offer?: Offer }) {
   const [declining, setDeclining] = useState(false);
   const [why, setWhy] = useState("");
   const qc = useQueryClient();
@@ -182,11 +197,21 @@ function OfferCard({ appId, accepted, company }: { appId: string; accepted: bool
     onSuccess: (_d, r) => { setDeclining(false); qc.invalidateQueries({ queryKey: qk.worker.all }); toast.success(r === "accepted" ? t("Offer accepted. Congratulations!") : t("Offer declined")); },
     onError: (e) => toast.error(errorMessage(e)),
   });
-  if (accepted) return <Banner tone="success" icon={<PartyPopper className="h-5 w-5" />}>{t("You accepted the offer from {company}. HR will call you with your joining date.", { company })}</Banner>;
+  if (accepted) {
+    return (
+      <Card className="border-success-fg/30">
+        <CardBody className="space-y-3">
+          <p className="flex items-center gap-2 text-h3 text-ink"><PartyPopper className="h-5 w-5 text-success-fg" aria-hidden /> {offer ? t("You accepted the offer from {company}.", { company }) : t("You accepted the offer from {company}. HR will call you with your joining date.", { company })}</p>
+          {offer && <OfferDetails offer={offer} />}
+        </CardBody>
+      </Card>
+    );
+  }
   return (
     <Card className="border-success-fg/30">
       <CardBody className="space-y-3">
         <p className="flex items-center gap-2 text-h3 text-ink"><PartyPopper className="h-5 w-5 text-success-fg" aria-hidden /> {t("{company} sent you an offer!", { company })}</p>
+        {offer && <OfferDetails offer={offer} />}
         <p className="text-body text-ink-secondary">{t("Tell them if you'll take the job. Accept only if you plan to join.")}</p>
         <div className="flex flex-wrap gap-2">
           <Button loading={reply.isPending && reply.variables === "accepted"} onClick={() => reply.mutate("accepted")}>{t("Accept offer")}</Button>

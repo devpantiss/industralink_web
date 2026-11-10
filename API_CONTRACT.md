@@ -37,15 +37,15 @@ The types (`User`, `Job`, …) are defined in `src/types/index.ts`.
 | Method | Path | Body / query | Returns | Notable errors |
 |---|---|---|---|---|
 | GET | `/worker/summary` | | `WorkerSummary` (incl. `missing[]` that drives the profile banner) | |
-| GET | `/jobs` | query: `JobSearchParams` | `Paginated<JobForWorker>` (page size 10, only active jobs, unpaid jobs last) | |
+| GET | `/jobs` | query: `JobSearchParams` | `Paginated<JobForWorker>` (page size 10, only active jobs whose `deadline` hasn't passed, unpaid jobs last) | |
 | GET | `/jobs/:id` | | `JobForWorker` (**never includes `hrPhone`**) | 404 `NOT_FOUND` |
-| GET | `/companies/:id` | | `CompanyForWorker` (company without GST + its active jobs) | 404 |
+| GET | `/companies/:id` | | `CompanyForWorker` (company **without `gstNumber` and `hrPhone`** + its open jobs) | 404 |
 | POST / DELETE | `/jobs/:id/save` | | `{ saved }` | |
 | GET | `/worker/saved` | | `JobForWorker[]` | |
 | POST | `/jobs/:id/apply` | `{ sentWith: "profile" \| "document", documentId? }` | `Application` | 410 `JOB_CLOSED`, 409 `ALREADY_APPLIED`, 409 `WITHDRAWN` |
 | GET | `/worker/applications` | | `WorkerApplication[]`. `contact` is set only when stage ≥ shortlisted **and** `job.allowCalls` | |
 | GET | `/worker/applications/:id` | | `WorkerApplication` | 404 |
-| POST | `/worker/applications/:id/withdraw` | | `Application` | 409 `CLOSED` |
+| POST | `/worker/applications/:id/withdraw` | | `WorkerApplication` | 409 `CLOSED` |
 | GET / PATCH | `/worker/profile` | PATCH: `Partial<WorkerProfile>` (phone and verification can't be changed) | `WorkerProfile` | |
 | GET | `/worker/documents` | | `WorkerDocument[]` (no review status: documents are not verified) | |
 | POST | `/worker/documents` | `multipart/form-data`: `file`, `type` (DocType). PDF/JPG/PNG/WEBP, max 5 MB | `WorkerDocument` (with a `url` to the stored file) | 415 `BAD_TYPE`, 413 `TOO_BIG` |
@@ -64,8 +64,12 @@ The types (`User`, `Job`, …) are defined in `src/types/index.ts`.
 | DELETE | `/employer/jobs/:id` | | `{ ok }` | 409 `HAS_APPLICANTS` (close it instead) |
 | GET | `/employer/jobs/:id/candidates` | | `Candidate[]` incl. the worker's `documents` (also resets the job's "new applicants" count) | |
 | GET | `/employer/candidates` | query: `q?`, `stage?`, `jobId?` | `Candidate[]` across all the company's jobs | |
-| PATCH | `/employer/applications/:id` | `{ stage, note?, notify?, interview?: { at, place } }` | `Candidate` | 409 `WITHDRAWN`, 422 (interview time in the past) |
-| GET / PATCH | `/employer/company` | PATCH: `Partial<Company>` + `resubmit?: boolean` | `Company` | |
+| PATCH | `/employer/applications/:id` | `{ stage, note?, notify?, interview?: { at, place, contactPerson?, bring? }, offer?: { pay, payPeriod, payType?, joiningDate, place, note? } }`. `offer` is required when `stage` is `offer`; sending it again while in `offer` updates the offer and clears the worker's reply | `Candidate` | 409 `WITHDRAWN`, 422 (interview time in the past, offer without pay / joining date / place) |
+| POST | `/employer/applications/:id/view` | | `{ ok }` | Adds a `viewed` timeline event once ("Seen by employer" for the worker). Any stage change also adds it if missing |
+| GET / PATCH | `/employer/company` | PATCH: `Partial<Company>` + `resubmit?: boolean` | `Company` | 422 (bad `hrPhone` / `pincode`). Changing `name` or `logoUrl` also updates the company's jobs |
+| GET | `/employer/company/documents` | | `CompanyDocument[]` | Verification proof. Only the company and admins see these |
+| POST | `/employer/company/documents` | `multipart/form-data`: `file`, `type` (`gst` \| `udyam` \| `cin` \| `other`). PDF/JPG/PNG/WEBP, max 5 MB | `CompanyDocument` | 415, 413 |
+| DELETE | `/employer/company/documents/:id` | | `{ ok }` | 409 `LOCKED` once the company is approved |
 
 Moving a candidate sends the worker a notification (rejection only if `notify` isn't `false`).
 
@@ -74,7 +78,7 @@ Moving a candidate sends the worker a notification (rejection only if `notify` i
 | Method | Path | Body / query | Returns | Notable errors |
 |---|---|---|---|---|
 | GET | `/admin/summary` | | `AdminSummary` | |
-| GET | `/admin/verifications` | query: `status?` (default pending) | `VerificationItem[]` (companies only) | |
+| GET | `/admin/verifications` | query: `status?` (default pending) | `VerificationItem[]` (companies only). `documents` = the company's uploaded `CompanyDocument`s; `details` include HR mobile, address and "Hiring as" | |
 | POST | `/admin/verifications/company/:id` | `{ decision: "approve" \| "reject", reason? }` | `{ ok }` | 422 (reject without reason), 409 `ALREADY_DONE` |
 | GET | `/admin/jobs` | query: `q?`, `status?` | `AdminJobRow[]` | |
 | POST | `/admin/jobs/:id/remove` | `{ reason }` | `{ ok }` (closes the job, tells the company) | 422 |
@@ -141,3 +145,18 @@ Shapes are in `src/types/index.ts`. Mock versions are in `src/mocks/handlers.ts`
 | GET / PATCH | `/admin/settings` | `Partial<PlatformSettings>` | `PlatformSettings` | Messaging, Find workers, auto-approve. Logged. |
 
 `AdminSummary` gained `openReports` and `openTickets`.
+
+## Added for the data gaps (Nov 2026)
+
+**Privacy rule for every worker response:** `rejectionNote` and the `note` on a `rejected` timeline event are for HR only ("only you see this"). Strip them from `WorkerApplication` (list, detail, withdraw, interview / offer replies). Company `gstNumber` and `hrPhone` are never sent to workers.
+
+New optional fields (all optional, so old data still works):
+
+- `Company`: `logoUrl`, `hrPhone`, `address`, `pincode`, `hiringType` (`direct` \| `agency`).
+- `Job`: `companyLogoUrl` (copied from the company, like `companyName`), `licences[]` (same list as worker licences), `payType` (`in_hand` \| `ctc`), `workHours`, `contractLength` (contract jobs), `address`, `pincode`. Publishing needs `location.state`.
+- `WalkIn`: `endDate`, `endTime`, `contactPerson`, `bring`.
+- `Interview`: `contactPerson`, `bring`.
+- `Application.offer`: `{ pay, payPeriod, payType?, joiningDate, place, note?, sentAt }`.
+- `WorkerProfile.workHistory[]`: `{ company, role, from, to? }` (years; no `to` = still there).
+
+Backend still to do: close jobs automatically at `deadline` (search already hides them), real distance for "Near me" (needs coordinates), email verification for employers.

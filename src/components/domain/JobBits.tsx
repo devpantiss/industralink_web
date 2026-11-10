@@ -1,7 +1,8 @@
 import { Bus, Car, Clock, Factory, Fuel, Hammer, HardHat, Pickaxe, ShieldAlert, Ship, Timer, Truck, UtensilsCrossed, Home, Landmark, type LucideIcon } from "lucide-react";
 import { t } from "@/lib/i18n";
 import type { Benefit, Job, Sector } from "@/types";
-import { BENEFIT_LABEL } from "@/lib/labels";
+import { BENEFIT_LABEL, JOB_TYPE_LABEL } from "@/lib/labels";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export const SECTOR_ICON: Record<Sector, LucideIcon> = {
@@ -60,7 +61,15 @@ export function companyColor(name: string) {
 
 const LOGO_SIZE = { sm: "h-9 w-9 rounded-[10px]", md: "h-11 w-11 rounded-xl", lg: "h-14 w-14 rounded-2xl" } as const;
 
-export function CompanyLogo({ job, size = "md", className }: { job: Pick<Job, "companyName" | "sector">; size?: keyof typeof LOGO_SIZE; className?: string }) {
+/** The company's uploaded logo, or a coloured tile with an industry glyph when there is none. */
+export function CompanyLogo({ job, size = "md", className }: { job: Pick<Job, "companyName" | "sector" | "companyLogoUrl">; size?: keyof typeof LOGO_SIZE; className?: string }) {
+  if (job.companyLogoUrl) {
+    return (
+      <span className={cn("inline-flex shrink-0 items-center justify-center overflow-hidden border border-border bg-white", LOGO_SIZE[size], className)} aria-hidden>
+        <img src={job.companyLogoUrl} alt="" className="h-full w-full object-contain" loading="lazy" />
+      </span>
+    );
+  }
   const glyph = SECTOR_GLYPH[job.sector];
   return (
     <span className={cn("inline-flex shrink-0 items-center justify-center", LOGO_SIZE[size], className)} style={{ background: companyColor(job.companyName) }} aria-hidden>
@@ -73,3 +82,16 @@ export function CompanyLogo({ job, size = "md", className }: { job: Pick<Job, "c
 
 export const ShiftIcon = Clock;
 export const TradeIcon = Hammer;
+
+/** "Contract · 6 months", or just the job type. */
+export function jobTypeText(job: Pick<Job, "jobType" | "contractLength">) {
+  const base = t(JOB_TYPE_LABEL[job.jobType]);
+  return job.jobType === "contract" && job.contractLength ? `${base} · ${job.contractLength}` : base;
+}
+
+/** "12 Nov – 14 Nov, 09:00 – 13:00" for a walk-in. */
+export function walkInWhen(w: NonNullable<Job["walkIn"]>) {
+  const days = w.endDate && w.endDate !== w.date ? `${formatDate(w.date)} – ${formatDate(w.endDate)}` : formatDate(w.date);
+  const time = w.time ? (w.endTime ? `${w.time} – ${w.endTime}` : w.time) : "";
+  return [days, time].filter(Boolean).join(", ");
+}

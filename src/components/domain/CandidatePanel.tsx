@@ -1,24 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
-import { CalendarClock, ChevronRight, Download, ExternalLink, FileImage, FileText, MapPin, MessageCircle, MessageSquare, Phone, Printer, Star } from "lucide-react";
+import { Briefcase, CalendarClock, ChevronRight, Download, ExternalLink, FileImage, FileText, MapPin, MessageCircle, MessageSquare, Phone, Printer, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { ApplicationStage, Candidate, WorkerDocument } from "@/types";
-import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EMPLOYMENT_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
+import type { ApplicationStage, Candidate, DocType, Offer, PayPeriod, PayType, WorkHistoryItem, WorkerDocument } from "@/types";
+import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EMPLOYMENT_TYPE_LABEL, EXPERIENCE_LABEL, PAY_TYPE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { formatBytes, formatDate, formatDateTime, formatNumber } from "@/lib/format";
-import { employerApi } from "@/api/employer";
+import { employerApi, type InterviewInput, type OfferInput } from "@/api/employer";
 import { qk } from "@/api/keys";
 import { errorMessage } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { Avatar, DefinitionList, Tabs } from "@/components/ui/Misc";
 import { Badge, StageBadge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
-import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { Checkbox, Chip, Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { ConfirmDialog, Drawer, Modal } from "@/components/ui/Overlay";
 import { useToast } from "@/components/ui/Toast";
 
 /* ---------------- Document preview ---------------- */
 
-export function DocumentPreview({ doc, tall }: { doc: WorkerDocument; tall?: boolean }) {
+/** Shows an image or PDF inline. `label` overrides the worker document type label (used for company documents). */
+export function DocumentPreview({ doc, tall, label }: { doc: Pick<WorkerDocument, "name" | "url" | "mimeType"> & { type: string }; tall?: boolean; label?: string }) {
   const isImage = doc.mimeType.startsWith("image/") || doc.url?.endsWith(".svg");
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-surface">
@@ -32,7 +33,7 @@ export function DocumentPreview({ doc, tall }: { doc: WorkerDocument; tall?: boo
         )}
       </div>
       <div className="flex items-center gap-3 border-t border-border px-3 py-2">
-        <span className="min-w-0 flex-1 truncate text-small"><span className="font-medium text-ink">{DOC_TYPE_LABEL[doc.type]}</span> <span className="text-ink-muted">· {doc.name}</span></span>
+        <span className="min-w-0 flex-1 truncate text-small"><span className="font-medium text-ink">{label ?? DOC_TYPE_LABEL[doc.type as DocType]}</span> <span className="text-ink-muted">· {doc.name}</span></span>
         {doc.url && (
           <>
             <a href={doc.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small font-medium text-primary hover:underline">Open <ExternalLink className="h-3.5 w-3.5" aria-hidden /></a>
@@ -41,6 +42,56 @@ export function DocumentPreview({ doc, tall }: { doc: WorkerDocument; tall?: boo
         )}
       </div>
     </div>
+  );
+}
+
+/* ---------------- Seen, work history, offer ---------------- */
+
+const seenSent = new Set<string>();
+
+/** Opening a candidate tells the worker "Seen by employer" (once per application). */
+export function useMarkSeen(c: Candidate) {
+  const qc = useQueryClient();
+  const seen = c.timeline.some((e) => e.stage === "viewed");
+  useEffect(() => {
+    if (seen || seenSent.has(c.id)) return;
+    seenSent.add(c.id);
+    employerApi.viewCandidate(c.id)
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["employer", "candidates"] });
+        qc.invalidateQueries({ queryKey: ["employer", "all-candidates"] });
+      })
+      .catch(() => seenSent.delete(c.id));
+  }, [c.id, seen, qc]);
+}
+
+export function WorkHistoryList({ items }: { items?: WorkHistoryItem[] }) {
+  if (!items?.length) return null;
+  return (
+    <ul className="space-y-2.5">
+      {items.map((h, i) => (
+        <li key={`${h.company}-${i}`} className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-secondary"><Briefcase className="h-4 w-4" aria-hidden /></span>
+          <span className="min-w-0">
+            <span className="block text-body font-semibold text-ink">{h.role}</span>
+            <span className="block text-small text-ink-secondary">{h.company} · {h.from}–{h.to || "now"}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export const offerPayText = (o: Pick<Offer, "pay" | "payPeriod" | "payType">) =>
+  `₹${formatNumber(o.pay)} / ${o.payPeriod}${o.payType ? ` (${PAY_TYPE_LABEL[o.payType].toLowerCase()})` : ""}`;
+
+/** What HR offered, for HR's own screens. */
+export function OfferSummary({ offer }: { offer?: Offer }) {
+  if (!offer) return <span className="block font-normal">No offer details were saved for this offer.</span>;
+  return (
+    <span className="block font-normal">
+      {offerPayText(offer)} · joining {formatDate(offer.joiningDate)} · {offer.place}{offer.note ? ` · "${offer.note}"` : ""}
+    </span>
   );
 }
 
@@ -66,6 +117,7 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
   const [tab, setTab] = useState<PanelTab>("resume");
   const [docId, setDocId] = useState<string | undefined>(sent?.id ?? resumes[0]?.id);
   const shownDoc = c.documents.find((d) => d.id === docId);
+  useMarkSeen(c);
 
   return (
     <Drawer open onClose={onClose} width="max-w-[640px]"
@@ -97,6 +149,9 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
           <div className="rounded-lg bg-interview-bg p-4">
             <p className="flex items-center gap-2 text-body font-medium text-interview-fg"><CalendarClock className="h-4 w-4" aria-hidden /> Interview {formatDateTime(c.interview.at)}</p>
             <p className="mt-1 flex items-center gap-2 text-small text-ink-secondary"><MapPin className="h-4 w-4" aria-hidden /> {c.interview.place}</p>
+            {(c.interview.contactPerson || c.interview.bring) && (
+              <p className="mt-1 text-small text-ink-secondary">{[c.interview.contactPerson && `Ask for: ${c.interview.contactPerson}`, c.interview.bring && `Bring: ${c.interview.bring}`].filter(Boolean).join(" · ")}</p>
+            )}
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-interview-fg/15 pt-3">
               <ReplyBadge response={c.interview.response} />
               {c.interview.responseNote && <span className="text-small text-ink-secondary">"{c.interview.responseNote}"</span>}
@@ -107,6 +162,8 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
         {c.stage === "offer" && (
           <div className={cn("rounded-lg p-4 text-body", c.offerResponse === "accepted" ? "bg-success-bg text-success-fg" : "bg-surface-muted text-ink-secondary")}>
             {c.offerResponse === "accepted" ? <span className="font-medium">✓ Accepted your offer. Mark as hired once they join.</span> : "Offer sent. Waiting for the worker to accept."}
+            <OfferSummary offer={c.offer} />
+            {c.offerResponse !== "accepted" && <Button size="sm" variant="secondary" className="mt-2" onClick={() => onMove("offer")}>Change offer</Button>}
           </div>
         )}
         {c.offerResponse === "declined" && <div className="rounded-lg bg-warning-bg p-4 text-body text-warning-fg">The worker declined your offer.</div>}
@@ -170,6 +227,7 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
               </div>
             )}
             {w.about && <div><p className="text-caption text-ink-muted">About</p><p className="mt-1 text-body text-ink">{w.about}</p></div>}
+            {!!w.workHistory?.length && <div><p className="mb-2 text-caption text-ink-muted">Work history</p><WorkHistoryList items={w.workHistory} /></div>}
           </div>
         )}
 
@@ -194,8 +252,10 @@ export function CandidateDrawer({ c, onClose, onMove, moving, showJob }: { c: Ca
 interface PendingMove { ids: string[]; stage: ApplicationStage }
 
 /** Handles stage changes, including the extra dialogs for Interview and Reject. */
-export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone, job }: {
+export function useCandidateMoves({ list, optimisticKey, defaultPlace, offerDefaults, onDone, job }: {
   list: Candidate[]; optimisticKey?: QueryKey; defaultPlace?: string; onDone?: () => void;
+  /** Pre-fills the offer dialog from the job. */
+  offerDefaults?: { pay?: number; payPeriod: PayPeriod; payType?: PayType };
   /** When given, HR is asked to close the job once every opening is filled. */
   job?: { id: string; title: string; openings: number; status: string };
 }) {
@@ -205,8 +265,8 @@ export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone, j
   const toast = useToast();
 
   const move = useMutation({
-    mutationFn: async ({ ids, stage, note, notify, interview }: PendingMove & { note?: string; notify?: boolean; interview?: { at: string; place: string } }) => {
-      for (const cid of ids) await employerApi.moveCandidate(cid, { stage, note, notify, interview });
+    mutationFn: async ({ ids, stage, note, notify, interview, offer }: PendingMove & { note?: string; notify?: boolean; interview?: InterviewInput; offer?: OfferInput }) => {
+      for (const cid of ids) await employerApi.moveCandidate(cid, { stage, note, notify, interview, offer });
     },
     onMutate: async ({ ids, stage }) => {
       if (!optimisticKey) return {};
@@ -231,7 +291,7 @@ export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone, j
   const requestMove = (ids: string[], stage: ApplicationStage) => {
     const movable = ids.filter((cid) => list.find((c) => c.id === cid)?.stage !== "withdrawn");
     if (!movable.length) return toast.error("Withdrawn candidates can't be moved.");
-    if (stage === "interview" || stage === "rejected") setPending({ ids: movable, stage });
+    if (stage === "interview" || stage === "rejected" || stage === "offer") setPending({ ids: movable, stage });
     else move.mutate({ ids: movable, stage });
   };
 
@@ -248,6 +308,10 @@ export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone, j
         message={`You've hired ${job?.openings ?? ""} ${job?.openings === 1 ? "person" : "people"} for "${job?.title ?? ""}". Close the job so new people stop applying? Candidates still in progress stay on your board.`} />
       <InterviewDialog open={pending?.stage === "interview"} count={pending?.ids.length ?? 0} defaultPlace={defaultPlace ?? ""}
         onClose={() => setPending(null)} loading={move.isPending} onConfirm={(interview) => pending && move.mutate({ ...pending, interview })} />
+      {pending?.stage === "offer" && (
+        <OfferDialog count={pending.ids.length} defaults={{ ...offerDefaults, place: defaultPlace ?? "", ...(pending.ids.length === 1 ? list.find((c) => c.id === pending.ids[0])?.offer : undefined) }}
+          onClose={() => setPending(null)} loading={move.isPending} onConfirm={(offer) => move.mutate({ ...pending, offer })} />
+      )}
       <RejectDialog open={pending?.stage === "rejected"} count={pending?.ids.length ?? 0} onClose={() => setPending(null)} loading={move.isPending}
         onConfirm={(note, notify) => pending && move.mutate({ ...pending, note, notify })} />
     </>
@@ -256,18 +320,20 @@ export function useCandidateMoves({ list, optimisticKey, defaultPlace, onDone, j
   return { requestMove, dialogs, moving: move.isPending };
 }
 
-function InterviewDialog({ open, count, defaultPlace, onClose, onConfirm, loading }: { open: boolean; count: number; defaultPlace: string; onClose: () => void; onConfirm: (i: { at: string; place: string }) => void; loading: boolean }) {
+function InterviewDialog({ open, count, defaultPlace, onClose, onConfirm, loading }: { open: boolean; count: number; defaultPlace: string; onClose: () => void; onConfirm: (i: InterviewInput) => void; loading: boolean }) {
   const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
   const [date, setDate] = useState(tomorrow);
   const [time, setTime] = useState("10:00");
   const [place, setPlace] = useState(defaultPlace);
+  const [contactPerson, setContactPerson] = useState("");
+  const [bring, setBring] = useState("");
   const [error, setError] = useState<string>();
   const submit = () => {
     const at = new Date(`${date}T${time}`);
     if (Number.isNaN(at.getTime()) || at < new Date()) return setError("Choose a time in the future.");
     if (!place.trim()) return setError("Add the interview place.");
     setError(undefined);
-    onConfirm({ at: at.toISOString(), place: place.trim() });
+    onConfirm({ at: at.toISOString(), place: place.trim(), contactPerson: contactPerson.trim() || undefined, bring: bring.trim() || undefined });
   };
   return (
     <Modal open={open} onClose={onClose} title={count > 1 ? `Schedule interview for ${count} candidates` : "Schedule interview"}
@@ -278,7 +344,55 @@ function InterviewDialog({ open, count, defaultPlace, onClose, onConfirm, loadin
           <Field label="Time">{(id) => <Input id={id} type="time" value={time} onChange={(e) => setTime(e.target.value)} />}</Field>
         </div>
         <Field label="Place" error={error}>{(id, d) => <Input id={id} aria-describedby={d} value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Gate no., building, area" />}</Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Ask for (optional)">{(id) => <Input id={id} value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="e.g. Priya at reception" />}</Field>
+          <Field label="What to bring (optional)">{(id) => <Input id={id} value={bring} onChange={(e) => setBring(e.target.value)} placeholder="e.g. Aadhaar, ITI certificate" />}</Field>
+        </div>
         <p className="text-small text-ink-muted">The worker gets a notification with the date, time and place.</p>
+      </div>
+    </Modal>
+  );
+}
+
+function OfferDialog({ count, defaults, onClose, onConfirm, loading }: {
+  count: number; defaults: Partial<OfferInput> & { place: string }; onClose: () => void; onConfirm: (o: OfferInput) => void; loading: boolean;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [pay, setPay] = useState<number | undefined>(defaults.pay);
+  const [payPeriod, setPayPeriod] = useState<PayPeriod>(defaults.payPeriod ?? "month");
+  const [payType, setPayType] = useState<PayType | undefined>(defaults.payType);
+  const [joiningDate, setJoiningDate] = useState(defaults.joiningDate ?? new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10));
+  const [place, setPlace] = useState(defaults.place);
+  const [note, setNote] = useState(defaults.note ?? "");
+  const [error, setError] = useState<string>();
+  const submit = () => {
+    if (!pay) return setError("Add the pay you are offering.");
+    if (!joiningDate || joiningDate < today) return setError("Choose a joining date from today onwards.");
+    if (!place.trim()) return setError("Add where they should report on the first day.");
+    setError(undefined);
+    onConfirm({ pay, payPeriod, payType, joiningDate, place: place.trim(), note: note.trim() || undefined });
+  };
+  return (
+    <Modal open onClose={onClose} title={count > 1 ? `Send offer to ${count} candidates` : "Send offer"}
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={submit} loading={loading}>Send offer</Button></>}>
+      <div className="space-y-4">
+        <div>
+          <p className="mb-1.5 text-small font-medium text-ink">Pay</p>
+          <div className="grid grid-cols-[1fr_140px] gap-3">
+            <Input aria-label="Pay offered" prefix="₹" inputMode="numeric" value={pay ? formatNumber(pay) : ""} onChange={(e) => setPay(Number(e.target.value.replace(/\D/g, "")) || undefined)} />
+            <Select aria-label="Pay period" value={payPeriod} onChange={(e) => setPayPeriod(e.target.value as PayPeriod)}>
+              <option value="month">per month</option>
+              <option value="day">per day</option>
+            </Select>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(Object.keys(PAY_TYPE_LABEL) as PayType[]).map((p) => <Chip key={p} selected={payType === p} onClick={() => setPayType(payType === p ? undefined : p)}>{PAY_TYPE_LABEL[p]}</Chip>)}
+          </div>
+        </div>
+        <Field label="Joining date">{(id) => <Input id={id} type="date" min={today} value={joiningDate} onChange={(e) => setJoiningDate(e.target.value)} />}</Field>
+        <Field label="Report on the first day at">{(id) => <Input id={id} value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Gate no., building, area" />}</Field>
+        <Field label="Note (optional)" error={error}>{(id, d) => <Textarea id={id} aria-describedby={d} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Bring your bank passbook for the salary account." />}</Field>
+        <p className="text-small text-ink-muted">The worker sees these details before they accept.</p>
       </div>
     </Modal>
   );

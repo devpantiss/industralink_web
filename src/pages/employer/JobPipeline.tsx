@@ -6,7 +6,7 @@ import {
   MapPin, MessageCircle, MessageSquare, Pencil, Phone, Search, Share2, ShieldCheck, Users, Wallet, X,
 } from "lucide-react";
 import type { ApplicationStage, Candidate, Job, WorkerDocument } from "@/types";
-import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
+import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL, PAY_TYPE_LABEL } from "@/lib/labels";
 import { formatBytes, formatDate, formatDateTime, formatNumber, formatPay, timeAgo } from "@/lib/format";
 import { employerApi } from "@/api/employer";
 import { qk } from "@/api/keys";
@@ -18,7 +18,7 @@ import { Drawer } from "@/components/ui/Overlay";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { BenefitChips } from "@/components/domain/JobBits";
-import { CandidateDrawer, DocumentPreview, QualificationBadges, ReplyBadge, useCandidateMoves } from "@/components/domain/CandidatePanel";
+import { CandidateDrawer, DocumentPreview, OfferSummary, QualificationBadges, ReplyBadge, useCandidateMoves, useMarkSeen, WorkHistoryList } from "@/components/domain/CandidatePanel";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSlideIndicator } from "@/hooks/useSlideIndicator";
 
@@ -73,7 +73,8 @@ export default function JobPipeline() {
 
   const { requestMove, dialogs, moving } = useCandidateMoves({
     list: cands.data ?? [], optimisticKey: qk.employer.candidates(id),
-    defaultPlace: job.data?.walkIn?.address ?? [job.data?.siteName, job.data?.location.city].filter(Boolean).join(", "),
+    defaultPlace: job.data?.walkIn?.address ?? [job.data?.siteName, job.data?.address, job.data?.location.city].filter(Boolean).join(", "),
+    offerDefaults: job.data ? { pay: job.data.payMax ?? job.data.payMin, payPeriod: job.data.payPeriod, payType: job.data.payType } : undefined,
     onDone: () => setSelected(new Set()),
     job: job.data ? { id: job.data.id, title: job.data.title, openings: job.data.openings, status: job.data.status } : undefined,
   });
@@ -260,6 +261,8 @@ function CandidatePane({ c, job, onMove, moving }: { c: Candidate; job: Job; onM
   const contactOpen = ["shortlisted", "interview", "offer", "hired"].includes(c.stage);
   const [doc, setDoc] = useState<WorkerDocument>();
   const qual = [...w.qualifications, ...w.licences];
+  const missingLicences = (job.licences ?? []).filter((l) => !w.licences.includes(l));
+  useMarkSeen(c);
 
   return (
     <section className="animate-rise overflow-hidden rounded-lg border border-border" aria-label={`${w.name}'s profile`}>
@@ -293,14 +296,20 @@ function CandidatePane({ c, job, onMove, moving }: { c: Candidate; job: Job; onM
       {c.stage === "interview" && c.interview && (
         <div className="mx-6 mt-5 flex flex-wrap items-center gap-3 rounded-xl bg-tile-purple p-4 text-tile-purple-ink">
           <CalendarClock className="h-5 w-5 shrink-0" aria-hidden />
-          <div className="min-w-0 flex-1 text-small"><b>Interview {formatDateTime(c.interview.at)}</b><span className="block">{c.interview.place}{c.interview.responseNote ? ` · "${c.interview.responseNote}"` : ""}</span></div>
+          <div className="min-w-0 flex-1 text-small"><b>Interview {formatDateTime(c.interview.at)}</b><span className="block">{[c.interview.place, c.interview.contactPerson && `ask for ${c.interview.contactPerson}`].filter(Boolean).join(" · ")}{c.interview.responseNote ? ` · "${c.interview.responseNote}"` : ""}</span></div>
           <ReplyBadge response={c.interview.response} />
           <Button size="sm" variant="secondary" onClick={() => onMove("interview")}>{c.interview.response === "cant_attend" ? "Pick a new time" : "Reschedule"}</Button>
         </div>
       )}
       {c.stage === "offer" && (
         <div className={cn("mx-6 mt-5 rounded-xl p-4 text-small font-semibold", c.offerResponse === "accepted" ? "bg-success-bg text-success-fg" : "bg-tile-yellow text-tile-yellow-ink")}>
-          {c.offerResponse === "accepted" ? "✓ Accepted your offer. Mark as hired once they join." : "Offer sent. Waiting for the worker to accept."}
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              {c.offerResponse === "accepted" ? "✓ Accepted your offer. Mark as hired once they join." : "Offer sent. Waiting for the worker to accept."}
+              <OfferSummary offer={c.offer} />
+            </div>
+            {c.offerResponse !== "accepted" && <Button size="sm" variant="secondary" onClick={() => onMove("offer")}>Change offer</Button>}
+          </div>
         </div>
       )}
 
@@ -315,6 +324,15 @@ function CandidatePane({ c, job, onMove, moving }: { c: Candidate; job: Job; onM
               <h4 className="mb-2 text-body-lg font-bold">Skills</h4>
               <ul className="flex flex-wrap gap-1.5">{w.skills.map((s) => <li key={s} className="rounded-full border border-border px-3 py-1 text-small font-semibold text-ink-secondary">{s}</li>)}</ul>
             </div>
+          )}
+          {!!w.workHistory?.length && (
+            <div>
+              <h4 className="mb-2 text-body-lg font-bold">Work history</h4>
+              <WorkHistoryList items={w.workHistory} />
+            </div>
+          )}
+          {missingLicences.length > 0 && (
+            <p className="rounded-lg bg-warning-bg px-3 py-2 text-small text-warning-fg">This job needs {missingLicences.join(", ")}. It's not on this worker's profile. Ask them before shortlisting.</p>
           )}
           {qual.length > 0 && (
             <div>
@@ -481,12 +499,13 @@ function JobDetails({ job }: { job: Job }) {
   return (
     <div className="space-y-5">
       <DefinitionList items={[
-        ["Pay", formatPay(job.payMin, job.payMax, job.payPeriod)],
-        ["Shift", SHIFT_LABEL[job.shift]],
+        ["Pay", `${formatPay(job.payMin, job.payMax, job.payPeriod)}${job.payType ? ` · ${PAY_TYPE_LABEL[job.payType]}` : ""}`],
+        ["Shift", `${SHIFT_LABEL[job.shift]}${job.workHours ? ` · ${job.workHours}` : ""}`],
         ["Experience", EXPERIENCE_LABEL[job.experience]],
         ["Openings", String(job.openings)],
         ["Site / plant", job.siteName ?? ""],
         ["Qualification", job.qualifications.join(", ")],
+        ["Licence needed", (job.licences ?? []).join(", ")],
         ["Calls from shortlisted workers", job.allowCalls ? `Allowed · +91 ${job.hrPhone} · ${job.callHours ?? "Anytime"}` : "Off"],
       ]} />
       <BenefitChips benefits={job.benefits} />

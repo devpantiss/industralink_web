@@ -22,6 +22,7 @@ export const qk = {
     candidates: (jobId: string) => ["employer", "candidates", jobId] as const,
     allCandidates: (p: object) => ["employer", "all-candidates", p] as const,
     company: ["employer", "company"] as const,
+    companyDocs: ["employer", "company", "documents"] as const,
     talent: (p: object) => ["employer", "talent", p] as const,
     analytics: ["employer", "analytics"] as const,
   },

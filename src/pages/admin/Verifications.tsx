@@ -12,6 +12,8 @@ import { Field, Textarea } from "@/components/ui/Field";
 import { Drawer, Modal } from "@/components/ui/Overlay";
 import { EmptyState, QueryState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
+import { DocumentPreview } from "@/components/domain/CandidatePanel";
+import { COMPANY_DOC_LABEL } from "@/lib/labels";
 
 /**
  * Only companies are reviewed. This protects workers from fake employers.
@@ -72,6 +74,16 @@ export default function Verifications() {
           </>}>
           <div className="space-y-6">
             <DefinitionList items={Object.entries(open.details)} />
+            <div>
+              <h3 className="mb-2 text-body-lg font-bold text-ink">Documents</h3>
+              {open.documents.length ? (
+                <div className="space-y-3">
+                  {open.documents.map((d) => <DocumentPreview key={d.id} doc={d} label={`${COMPANY_DOC_LABEL[d.type]} · uploaded ${formatDate(d.uploadedAt)}`} />)}
+                </div>
+              ) : (
+                <p className="rounded-lg bg-warning-bg px-3 py-2 text-small text-warning-fg">No document uploaded yet. Ask for a GST or registration certificate before approving, or reject with a reason.</p>
+              )}
+            </div>
             {open.details["GST number"] && open.details["GST number"] !== "Not given" && (
               <a href="https://services.gst.gov.in/services/searchtp" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small font-medium text-primary hover:underline">
                 Check this GST number on the GST portal <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -80,7 +92,9 @@ export default function Verifications() {
             <div className="rounded-lg bg-surface-muted p-4 text-small text-ink-secondary">
               <p className="font-medium text-ink">Before approving, check:</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                <li>The uploaded document shows the same company name and GST number</li>
                 <li>The GST number belongs to this company name</li>
+                <li>For contractors and agencies: call the HR mobile and ask which companies they hire for</li>
                 <li>The HR email uses the company's domain (not a random Gmail)</li>
                 <li>The company is in an industrial sector we support</li>
               </ul>

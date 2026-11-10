@@ -34,6 +34,7 @@ function withoutBigFiles(d: MockDb): MockDb {
     ...d,
     documents: d.documents.map((doc) => (isBigDataUrl(doc.url) ? { ...doc, url: undefined } : doc)),
     workers: d.workers.map((w) => (isBigDataUrl(w.photoUrl) ? { ...w, photoUrl: undefined } : w)),
+    companyDocs: d.companyDocs?.map((doc) => (isBigDataUrl(doc.url) ? { ...doc, url: undefined } : doc)),
   };
 }
 

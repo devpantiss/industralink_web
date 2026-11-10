@@ -40,7 +40,7 @@ export default function Companies() {
               return (
                 <li key={c.id} className="min-w-0">
                   <Link to={`/worker/companies/${c.id}`} className="flex h-full items-center gap-3 rounded-lg sm:gap-4 border border-border bg-surface p-4 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                    <CompanyLogo job={{ companyName: c.name, sector: c.sector }} className="h-12 w-12" />
+                    <CompanyLogo job={{ companyName: c.name, sector: c.sector, companyLogoUrl: c.logoUrl }} className="h-12 w-12" />
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-1.5 text-h3 text-ink"><span className="min-w-0 truncate">{c.name}</span> <span className="shrink-0"><VerifiedTick verified /></span></p>
                       <p className="truncate text-small text-ink-secondary">{t(SECTOR_LABEL[c.sector])}</p>
