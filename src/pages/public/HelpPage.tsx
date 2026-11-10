@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
+import { LangToggle, t } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 /** Placeholder support details. Replace with the real ones before launch. */
 const SUPPORT = { phone: "1800 000 0000", whatsapp: "910000000000", email: "support@industrialink.in", hours: "Mon–Sat, 9 AM – 6 PM" };
@@ -46,7 +48,7 @@ export default function HelpPage() {
     try {
       await publicApi.support({ topic, message: message.trim(), name: name.trim() || undefined, contact: contact.trim() || undefined });
       setSent(true);
-      toast.success("Request sent. We'll reply within 1 working day.");
+      toast.success(t("Request sent. We'll reply within 1 working day."));
     } catch (err) { setError(errorMessage(err)); }
     finally { setBusy(false); }
   };
@@ -59,32 +61,36 @@ export default function HelpPage() {
             <LogoMark />
             <span className="text-h3 font-semibold">IndustriaLink</span>
           </Link>
-          <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(user ? homeFor(user.role) : "/login"))} className="text-body font-medium text-primary hover:underline">← Back</button>
+          <div className="flex items-center gap-3">
+            <LangToggle />
+            <ThemeToggle className="h-9 w-9" />
+            <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(user ? homeFor(user.role) : "/login"))} className="text-body font-medium text-primary hover:underline">← {t("Back")}</button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto grid max-w-4xl gap-6 px-4 py-8 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <div>
-            <h1 className="flex items-center gap-2 text-h1"><LifeBuoy className="h-6 w-6 text-primary" aria-hidden /> Help & support</h1>
-            <p className="mt-1 text-body text-ink-secondary">Quick answers first. Still stuck? Send us a request and a real person will reply.</p>
+            <h1 className="flex items-center gap-2 text-h1"><LifeBuoy className="h-6 w-6 text-primary" aria-hidden /> {t("Help & Support")}</h1>
+            <p className="mt-1 text-body text-ink-secondary">{t("Quick answers first. Still stuck? Send us a request and a real person will reply.")}</p>
           </div>
 
           <div className="flex items-start gap-3 rounded-lg border border-danger-fg/20 bg-danger-bg p-4">
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-danger-fg" aria-hidden />
-            <p className="text-body text-ink"><span className="font-semibold">Asked to pay for a job?</span> Don't pay. Report the job from its page, or choose "Someone asked me for money" below.</p>
+            <p className="text-body text-ink"><span className="font-semibold">{t("Asked to pay for a job?")}</span> {t("Don't pay. Report the job from its page, or choose \"Someone asked me for money\" below.")}</p>
           </div>
 
           <Card>
-            <CardHeader title="Common questions" />
+            <CardHeader title={t("Common questions")} />
             <ul className="divide-y divide-border">
               {faqs.map((f) => (
                 <li key={f.q}>
                   <details className="group px-5 py-3.5">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-body font-medium text-ink">
-                      {f.q}<ChevronDown className="h-4 w-4 shrink-0 text-ink-muted transition-transform group-open:rotate-180" aria-hidden />
+                      {t(f.q)}<ChevronDown className="h-4 w-4 shrink-0 text-ink-muted transition-transform group-open:rotate-180" aria-hidden />
                     </summary>
-                    <p className="mt-2 text-body text-ink-secondary">{f.a}</p>
+                    <p className="mt-2 text-body text-ink-secondary">{t(f.a)}</p>
                   </details>
                 </li>
               ))}
@@ -92,27 +98,27 @@ export default function HelpPage() {
           </Card>
 
           <Card>
-            <CardHeader title="Send us a request" description="We reply within 1 working day." />
+            <CardHeader title={t("Send us a request")} description={t("We reply within 1 working day.")} />
             <CardBody>
               {sent ? (
                 <div className="py-4 text-center">
-                  <p className="text-h3 text-ink">Thanks, we got it.</p>
-                  <p className="mt-1 text-body text-ink-secondary">We'll reply on {user ? (user.phone ? `+91 ${user.phone}` : user.email) : contact}.</p>
-                  <Button variant="secondary" className="mt-4" onClick={() => { setSent(false); setMessage(""); }}>Send another</Button>
+                  <p className="text-h3 text-ink">{t("Thanks, we got it.")}</p>
+                  <p className="mt-1 text-body text-ink-secondary">{t("We'll reply on {contact}.", { contact: user ? (user.phone ? `+91 ${user.phone}` : user.email ?? "") : contact })}</p>
+                  <Button variant="secondary" className="mt-4" onClick={() => { setSent(false); setMessage(""); }}>{t("Send another")}</Button>
                 </div>
               ) : (
                 <form onSubmit={submit} className="space-y-4" noValidate>
                   {!user && (
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field label="Your name">{(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />}</Field>
-                      <Field label="Mobile or email" required>{(id) => <Input id={id} value={contact} onChange={(e) => setContact(e.target.value)} />}</Field>
+                      <Field label={t("Your name")}>{(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />}</Field>
+                      <Field label={t("Mobile or email")} required>{(id) => <Input id={id} value={contact} onChange={(e) => setContact(e.target.value)} />}</Field>
                     </div>
                   )}
-                  <Field label="Topic">{(id) => <Select id={id} value={topic} onChange={(e) => setTopic(e.target.value)}>{TOPICS.map((t) => <option key={t}>{t}</option>)}</Select>}</Field>
-                  <Field label="What happened?" error={error} hint={topic === "Change my mobile number" ? "Write your old and new number." : undefined}>
+                  <Field label={t("Topic")}>{(id) => <Select id={id} value={topic} onChange={(e) => setTopic(e.target.value)}>{TOPICS.map((top) => <option key={top} value={top}>{t(top)}</option>)}</Select>}</Field>
+                  <Field label={t("What happened?")} error={error} hint={topic === "Change my mobile number" ? t("Write your old and new number.") : undefined}>
                     {(id, d) => <Textarea id={id} aria-describedby={d} rows={4} value={message} onChange={(e) => setMessage(e.target.value)} invalid={!!error} />}
                   </Field>
-                  <Button type="submit" loading={busy} loadingText="Sending…">Send request</Button>
+                  <Button type="submit" loading={busy} loadingText={t("Sending…")}>{t("Send request")}</Button>
                 </form>
               )}
             </CardBody>
@@ -121,14 +127,14 @@ export default function HelpPage() {
 
         <aside className="space-y-3 lg:pt-16">
           <Card>
-            <CardHeader title="Contact us" description={SUPPORT.hours} />
+            <CardHeader title={t("Contact us")} description={SUPPORT.hours} />
             <CardBody className="space-y-3 text-body">
-              <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">Toll-free</span><span className="select-all font-medium text-ink">{SUPPORT.phone}</span></span></p>
-              <a href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-primary"><MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden /><span><span className="block text-caption text-ink-muted">WhatsApp</span><span className="font-medium">Chat with us</span></span></a>
-              <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">Email</span><span className="select-all font-medium text-ink">{SUPPORT.email}</span></span></p>
+              <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">{t("Toll-free")}</span><span className="select-all font-medium text-ink">{SUPPORT.phone}</span></span></p>
+              <a href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-primary"><MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden /><span><span className="block text-caption text-ink-muted">WhatsApp</span><span className="font-medium">{t("Chat with us")}</span></span></a>
+              <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">{t("Email")}</span><span className="select-all font-medium text-ink">{SUPPORT.email}</span></span></p>
             </CardBody>
           </Card>
-          <p className="px-1 text-caption text-ink-muted">Demo: these contact details are placeholders.</p>
+          <p className="px-1 text-caption text-ink-muted">{t("Demo: these contact details are placeholders.")}</p>
         </aside>
       </main>
     </div>

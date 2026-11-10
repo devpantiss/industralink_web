@@ -5,6 +5,7 @@
 import type {
   ApplicationStage, Availability, Benefit, CompanyDocType, DocType, ExperienceBand, HiringType, JobType, PayType, Sector, Shift, Trade,
 } from "@/types";
+import { t } from "@/lib/i18n";
 
 export const TRADE_LABEL: Record<Trade, string> = {
   welder: "Welder",
@@ -123,3 +124,18 @@ export const HIRING_TYPE_LABEL: Record<HiringType, string> = {
   direct: "Direct employer",
   agency: "Contractor / placement agency",
 };
+
+export const tTrade = (trade: Trade) => t(TRADE_LABEL[trade] ?? trade);
+export const tSector = (sector: Sector) => t(SECTOR_LABEL[sector] ?? sector);
+export const tShift = (shift: Shift | "any") => t(SHIFT_LABEL[shift] ?? shift);
+export const tExperience = (exp: ExperienceBand) => t(EXPERIENCE_LABEL[exp] ?? exp);
+export const tJobType = (type: JobType) => t(JOB_TYPE_LABEL[type] ?? type);
+export const tBenefit = (benefit: Benefit) => t(BENEFIT_LABEL[benefit] ?? benefit);
+export const tStageWorker = (stage: ApplicationStage) => t(STAGE_LABEL_WORKER[stage] ?? stage);
+export const tStage = (stage: ApplicationStage) => t(STAGE_LABEL[stage] ?? stage);
+export const tPayType = (payType: PayType) => t(PAY_TYPE_LABEL[payType] ?? payType);
+export const tDocType = (docType: DocType) => t(DOC_TYPE_LABEL[docType] ?? docType);
+export const tAvailability = (avail: Availability) => t(AVAILABILITY_LABEL[avail] ?? avail);
+export const tEmploymentType = (type: "permanent" | "contract" | "any") => t(EMPLOYMENT_TYPE_LABEL[type] ?? type);
+export const tHiringType = (type: HiringType) => t(HIRING_TYPE_LABEL[type] ?? type);
+

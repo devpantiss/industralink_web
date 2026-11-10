@@ -13,26 +13,18 @@
 import { createContext, Fragment, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Languages } from "lucide-react";
 
-export type Lang = "en" | "hi" | "or" | "bn" | "te" | "ta" | "mr";
+export type Lang = "en" | "hi" | "or";
 
 /** Native name first, so people can find their own language without reading English. */
 export const LANGS: { code: Lang; native: string; english: string; states: string; font?: string }[] = [
   { code: "hi", native: "हिंदी", english: "Hindi", states: "North & Central India", font: "Noto+Sans+Devanagari" },
   { code: "or", native: "ଓଡ଼ିଆ", english: "Odia", states: "Odisha", font: "Noto+Sans+Oriya" },
-  { code: "bn", native: "বাংলা", english: "Bengali", states: "West Bengal, Jharkhand, Assam", font: "Noto+Sans+Bengali" },
-  { code: "te", native: "తెలుగు", english: "Telugu", states: "Andhra Pradesh, Telangana", font: "Noto+Sans+Telugu" },
-  { code: "ta", native: "தமிழ்", english: "Tamil", states: "Tamil Nadu", font: "Noto+Sans+Tamil" },
-  { code: "mr", native: "मराठी", english: "Marathi", states: "Maharashtra", font: "Noto+Sans+Devanagari" },
   { code: "en", native: "English", english: "English", states: "" },
 ];
 
 const loaders: Record<Exclude<Lang, "en">, () => Promise<{ default: Record<string, string> }>> = {
   hi: () => import("./locales/hi"),
   or: () => import("./locales/or"),
-  bn: () => import("./locales/bn"),
-  te: () => import("./locales/te"),
-  ta: () => import("./locales/ta"),
-  mr: () => import("./locales/mr"),
 };
 
 const KEY = "industrialink.lang";
