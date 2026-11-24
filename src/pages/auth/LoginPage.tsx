@@ -90,11 +90,18 @@ export function EmailLogin({ onSuccess, footer }: { onSuccess: (r: AuthResponse)
 /** One-click demo logins. Shown with mock data or in local dev; hidden in production builds. */
 const SHOW_DEMO_LOGIN = USE_MOCKS || import.meta.env.DEV;
 
-const DEMO_USERS = [
-  { key: "worker", label: "Worker", who: "Rajan Mehta · Welder", icon: HardHat, login: async () => { await authApi.requestOtp("9876543210"); return authApi.verifyOtp("9876543210", "123456"); } },
-  { key: "employer", label: "HR / Employer", who: "Vedanta Aluminium", icon: Building2, login: () => authApi.login("hr@vedanta.demo", "demo1234") },
-  { key: "admin", label: "Admin", who: "IndustriaLink team", icon: ShieldCheck, login: () => authApi.login("admin@industrialink.demo", "demo1234") },
-] as const;
+/** Mock mode: the fake logins. Real backend: its test login, which only exists on developer machines. */
+const DEMO_USERS = USE_MOCKS
+  ? ([
+      { key: "worker", label: "Worker", who: "Rajan Mehta · Welder", icon: HardHat, login: async () => { await authApi.requestOtp("9876543210"); return authApi.verifyOtp("9876543210", "123456"); } },
+      { key: "employer", label: "HR / Employer", who: "Vedanta Aluminium", icon: Building2, login: () => authApi.login("hr@vedanta.demo", "demo1234") },
+      { key: "admin", label: "Admin", who: "IndustriaLink team", icon: ShieldCheck, login: () => authApi.login("admin@industrialink.demo", "demo1234") },
+    ] as const)
+  : ([
+      { key: "worker", label: "Worker", who: "Ramesh Kumar · Welder", icon: HardHat, login: () => authApi.devLogin({ phone: "9876543210" }) },
+      { key: "employer", label: "HR / Employer", who: "Konark Heavy Engineering", icon: Building2, login: () => authApi.devLogin({ email: "hr@konark.demo" }) },
+      { key: "admin", label: "Admin", who: "IndustriaLink team", icon: ShieldCheck, login: () => authApi.devLogin({ email: "admin@industrialink.demo" }) },
+    ] as const);
 
 function DemoLogin({ onSuccess }: { onSuccess: (r: AuthResponse) => void }) {
   const [busy, setBusy] = useState<string>();
@@ -106,7 +113,7 @@ function DemoLogin({ onSuccess }: { onSuccess: (r: AuthResponse) => void }) {
   return (
     <div className="mt-8 rounded-lg border border-dashed border-border-strong bg-surface-muted/60 p-4">
       <p className="text-small font-semibold text-ink">Quick demo login</p>
-      <p className="text-caption text-ink-muted">For testing only. Not shown in production.</p>
+      <p className="text-caption text-ink-muted">{USE_MOCKS ? "For testing only. Not shown in production." : "Uses the backend test login (DEV_LOGIN=true). Not shown in production."}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {DEMO_USERS.map((u) => (
           <Button key={u.key} variant="secondary" size="sm" className="h-auto flex-col gap-0.5 py-2" onClick={() => go(u)}
