@@ -381,6 +381,10 @@ export interface Message {
   fromRole: "worker" | "employer";
   text: string;
   at: string;
+  /** Only on your own messages: the id your app made when sending. */
+  clientId?: string;
+  /** Only on your own messages: the other side has opened the chat since (✓✓). */
+  seen?: boolean;
 }
 
 export interface MessageThread {

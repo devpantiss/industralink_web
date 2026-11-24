@@ -52,7 +52,8 @@ export const supportAdminApi = {
 export const messagesApi = {
   threads: () => get<MessageThread[]>("/messages"),
   thread: (applicationId: string) => get<{ thread: MessageThread; messages: Message[] }>(`/messages/${applicationId}`),
-  send: (applicationId: string, text: string) => post<Message>(`/messages/${applicationId}`, { text }),
+  /** clientId: made once per message, so a retry after a network error is saved only once. */
+  send: (applicationId: string, text: string, clientId?: string) => post<Message>(`/messages/${applicationId}`, { text, clientId }),
 };
 
 export const talentApi = {

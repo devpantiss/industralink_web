@@ -11,6 +11,7 @@ import { notificationsApi } from "@/api/notifications";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
 import { USE_MOCKS } from "@/api/client";
+import { startLiveChat, useLiveConnected } from "@/api/live";
 import { Avatar } from "@/components/ui/Misc";
 import { LogoMark } from "@/components/ui/Logo";
 import { LinkButton } from "@/components/ui/Button";
@@ -163,10 +164,20 @@ function ProfileMenu({ variant = "header" }: { variant?: "header" | "card" }) {
   );
 }
 
-/** Unread message count for the Messages nav item. */
+/** Unread message count for the Messages nav item. Refreshed live; the timer is a fallback. */
 function useUnread(enabled: boolean) {
-  const q = useQuery({ queryKey: qk.messages.all, queryFn: messagesApi.threads, enabled, refetchInterval: 30_000 });
+  const live = useLiveConnected();
+  const q = useQuery({ queryKey: qk.messages.all, queryFn: messagesApi.threads, enabled, refetchInterval: live ? 120_000 : 30_000 });
   return q.data?.reduce((s, th) => s + th.unread, 0) ?? 0;
+}
+
+/** Live chat updates for workers and HR, while logged in (real backend only). */
+function useLiveChatFor(role: string, userId: string) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (USE_MOCKS || role === "admin") return;
+    return startLiveChat(qc);
+  }, [qc, role, userId]);
 }
 
 function NavCount({ n, className }: { n: number; className?: string }) {
@@ -296,6 +307,7 @@ export function AppShell() {
   const user = useUser();
   const items = NAV[user.role];
   const unread = useUnread(user.role !== "admin");
+  useLiveChatFor(user.role, user.id);
   const online = useOnline();
   const { pathname } = useLocation();
 

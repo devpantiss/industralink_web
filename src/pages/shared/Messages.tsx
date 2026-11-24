@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Lock, MessageSquare, Send } from "lucide-react";
+import { isAxiosError } from "axios";
+import { ArrowLeft, Check, CheckCheck, Lock, MessageSquare, Send } from "lucide-react";
 import type { Message, MessageThread } from "@/types";
 import { messagesApi } from "@/api/extra";
 import { qk } from "@/api/keys";
 import { errorMessage } from "@/api/client";
+import { sendTyping, useIsTyping, useLiveConnected } from "@/api/live";
 import { useUser } from "@/app/AuthContext";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
@@ -19,13 +21,15 @@ import { useToast } from "@/components/ui/Toast";
 /**
  * Worker ↔ HR chat, one conversation per application. Opens once the worker
  * is shortlisted (same rule as calling), so HR isn't flooded and workers
- * don't get spam. Polls every 10 s; the real backend can push instead.
+ * don't get spam. New messages, "typing…" and seen ticks come live (src/api/live.ts);
+ * the refresh timers are only a fallback, slower while the live connection is up.
  */
 export default function Messages() {
   const user = useUser();
   const [sp, setSp] = useSearchParams();
   const openId = sp.get("c") ?? undefined;
-  const threads = useQuery({ queryKey: qk.messages.all, queryFn: messagesApi.threads, refetchInterval: 15_000 });
+  const live = useLiveConnected();
+  const threads = useQuery({ queryKey: qk.messages.all, queryFn: messagesApi.threads, refetchInterval: live ? 60_000 : 15_000 });
   const worker = user.role === "worker";
   const select = (id?: string) => setSp(id ? { c: id } : {}, { replace: !id });
 
@@ -78,16 +82,29 @@ const QUICK = {
   employer: ["Please bring your ITI certificate and one ID proof.", "Can you join from Monday?", "Please call me between 10 AM and 5 PM."],
 };
 
+/** A message being sent. The clientId is made once, so retries are saved only once. */
+interface Draft { body: string; clientId: string }
+
+/** A unique id for a message. randomUUID needs https (or localhost), so there is a fallback. */
+function newClientId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 function Thread({ applicationId, onBack }: { applicationId: string; onBack: () => void }) {
   const user = useUser();
-  const q = useQuery({ queryKey: qk.messages.thread(applicationId), queryFn: () => messagesApi.thread(applicationId), refetchInterval: 10_000 });
+  const live = useLiveConnected();
+  const typing = useIsTyping(applicationId);
+  const q = useQuery({ queryKey: qk.messages.thread(applicationId), queryFn: () => messagesApi.thread(applicationId), refetchInterval: live ? 60_000 : 10_000 });
   const [text, setText] = useState("");
   const qc = useQueryClient();
   const toast = useToast();
   const end = useRef<HTMLDivElement>(null);
   const send = useMutation({
-    mutationFn: (body: string) => messagesApi.send(applicationId, body),
-    onMutate: async (body) => {
+    mutationFn: ({ body, clientId }: Draft) => messagesApi.send(applicationId, body, clientId),
+    // Retry only when the network failed. The same clientId makes sure it is saved once.
+    retry: (count, error) => count < 2 && isAxiosError(error) && !error.response,
+    onMutate: async ({ body }) => {
       // Show the message straight away; the server copy replaces it.
       const key = qk.messages.thread(applicationId);
       await qc.cancelQueries({ queryKey: key });
@@ -96,14 +113,16 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
       setText("");
       return { prev };
     },
-    onError: (e, body, ctx) => { if (ctx?.prev) qc.setQueryData(qk.messages.thread(applicationId), ctx.prev); setText(body); toast.error(errorMessage(e)); },
-    onSettled: () => { qc.invalidateQueries({ queryKey: qk.messages.all }); qc.invalidateQueries({ queryKey: qk.messages.thread(applicationId) }); },
+    onError: (e, { body }, ctx) => { if (ctx?.prev) qc.setQueryData(qk.messages.thread(applicationId), ctx.prev); setText(body); toast.error(errorMessage(e)); },
+    onSettled: () => { qc.invalidateQueries({ queryKey: qk.messages.all, exact: true }); qc.invalidateQueries({ queryKey: qk.messages.thread(applicationId) }); },
   });
   const count = q.data?.messages.length ?? 0;
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [count]);
-  useEffect(() => { qc.invalidateQueries({ queryKey: qk.messages.all }); }, [q.dataUpdatedAt, qc]);
+  // Opening a chat marks it read, so refresh the inbox list. Only the list (exact): the
+  // chat's own key starts with "messages" too, and refreshing it here would loop forever.
+  useEffect(() => { qc.invalidateQueries({ queryKey: qk.messages.all, exact: true }); }, [q.dataUpdatedAt, qc]);
 
-  const submit = (e: FormEvent) => { e.preventDefault(); const body = text.trim(); if (body) send.mutate(body); };
+  const submit = (e: FormEvent) => { e.preventDefault(); const body = text.trim(); if (body) send.mutate({ body, clientId: newClientId() }); };
 
   if (q.isLoading) return <div className="p-5"><ListSkeleton count={2} /></div>;
   if (q.isError || !q.data) return <div className="p-5"><ErrorState onRetry={() => q.refetch()} /></div>;
@@ -118,7 +137,11 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
         <Avatar name={thread.otherName} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-ink">{thread.otherName}</p>
-          <p className="flex items-center gap-2 truncate text-caption text-ink-muted">{thread.jobTitle} <StageBadge stage={thread.stage} audience={user.role === "worker" ? "worker" : "employer"} /></p>
+          {typing ? (
+            <p className="text-caption font-medium text-primary" aria-live="polite">{t("typing…")}</p>
+          ) : (
+            <p className="flex items-center gap-2 truncate text-caption text-ink-muted">{thread.jobTitle} <StageBadge stage={thread.stage} audience={user.role === "worker" ? "worker" : "employer"} /></p>
+          )}
         </div>
         {appLink && <Link to={appLink} className="hidden text-small font-medium text-primary hover:underline sm:inline">{t("View application")}</Link>}
       </header>
@@ -129,7 +152,12 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
           <div key={m.id} className={cn("flex", mine(m) ? "justify-end" : "justify-start")}>
             <div className={cn("max-w-[80%] rounded-2xl px-3.5 py-2 text-body shadow-xs", mine(m) ? "rounded-br-sm bg-primary text-white" : "rounded-bl-sm bg-surface text-ink")}>
               <p className="whitespace-pre-line break-words">{m.text}</p>
-              <p className={cn("mt-0.5 text-right text-[11px]", mine(m) ? "text-white/70" : "text-ink-muted")}>{m.id === "tmp" ? t("Sending…") : formatDateTime(m.at)}</p>
+              <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[11px]", mine(m) ? "text-white/70" : "text-ink-muted")}>
+                {m.id === "tmp" ? t("Sending…") : formatDateTime(m.at)}
+                {m.id !== "tmp" && m.seen !== undefined && (m.seen
+                  ? <CheckCheck className="h-3.5 w-3.5 text-white" aria-label={t("Seen")} />
+                  : <Check className="h-3.5 w-3.5" aria-label={t("Sent")} />)}
+              </p>
             </div>
           </div>
         ))}
@@ -147,7 +175,7 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
           )}
           <form onSubmit={submit} className="flex items-end gap-2">
             <label className="sr-only" htmlFor="msg">{t("Write a message")}</label>
-            <textarea id="msg" rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder={t("Write a message…")}
+            <textarea id="msg" rows={1} value={text} onChange={(e) => { setText(e.target.value); if (e.target.value.trim()) sendTyping(applicationId); }} maxLength={1000} placeholder={t("Write a message…")}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(e); } }}
               className="max-h-32 min-h-[44px] flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none" />
             <Button type="submit" disabled={!text.trim()} aria-label={t("Send")} className="h-11 w-11 px-0"><Send className="h-4 w-4" /></Button>
