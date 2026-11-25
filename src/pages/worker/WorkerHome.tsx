@@ -110,7 +110,7 @@ export default function WorkerHome() {
           {loading ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-[230px] rounded-xl" />)
             : latest.isError ? <ErrorState onRetry={() => latest.refetch()} />
             : list.length === 0 ? (
-              <EmptyState icon={<Search className="h-6 w-6" />} title={q ? t("No jobs match \"{q}\"", { q }) : t("No jobs yet")}
+              <EmptyState art="search" title={q ? t("No jobs match \"{q}\"", { q }) : t("No jobs yet")}
                 description={q ? t("Try another trade, like welder or driver.") : t("New jobs are added every day. Check back soon.")}
                 action={<LinkButton to={q ? `/worker/jobs?q=${encodeURIComponent(q)}` : "/worker/jobs"} variant="secondary">{t("Search all jobs")}</LinkButton>} />
             ) : list.map((j) => (

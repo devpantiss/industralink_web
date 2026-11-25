@@ -7,7 +7,7 @@ import { qk } from "@/api/keys";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Hero, StatCard } from "@/components/ui/Misc";
 import { LinkButton } from "@/components/ui/Button";
-import { ErrorState, Skeleton } from "@/components/ui/States";
+import { EmptyState, ErrorState, Skeleton } from "@/components/ui/States";
 
 export default function AdminHome() {
   const q = useQuery({ queryKey: qk.admin.summary, queryFn: adminApi.summary });
@@ -32,7 +32,7 @@ export default function AdminHome() {
         <Card className="lg:col-span-2">
           <CardHeader title="Action required" />
           {!s ? <CardBody><Skeleton className="h-24" /></CardBody> : s.attention.length === 0 ? (
-            <CardBody><p className="py-6 text-center text-body text-ink-muted">All caught up 🎉</p></CardBody>
+            <EmptyState compact art="done" title="All caught up" />
           ) : (
             <ul className="divide-y divide-border">
               {s.attention.map((a) => (

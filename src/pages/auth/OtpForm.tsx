@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { t } from "@/lib/i18n";
 import { authApi } from "@/api/auth";
-import { errorCode, errorMessage, USE_MOCKS } from "@/api/client";
+import { errorCode, errorMessage } from "@/api/client";
 import type { AuthResponse } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
@@ -9,7 +9,6 @@ import { Field, Input } from "@/components/ui/Field";
 /**
  * Phone → OTP flow, shared by login and worker sign-up.
  * Login with an unknown number offers sign-up; sign-up with a known number offers login.
- * Demo: any 6 digits work (000000 shows the "wrong code" error).
  */
 export function OtpForm({ mode, name, initialPhone = "", onSuccess, onWrongMode, submitLabel = "Continue" }: {
   mode: "login" | "signup";
@@ -93,7 +92,7 @@ export function OtpForm({ mode, name, initialPhone = "", onSuccess, onWrongMode,
         {t("Code sent to")} <span className="font-medium text-ink">+91 {phone}</span>.{" "}
         <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setStep("phone"); setCode(""); setError(undefined); }}>{t("Change number")}</button>
       </p>
-      <Field label={t("6-digit code")} error={error} hint={USE_MOCKS ? t("Demo: any 6 digits work.") : undefined}>
+      <Field label={t("6-digit code")} error={error}>
         {(id, d) => (
           <Input ref={codeRef} id={id} aria-describedby={d} inputSize="lg" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
             className="text-center text-h2 tracking-[0.5em]" placeholder="••••••" value={code} invalid={!!error} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />

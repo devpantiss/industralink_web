@@ -56,7 +56,7 @@ export default function PublicJob() {
 
       <main className="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:pb-10">
         {q.isLoading ? <ListSkeleton count={2} lines={5} /> : q.isError && errorCode(q.error) === "NOT_FOUND" ? (
-          <EmptyState title={t("Job not found")} description={t("This job was removed or the link is wrong.")} action={<LinkButton to="/jobs">{t("See other jobs")}</LinkButton>} />
+          <EmptyState art="notFound" title={t("Job not found")} description={t("This job was removed or the link is wrong.")} action={<LinkButton to="/jobs">{t("See other jobs")}</LinkButton>} />
         ) : q.isError || !q.data ? <ErrorState onRetry={() => q.refetch()} /> : (() => {
           const job = q.data;
           const closed = job.status !== "active" || (!!job.deadline && new Date(job.deadline) < new Date());

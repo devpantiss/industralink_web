@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Flag, LifeBuoy } from "lucide-react";
 import type { ReportReason } from "@/types";
 import { reportsApi, supportAdminApi, type AdminReportRow } from "@/api/extra";
 import { qk } from "@/api/keys";
@@ -55,7 +54,7 @@ function JobReports({ status }: { status: string }) {
 
   return (
     <>
-    <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<Flag className="h-6 w-6" />} title={status === "open" ? "No open reports" : "Nothing here"} description="Workers report jobs from the job page." />}>
+    <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState art="done" title={status === "open" ? "No open reports" : "Nothing here"} description="Workers report jobs from the job page." />}>
       {(rows) => (
         <ul className="stagger space-y-3">
           {rows.map((r) => (
@@ -106,7 +105,7 @@ function HelpRequests({ status }: { status: string }) {
     onError: (e) => toast.error(errorMessage(e)),
   });
   return (
-    <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<LifeBuoy className="h-6 w-6" />} title="No help requests" description="People send these from the Help page." />}>
+    <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState art="done" title="No help requests" description="People send these from the Help page." />}>
       {(rows) => (
         <ul className="stagger space-y-3">
           {rows.map((t) => (

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, Inbox } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Button } from "./Button";
+import { Illustration } from "./Illustration";
+import type { ArtName } from "./illustrations";
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn("relative overflow-hidden rounded-md bg-surface-muted before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.4s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/60 dark:before:via-white/[.06] before:to-transparent", className)} aria-hidden />;
@@ -20,12 +22,16 @@ export function ListSkeleton({ count = 3, lines = 3 }: { count?: number; lines?:
   return <div className="flex flex-col gap-4">{[...Array(count)].map((_, i) => <CardSkeleton key={i} lines={lines} />)}</div>;
 }
 
-export function EmptyState({ icon, title, description, action, className }: { icon?: ReactNode; title: string; description?: string; action?: ReactNode; className?: string }) {
+/**
+ * Shown when a list or page has nothing yet: a drawing, a short title, and what to do next.
+ * `compact` is for small spaces inside a card or menu.
+ */
+export function EmptyState({ art = "search", title, description, action, compact, className }: { art?: ArtName; title: string; description?: string; action?: ReactNode; compact?: boolean; className?: string }) {
   return (
-    <div className={cn("flex flex-col items-center rounded-lg border border-dashed border-border-strong bg-surface px-6 py-12 text-center", className)}>
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">{icon ?? <Inbox className="h-6 w-6" aria-hidden />}</div>
-      <h3 className="text-h3 text-ink">{title}</h3>
-      {description && <p className="mt-1 max-w-sm text-body text-ink-muted">{description}</p>}
+    <div className={cn("flex flex-col items-center text-center", compact ? "px-4 py-6" : "rounded-lg border border-border bg-surface px-6 py-10", className)}>
+      <Illustration name={art} className={cn("w-auto", compact ? "mb-2 h-16" : "mb-4 h-28")} />
+      <h3 className={compact ? "text-body font-semibold text-ink" : "text-h3 text-ink"}>{title}</h3>
+      {description && <p className={cn("mt-1 text-ink-muted", compact ? "max-w-xs text-small" : "max-w-sm text-body")}>{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );

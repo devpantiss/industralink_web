@@ -22,7 +22,7 @@ export const repliesApi = {
 };
 
 export const passwordApi = {
-  forgot: (email: string) => post<{ ok: boolean; demoResetLink?: string }>("/auth/password/forgot", { email }),
+  forgot: (email: string) => post<{ ok: boolean }>("/auth/password/forgot", { email }),
   reset: (token: string, password: string) => post<{ ok: boolean; role: string }>("/auth/password/reset", { token, password }),
   change: (current: string, next: string) => post("/auth/password/change", { current, next }),
 };

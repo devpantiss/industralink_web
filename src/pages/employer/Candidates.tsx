@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Search, UserSearch } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import type { ApplicationStage } from "@/types";
 import { EXPERIENCE_LABEL, STAGE_LABEL, TRADE_LABEL } from "@/lib/labels";
 import { timeAgo } from "@/lib/format";
@@ -47,7 +47,7 @@ export default function Candidates() {
         </Select>
       </div>
 
-      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<UserSearch className="h-6 w-6" />} title="No candidates found" description="Try a different search, or post a job to get applicants." />}>
+      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState art="people" title="No candidates found" description="Try a different search, or post a job to get applicants." />}>
         {(rows) => (
           <ul className="stagger overflow-hidden rounded-lg border border-border bg-surface shadow-xs">
             {rows.map((c) => (

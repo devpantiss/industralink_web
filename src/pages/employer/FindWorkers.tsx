@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, EyeOff, MapPin, Search, Send, ShieldCheck, UserSearch } from "lucide-react";
+import { CheckCircle2, EyeOff, MapPin, Search, Send, ShieldCheck } from "lucide-react";
 import type { ExperienceBand, TalentProfile, Trade } from "@/types";
 import { talentApi } from "@/api/extra";
 import { employerApi } from "@/api/employer";
@@ -62,7 +62,7 @@ export default function FindWorkers() {
       {list.isLoading ? <ListSkeleton count={3} /> : blocked ? (
         <Banner tone="warning" icon={<ShieldCheck className="h-5 w-5" />}>{errorMessage(list.error)}</Banner>
       ) : list.isError ? <ErrorState onRetry={() => list.refetch()} /> : list.data!.length === 0 ? (
-        <EmptyState icon={<UserSearch className="h-6 w-6" />} title="No workers match" description="Try fewer filters, or search a nearby city." />
+        <EmptyState art="people" title="No workers match" description="Try fewer filters, or search a nearby city." />
       ) : (
         <>
           <p className="mb-2 text-small text-ink-secondary">{list.data!.length} worker{list.data!.length === 1 ? "" : "s"}</p>

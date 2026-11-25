@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, CheckCircle2, FileText, Timer, Users } from "lucide-react";
+import { CheckCircle2, FileText, Timer, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { talentApi } from "@/api/extra";
 import { qk } from "@/api/keys";
@@ -14,7 +14,7 @@ export default function Analytics() {
   const a = q.data;
   if (q.isError) return <ErrorState onRetry={() => q.refetch()} />;
   if (a && a.totalApplicants === 0) return (
-    <div><PageHeader title="Analytics" /><EmptyState icon={<BarChart3 className="h-6 w-6" />} title="No numbers yet" description="Numbers appear once people start applying to your jobs." /></div>
+    <div><PageHeader title="Analytics" /><EmptyState art="chart" title="No numbers yet" description="Numbers appear once people start applying to your jobs." /></div>
   );
   const maxState = Math.max(1, ...(a?.byState.map((s) => s.count) ?? [1]));
 

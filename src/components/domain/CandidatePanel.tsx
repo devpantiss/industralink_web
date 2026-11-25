@@ -25,7 +25,7 @@ export function DocumentPreview({ doc, tall, label }: { doc: Pick<WorkerDocument
     <div className="overflow-hidden rounded-lg border border-border bg-surface">
       <div className={cn("bg-surface-muted", tall ? "h-[460px]" : "h-64")}>
         {!doc.url ? (
-          <div className="flex h-full items-center justify-center p-6 text-center text-small text-ink-muted">Preview not available. The file wasn't saved in this demo.</div>
+          <div className="flex h-full items-center justify-center p-6 text-center text-small text-ink-muted">Preview not available.</div>
         ) : isImage ? (
           <img src={doc.url} alt={doc.name} className="h-full w-full object-contain" />
         ) : (

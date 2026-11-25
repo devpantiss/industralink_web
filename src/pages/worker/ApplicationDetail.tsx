@@ -41,7 +41,7 @@ export default function ApplicationDetail() {
   });
 
   if (q.isLoading) return <ListSkeleton count={2} lines={4} />;
-  if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState title={t("Application not found")} action={<LinkButton to="/worker/applications">{t("Back to applications")}</LinkButton>} />;
+  if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState art="notFound" title={t("Application not found")} action={<LinkButton to="/worker/applications">{t("Back to applications")}</LinkButton>} />;
   if (q.isError || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const a = q.data;
   const job = a.job;

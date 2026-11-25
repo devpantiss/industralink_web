@@ -19,7 +19,7 @@ export default function CompanyDetail() {
   const q = useQuery({ queryKey: qk.worker.company(id), queryFn: () => workerApi.company(id) });
   const { toggle, pendingId } = useSaveJob();
   if (q.isLoading) return <ListSkeleton count={2} />;
-  if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState title={t("Company not found")} action={<LinkButton to="/worker/jobs">{t("Find jobs")}</LinkButton>} />;
+  if (q.isError && errorCode(q.error) === "NOT_FOUND") return <EmptyState art="notFound" title={t("Company not found")} action={<LinkButton to="/worker/jobs">{t("Find jobs")}</LinkButton>} />;
   if (q.isError || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const { company: c, jobs } = q.data;
 
@@ -52,7 +52,7 @@ export default function CompanyDetail() {
 
       <section>
         <h2 className="mb-3 text-h2">{t("Open jobs")} <span className="text-ink-muted">({jobs.length})</span></h2>
-        {jobs.length === 0 ? <EmptyState title={t("No open jobs right now")} description={t("Save a job you like elsewhere, and check back later.")} /> : (
+        {jobs.length === 0 ? <EmptyState art="jobs" title={t("No open jobs right now")} description={t("Save a job you like elsewhere, and check back later.")} /> : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{jobs.map((j) => <JobCard key={j.id} job={j} onToggleSave={toggle} saving={pendingId === j.id} />)}</div>
         )}
       </section>

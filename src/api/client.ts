@@ -1,26 +1,14 @@
 /**
- * The ONE place that talks to the backend.
- *
- *   VITE_USE_MOCKS=true  -> requests are answered by src/mocks (fake data)
- *   VITE_USE_MOCKS=false -> requests go to VITE_API_URL (real backend)
- *
- * Screens never import mock data; they only call functions in src/api/*.
+ * The ONE place that talks to the backend (VITE_API_URL).
+ * Screens only call the functions in src/api/*.
  */
 import axios, { AxiosError } from "axios";
 import { session } from "@/lib/session";
 
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== "false";
-
 export const http = axios.create({
-  baseURL: USE_MOCKS ? "/api/v1" : import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL ?? "/api/v1",
   timeout: 20_000,
 });
-
-if (USE_MOCKS) {
-  // Loaded lazily so mock code is not needed when using the real API.
-  const { mockAdapter } = await import("@/mocks/adapter");
-  http.defaults.adapter = mockAdapter;
-}
 
 http.interceptors.request.use((config) => {
   const token = session.get();

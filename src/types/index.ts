@@ -1,6 +1,5 @@
 /**
- * Data shapes shared by the UI, the mock API and (later) the real backend.
- * The backend should return exactly these shapes; see API_CONTRACT.md.
+ * Data shapes shared by the UI and the backend API (see the backend docs/API_CONTRACT.md).
  */
 
 export type Role = "worker" | "employer" | "admin";

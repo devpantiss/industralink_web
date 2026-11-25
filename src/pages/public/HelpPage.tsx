@@ -13,7 +13,12 @@ import { LangToggle, t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 /** Placeholder support details. Replace with the real ones before launch. */
-const SUPPORT = { phone: "1800 000 0000", whatsapp: "910000000000", email: "support@industrialink.in", hours: "Mon–Sat, 9 AM – 6 PM" };
+/** Support contacts come from the build settings; until they are set only the help form shows. */
+const SUPPORT = {
+  phone: import.meta.env.VITE_SUPPORT_PHONE,
+  whatsapp: import.meta.env.VITE_SUPPORT_WHATSAPP,
+  email: import.meta.env.VITE_SUPPORT_EMAIL,
+};
 
 const TOPICS = ["Change my mobile number", "I can't log in", "Problem with a job or company", "Someone asked me for money", "Delete my account", "Company verification", "Other"];
 
@@ -126,15 +131,16 @@ export default function HelpPage() {
         </div>
 
         <aside className="space-y-3 lg:pt-16">
-          <Card>
-            <CardHeader title={t("Contact us")} description={SUPPORT.hours} />
-            <CardBody className="space-y-3 text-body">
-              <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">{t("Toll-free")}</span><span className="select-all font-medium text-ink">{SUPPORT.phone}</span></span></p>
-              <a href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-primary"><MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden /><span><span className="block text-caption text-ink-muted">WhatsApp</span><span className="font-medium">{t("Chat with us")}</span></span></a>
-              <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">{t("Email")}</span><span className="select-all font-medium text-ink">{SUPPORT.email}</span></span></p>
-            </CardBody>
-          </Card>
-          <p className="px-1 text-caption text-ink-muted">{t("Demo: these contact details are placeholders.")}</p>
+          {(SUPPORT.phone || SUPPORT.whatsapp || SUPPORT.email) && (
+            <Card>
+              <CardHeader title={t("Contact us")} description={t("Mon–Sat, 9 AM – 6 PM")} />
+              <CardBody className="space-y-3 text-body">
+                {SUPPORT.phone && <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">{t("Toll-free")}</span><span className="select-all font-medium text-ink">{SUPPORT.phone}</span></span></p>}
+                {SUPPORT.whatsapp && <a href={`https://wa.me/${SUPPORT.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-primary"><MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden /><span><span className="block text-caption text-ink-muted">WhatsApp</span><span className="font-medium">{t("Chat with us")}</span></span></a>}
+                {SUPPORT.email && <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-ink-muted" aria-hidden /><span><span className="block text-caption text-ink-muted">{t("Email")}</span><span className="select-all font-medium text-ink">{SUPPORT.email}</span></span></p>}
+              </CardBody>
+            </Card>
+          )}
         </aside>
       </main>
     </div>

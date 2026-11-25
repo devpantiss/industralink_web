@@ -173,7 +173,7 @@ export default function FindJobs() {
           {query.isLoading ? (
             <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-[150px] rounded-lg" />)}</div>
           ) : query.isError ? <ErrorState onRetry={() => query.refetch()} /> : items.length === 0 ? (
-            <EmptyState icon={<Search className="h-6 w-6" />} title={t("No jobs found")} description={t("Try removing some filters or searching a nearby city.")}
+            <EmptyState art="search" title={t("No jobs found")} description={t("Try removing some filters or searching a nearby city.")}
               action={<Button variant="secondary" onClick={clearAll}>{t("Clear filters")}</Button>} />
           ) : (
             <>

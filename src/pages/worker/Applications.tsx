@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { t } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Check, ChevronRight, Clock, FileText, Gift, MapPin, Phone, XCircle } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Clock, Gift, MapPin, Phone, XCircle } from "lucide-react";
 import type { WorkerApplication } from "@/types";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
@@ -55,7 +55,7 @@ export default function Applications() {
       />
       <QueryState query={q}
         empty={() => groups[tab].length === 0 && (
-          <EmptyState icon={<FileText className="h-6 w-6" />}
+          <EmptyState art="applications"
             title={tab === "closed" ? t("Nothing here yet") : tab === "interviews" ? t("No interviews yet") : t("You haven't applied yet")}
             description={tab === "active" ? t("Find a job you like and tap Apply. It takes less than a minute.") : undefined}
             action={tab === "active" ? <LinkButton to="/worker/jobs">{t("Find jobs")}</LinkButton> : undefined} />

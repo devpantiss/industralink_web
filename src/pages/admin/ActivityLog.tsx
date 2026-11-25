@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { ScrollText } from "lucide-react";
 import { adminApi } from "@/api/admin";
 import { qk } from "@/api/keys";
 import { formatDateTime } from "@/lib/format";
@@ -11,7 +10,7 @@ export default function ActivityLog() {
   return (
     <div>
       <PageHeader title="Activity log" description="Every admin action, newest first. This list can't be edited." />
-      <QueryState query={q} empty={(d) => d.length === 0 && <EmptyState icon={<ScrollText className="h-6 w-6" />} title="No activity yet" />}>
+      <QueryState query={q} empty={(d) => d.length === 0 && <EmptyState art="applications" title="No activity yet" />}>
         {(rows) => (
           <ul className="overflow-hidden rounded-lg border border-border bg-surface shadow-xs">
             {rows.map((r) => (

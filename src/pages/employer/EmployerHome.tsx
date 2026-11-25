@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/Misc";
 import { LinkButton } from "@/components/ui/Button";
 import { JobStatusBadge } from "@/components/ui/Badge";
-import { ErrorState, Skeleton } from "@/components/ui/States";
+import { EmptyState, ErrorState, Skeleton } from "@/components/ui/States";
 import { VerificationBanner } from "@/components/domain/VerificationBanner";
 import { CompanyLogo } from "@/components/domain/JobBits";
 
@@ -67,7 +67,7 @@ export default function EmployerHome() {
             <Link to="/employer/candidates?stage=interview" className="text-small font-semibold text-primary hover:underline">View all</Link>
           </div>
           {interviews.isLoading ? <Skeleton className="h-40" /> : upcoming.length === 0 ? (
-            <p className="rounded-xl bg-surface-muted px-4 py-8 text-center text-small text-ink-muted">No interviews scheduled. Shortlist workers and invite them from a job.</p>
+            <EmptyState compact art="applications" title="No interviews scheduled" description="Shortlist workers and invite them from a job." />
           ) : (
             <ul className="space-y-2">
               {upcoming.map((c) => (

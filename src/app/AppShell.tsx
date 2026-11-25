@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, HelpCircle, LifeBuoy, LogOut, MoreVertical, Plus, RotateCcw, Search, Settings as SettingsIcon, User as UserIcon, WifiOff } from "lucide-react";
+import { Bell, HelpCircle, LifeBuoy, LogOut, MoreVertical, Plus, Search, Settings as SettingsIcon, User as UserIcon, WifiOff } from "lucide-react";
 import { LangToggle, t } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { messagesApi } from "@/api/extra";
@@ -10,12 +10,11 @@ import { timeAgo } from "@/lib/format";
 import { notificationsApi } from "@/api/notifications";
 import { workerApi } from "@/api/worker";
 import { qk } from "@/api/keys";
-import { USE_MOCKS } from "@/api/client";
 import { startLiveChat, useLiveConnected } from "@/api/live";
 import { Avatar } from "@/components/ui/Misc";
 import { LogoMark } from "@/components/ui/Logo";
+import { EmptyState } from "@/components/ui/States";
 import { LinkButton } from "@/components/ui/Button";
-import { useToast } from "@/components/ui/Toast";
 import { useSlideIndicator } from "@/hooks/useSlideIndicator";
 import { useAuth, useUser } from "./AuthContext";
 import { ProfileNudge } from "@/components/domain/ProfileNudge";
@@ -79,7 +78,7 @@ function Notifications() {
             {unread > 0 && <button className="text-small font-semibold text-primary hover:underline" onClick={() => readAll.mutate()}>{t("Mark all as read")}</button>}
           </div>
           <ul className="max-h-[60vh] overflow-y-auto">
-            {q.data?.length === 0 && <li className="px-4 py-8 text-center text-body text-ink-muted">{t("You're all caught up.")}</li>}
+            {q.data?.length === 0 && <li><EmptyState compact art="notifications" title={t("You're all caught up.")} /></li>}
             {q.data?.map((n) => (
               <li key={n.id}>
                 <button
@@ -109,18 +108,10 @@ function Notifications() {
 function ProfileMenu({ variant = "header" }: { variant?: "header" | "card" }) {
   const user = useUser();
   const { signOut } = useAuth();
-  const toast = useToast();
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(open, () => setOpen(false));
   const profile = useQuery({ queryKey: qk.worker.profile, queryFn: workerApi.profile, enabled: user.role === "worker" });
   const sub = user.role === "worker" ? (profile.data?.location ? `${profile.data.location.city}, ${profile.data.location.state}` : user.phone ? `+91 ${user.phone}` : "") : user.email ?? "";
-
-  const resetDemo = async () => {
-    const { resetMockDb } = await import("@/mocks/db");
-    resetMockDb();
-    toast.success("Demo data reset");
-    setTimeout(() => window.location.reload(), 400);
-  };
 
   const item = "flex w-full items-center gap-2.5 px-4 py-2.5 text-body text-ink-secondary hover:bg-surface-muted hover:text-ink";
   return (
@@ -156,7 +147,6 @@ function ProfileMenu({ variant = "header" }: { variant?: "header" | "card" }) {
           )}
           <Link to={`/${user.role}/settings`} onClick={() => setOpen(false)} className={item}><SettingsIcon className="h-4 w-4" aria-hidden /> {t("Settings")}</Link>
           <Link to="/help" onClick={() => setOpen(false)} className={item}><LifeBuoy className="h-4 w-4" aria-hidden /> {t("Help & support")}</Link>
-          {USE_MOCKS && <button onClick={resetDemo} className={item}><RotateCcw className="h-4 w-4" aria-hidden /> Reset demo data</button>}
           <button onClick={signOut} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-body text-danger-fg hover:bg-danger-bg"><LogOut className="h-4 w-4" aria-hidden /> {t("Log out")}</button>
         </div>
       )}
@@ -182,7 +172,7 @@ function useUnread(enabled: boolean) {
 function useLiveChatFor(role: string, userId: string) {
   const qc = useQueryClient();
   useEffect(() => {
-    if (USE_MOCKS || role === "admin") return;
+    if (role === "admin") return;
     return startLiveChat(qc);
   }, [qc, role, userId]);
 }

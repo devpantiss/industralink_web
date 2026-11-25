@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { MailCheck } from "lucide-react";
 import { passwordApi } from "@/api/extra";
-import { errorMessage, USE_MOCKS } from "@/api/client";
+import { errorMessage } from "@/api/client";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
@@ -14,13 +14,13 @@ export function ForgotPassword() {
   const [email, setEmail] = useState(sp.get("email") ?? "");
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState<{ demoLink?: string }>();
+  const [sent, setSent] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
     setBusy(true);
-    try { const r = await passwordApi.forgot(email.trim()); setSent({ demoLink: r.demoResetLink }); }
+    try { await passwordApi.forgot(email.trim()); setSent(true); }
     catch (err) { setError(errorMessage(err)); }
     finally { setBusy(false); }
   };
@@ -30,14 +30,7 @@ export function ForgotPassword() {
       <AuthLayout side="employer" title="Check your email" subtitle={<>If <span className="font-medium text-ink">{email}</span> has an account, we sent a link to reset the password. It works for 1 hour.</>}>
         <div className="flex flex-col items-center gap-4 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-success-bg text-success-fg"><MailCheck className="h-7 w-7" aria-hidden /></span>
-          <p className="text-small text-ink-secondary">No email after 5 minutes? Check spam, or <button className="font-medium text-primary hover:underline" onClick={() => setSent(undefined)}>try again</button>.</p>
-          {USE_MOCKS && sent.demoLink && (
-            <div className="w-full rounded-lg border border-dashed border-border-strong bg-surface-muted/60 p-4 text-left">
-              <p className="text-small font-semibold text-ink">Demo only</p>
-              <p className="text-caption text-ink-muted">There is no real email in the demo. Open the link here instead.</p>
-              <LinkButton to={sent.demoLink} variant="secondary" size="sm" className="mt-2">Open reset link</LinkButton>
-            </div>
-          )}
+          <p className="text-small text-ink-secondary">No email after 5 minutes? Check spam, or <button className="font-medium text-primary hover:underline" onClick={() => setSent(false)}>try again</button>.</p>
           <Link to="/login?as=employer" className="text-body font-medium text-primary hover:underline">Back to log in</Link>
         </div>
       </AuthLayout>

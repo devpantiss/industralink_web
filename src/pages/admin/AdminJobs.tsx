@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import type { AdminJobRow } from "@/types";
 import { adminApi } from "@/api/admin";
 import { qk } from "@/api/keys";
@@ -49,7 +49,7 @@ export default function AdminJobs() {
           <option value="">All</option>
         </Select>
       </div>
-      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<Briefcase className="h-6 w-6" />} title="No jobs found" />}>
+      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState art="jobs" title="No jobs found" />}>
         {(rows) => (
           <ul className="stagger overflow-hidden rounded-lg border border-border bg-surface shadow-xs">
             {rows.map((j) => (

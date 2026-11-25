@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import type { VerificationItem } from "@/types";
 import { adminApi } from "@/api/admin";
 import { qk } from "@/api/keys";
@@ -46,7 +46,7 @@ export default function Verifications() {
   return (
     <div>
       <PageHeader title="Company approvals" description="New companies can't publish jobs until you approve them. Oldest first." />
-      <QueryState query={q} empty={(d) => d.length === 0 && <EmptyState icon={<BadgeCheck className="h-6 w-6" />} title="All caught up 🎉" description="No companies are waiting for approval." />}>
+      <QueryState query={q} empty={(d) => d.length === 0 && <EmptyState art="done" title="All caught up" description="No companies are waiting for approval." />}>
         {() => (
           <ul className="stagger overflow-hidden rounded-lg border border-border bg-surface shadow-xs">
             {items.map((i) => (

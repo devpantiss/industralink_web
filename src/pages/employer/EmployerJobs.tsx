@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Copy, MoreVertical, Pencil, Plus, Trash2, XCircle } from "lucide-react";
+import { Copy, MoreVertical, Pencil, Plus, Trash2, XCircle } from "lucide-react";
 import type { Job, JobStatus } from "@/types";
 import { employerApi } from "@/api/employer";
 import { qk } from "@/api/keys";
@@ -54,7 +54,7 @@ export default function EmployerJobs() {
 
       <QueryState query={q}
         empty={(d) => d.filter((j) => j.status === tab).length === 0 && (
-          <EmptyState icon={<Briefcase className="h-6 w-6" />} title={tab === "active" ? "No active jobs" : tab === "draft" ? "No drafts" : "No closed jobs"}
+          <EmptyState art="jobs" title={tab === "active" ? "No active jobs" : tab === "draft" ? "No drafts" : "No closed jobs"}
             description={tab === "active" ? "Post a job and start getting applicants today." : undefined}
             action={tab !== "closed" ? <LinkButton to="/employer/jobs/new">Post a job</LinkButton> : undefined} />
         )}>

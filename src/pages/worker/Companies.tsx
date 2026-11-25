@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, ChevronRight, MapPin, Search, Users } from "lucide-react";
+import { ChevronRight, MapPin, Search, Users } from "lucide-react";
 import type { Sector } from "@/types";
 import { companiesApi } from "@/api/extra";
 import { qk } from "@/api/keys";
@@ -33,7 +33,7 @@ export default function Companies() {
         <Chip selected={!sector} onClick={() => setSector("")} className="shrink-0">{t("All")}</Chip>
         {(Object.keys(SECTOR_LABEL) as Sector[]).map((s) => <Chip key={s} selected={sector === s} onClick={() => setSector(sector === s ? "" : s)} className="shrink-0">{t(SECTOR_LABEL[s])}</Chip>)}
       </div>
-      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<Building2 className="h-6 w-6" />} title={t("No companies found")} description={t("Try another name or industry.")} />}>
+      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState art="company" title={t("No companies found")} description={t("Try another name or industry.")} />}>
         {(rows) => (
           <ul className="stagger grid grid-cols-1 gap-3 md:grid-cols-2">
             {rows.map(({ company: c, openJobs }) => {

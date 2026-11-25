@@ -30,7 +30,7 @@ export default function JobDetail() {
 
   if (q.isLoading) return <ListSkeleton count={2} lines={5} />;
   if (q.isError && errorCode(q.error) === "NOT_FOUND")
-    return <EmptyState title={t("Job not found")} description={t("This job was removed or the link is wrong.")} action={<LinkButton to="/worker/jobs">{t("Find other jobs")}</LinkButton>} />;
+    return <EmptyState art="notFound" title={t("Job not found")} description={t("This job was removed or the link is wrong.")} action={<LinkButton to="/worker/jobs">{t("Find other jobs")}</LinkButton>} />;
   if (q.isError || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
 
   const job = q.data;

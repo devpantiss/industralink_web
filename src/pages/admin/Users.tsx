@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Users as UsersIcon } from "lucide-react";
+import { Search } from "lucide-react";
 import type { AccountStatus, AdminUserRow } from "@/types";
 import { adminApi } from "@/api/admin";
 import { qk } from "@/api/keys";
@@ -53,7 +53,7 @@ export default function Users() {
         </Select>
       </div>
 
-      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState icon={<UsersIcon className="h-6 w-6" />} title="No users found" description="Try a different search or filter." />}>
+      <QueryState query={list} empty={(d) => d.length === 0 && <EmptyState art="people" title="No users found" description="Try a different search or filter." />}>
         {(rows) => (
           <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-xs">
             <table className="hidden w-full text-left md:table">

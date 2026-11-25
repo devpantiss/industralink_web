@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { ArrowLeft, Check, CheckCheck, Lock, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Lock, Send } from "lucide-react";
 import type { Message, MessagePage, MessageThread } from "@/types";
 import { messagesApi } from "@/api/extra";
 import { qk } from "@/api/keys";
@@ -37,7 +37,7 @@ export default function Messages() {
     <div>
       <PageHeader title={t("Messages")} description={worker ? t("Chat with HR after you're shortlisted.") : "Chat with shortlisted candidates. Phone numbers stay private."} />
       {threads.isLoading ? <ListSkeleton count={3} /> : threads.isError ? <ErrorState onRetry={() => threads.refetch()} /> : threads.data!.length === 0 ? (
-        <EmptyState icon={<MessageSquare className="h-6 w-6" />} title={t("No conversations yet")}
+        <EmptyState art="messages" title={t("No conversations yet")}
           description={worker ? t("When a company shortlists you, you can message their HR here.") : "Shortlist a candidate, then message them from their profile."} />
       ) : (
         <div className="grid h-[calc(100vh-15rem)] min-h-[420px] overflow-hidden rounded-lg border border-border bg-surface shadow-xs md:grid-cols-[320px_1fr]">

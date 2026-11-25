@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck, Briefcase, CalendarClock, Check, ChevronDown, ChevronRight, Clock, Columns3, Download, FileImage, FileText, Info, Languages, List, Mail,
-  MapPin, MessageCircle, MessageSquare, Pencil, Phone, Search, Share2, ShieldCheck, Users, Wallet, X,
+  MapPin, MessageCircle, MessageSquare, Pencil, Phone, Search, Share2, ShieldCheck, Wallet, X,
 } from "lucide-react";
 import type { ApplicationStage, Candidate, Job, WorkerDocument } from "@/types";
 import { AVAILABILITY_LABEL, DOC_TYPE_LABEL, EXPERIENCE_LABEL, PIPELINE_STAGES, SHIFT_LABEL, STAGE_LABEL, TRADE_LABEL, PAY_TYPE_LABEL } from "@/lib/labels";
@@ -170,7 +170,7 @@ export default function JobPipeline() {
       )}
 
       {cands.isLoading ? <ListSkeleton count={2} /> : cands.isError ? <ErrorState onRetry={() => cands.refetch()} /> : !cands.data?.length ? (
-        <EmptyState icon={<Users className="h-6 w-6" />} title="No applicants yet" description="Share the job with your contacts or on WhatsApp groups to get applicants faster."
+        <EmptyState art="people" title="No applicants yet" description="Share the job with your contacts or on WhatsApp groups to get applicants faster."
           action={<Button variant="secondary" onClick={copyLink}>Copy job link</Button>} />
       ) : view === "board" ? (
         <Board list={searched} selected={selected} onSelect={toggleSelect} onOpen={openCandidate} onDrop={(cid, stage) => requestMove([cid], stage)} />
@@ -198,7 +198,7 @@ export default function JobPipeline() {
               </label>
             </div>
             {shown.length === 0 ? (
-              <p className="rounded-xl bg-surface-muted px-4 py-8 text-center text-small text-ink-muted">{search ? "No one matches that search." : `No one in ${tabLabel} yet.`}</p>
+              <EmptyState compact art={search ? "search" : "people"} title={search ? "No one matches that search" : `No one in ${tabLabel} yet`} />
             ) : (
               <ul className="-mx-1 max-h-[560px] space-y-0.5 overflow-y-auto px-1">
                 {shown.map((c) => {
