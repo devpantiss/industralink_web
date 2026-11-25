@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { ArrowLeft, Check, CheckCheck, Lock, MessageSquare, Send } from "lucide-react";
-import type { Message, MessageThread } from "@/types";
+import type { Message, MessagePage, MessageThread } from "@/types";
 import { messagesApi } from "@/api/extra";
 import { qk } from "@/api/keys";
 import { errorMessage } from "@/api/client";
-import { sendTyping, useIsTyping, useLiveConnected } from "@/api/live";
+import { sendTyping, useIsTyping, useLiveConnected, usePageVisible } from "@/api/live";
 import { useUser } from "@/app/AuthContext";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
@@ -91,15 +91,34 @@ function newClientId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
+/** Joins two lists of messages: no copies (the newer copy wins), oldest first. */
+function mergeMessages(older: Message[], newer: Message[]): Message[] {
+  const byId = new Map(older.map((m) => [m.id, m]));
+  for (const m of newer) byId.set(m.id, m);
+  return [...byId.values()].sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+}
+
 function Thread({ applicationId, onBack }: { applicationId: string; onBack: () => void }) {
   const user = useUser();
   const live = useLiveConnected();
   const typing = useIsTyping(applicationId);
-  const q = useQuery({ queryKey: qk.messages.thread(applicationId), queryFn: () => messagesApi.thread(applicationId), refetchInterval: live ? 60_000 : 10_000 });
+  // Loading the chat marks it read, so it only loads while the tab is on screen. A new
+  // message in a hidden tab waits (and keeps its badge) until you come back to it.
+  const visible = usePageVisible();
+  const q = useQuery({ queryKey: qk.messages.thread(applicationId), queryFn: () => messagesApi.thread(applicationId), enabled: visible, refetchInterval: live ? 60_000 : 10_000 });
+  // Older messages loaded with "Load earlier messages" (the query above keeps the newest 50).
+  const [older, setOlder] = useState<{ messages: Message[]; hasMore: boolean } | null>(null);
+  const loadOlder = useMutation({
+    mutationFn: (before: string) => messagesApi.thread(applicationId, before),
+    // Keep everything shown so far too, so nothing falls out as new messages arrive.
+    onSuccess: (page: MessagePage) => setOlder((prev) => ({ messages: mergeMessages(page.messages, mergeMessages(prev?.messages ?? [], q.data?.messages ?? [])), hasMore: page.hasMore })),
+    onError: (e) => toast.error(errorMessage(e)),
+  });
   const [text, setText] = useState("");
   const qc = useQueryClient();
   const toast = useToast();
-  const end = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const atBottom = useRef(true);
   const send = useMutation({
     mutationFn: ({ body, clientId }: Draft) => messagesApi.send(applicationId, body, clientId),
     // Retry only when the network failed. The same clientId makes sure it is saved once.
@@ -116,17 +135,24 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
     onError: (e, { body }, ctx) => { if (ctx?.prev) qc.setQueryData(qk.messages.thread(applicationId), ctx.prev); setText(body); toast.error(errorMessage(e)); },
     onSettled: () => { qc.invalidateQueries({ queryKey: qk.messages.all, exact: true }); qc.invalidateQueries({ queryKey: qk.messages.thread(applicationId) }); },
   });
-  const count = q.data?.messages.length ?? 0;
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [count]);
+  const messages = useMemo(() => mergeMessages(older?.messages ?? [], q.data?.messages ?? []), [older, q.data]);
+  const hasMore = older ? older.hasMore : (q.data?.hasMore ?? false);
+  const lastId = messages.at(-1)?.id;
+  const lastIsMine = messages.at(-1)?.fromUserId === user.id;
+  const scrollToEnd = () => { if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight; };
+  // Go to the bottom for your own new message, or for any new one / the typing bubble
+  // when you were already there. Reading older messages is never interrupted.
+  useEffect(() => { if (lastId && (lastIsMine || atBottom.current)) scrollToEnd(); }, [lastId, lastIsMine]);
+  useEffect(() => { if (typing && atBottom.current) scrollToEnd(); }, [typing]);
   // Opening a chat marks it read, so refresh the inbox list. Only the list (exact): the
   // chat's own key starts with "messages" too, and refreshing it here would loop forever.
   useEffect(() => { qc.invalidateQueries({ queryKey: qk.messages.all, exact: true }); }, [q.dataUpdatedAt, qc]);
 
   const submit = (e: FormEvent) => { e.preventDefault(); const body = text.trim(); if (body) send.mutate({ body, clientId: newClientId() }); };
 
-  if (q.isLoading) return <div className="p-5"><ListSkeleton count={2} /></div>;
-  if (q.isError || !q.data) return <div className="p-5"><ErrorState onRetry={() => q.refetch()} /></div>;
-  const { thread, messages } = q.data;
+  if (q.isError) return <div className="p-5"><ErrorState onRetry={() => q.refetch()} /></div>;
+  if (!q.data) return <div className="p-5"><ListSkeleton count={2} /></div>;
+  const { thread } = q.data;
   const mine = (m: Message) => m.fromUserId === user.id;
   const appLink = user.role === "worker" ? `/worker/applications/${applicationId}` : undefined;
 
@@ -138,15 +164,21 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-ink">{thread.otherName}</p>
           {typing ? (
-            <p className="text-caption font-medium text-primary" aria-live="polite">{t("typing…")}</p>
+            <p className="flex h-6 items-center text-caption font-medium text-primary" aria-live="polite">{t("typing…")}</p>
           ) : (
-            <p className="flex items-center gap-2 truncate text-caption text-ink-muted">{thread.jobTitle} <StageBadge stage={thread.stage} audience={user.role === "worker" ? "worker" : "employer"} /></p>
+            <p className="flex h-6 items-center gap-2 truncate text-caption text-ink-muted">{thread.jobTitle} <StageBadge stage={thread.stage} audience={user.role === "worker" ? "worker" : "employer"} /></p>
           )}
         </div>
         {appLink && <Link to={appLink} className="hidden text-small font-medium text-primary hover:underline sm:inline">{t("View application")}</Link>}
       </header>
 
-      <div className="flex-1 space-y-2 overflow-y-auto bg-surface-muted/50 px-4 py-4">
+      <div ref={scroller} onScroll={(e) => { const el = e.currentTarget; atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; }}
+        className="flex-1 space-y-2 overflow-y-auto bg-surface-muted/50 px-4 py-4">
+        {hasMore && (
+          <div className="flex justify-center">
+            <Button variant="ghost" loading={loadOlder.isPending} onClick={() => loadOlder.mutate(messages[0].id)}>{t("Load earlier messages")}</Button>
+          </div>
+        )}
         {messages.length === 0 && <p className="py-8 text-center text-small text-ink-muted">{t("Say hello. Keep it about this job.")}</p>}
         {messages.map((m) => (
           <div key={m.id} className={cn("flex", mine(m) ? "justify-end" : "justify-start")}>
@@ -161,7 +193,7 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
             </div>
           </div>
         ))}
-        <div ref={end} />
+        {typing && <TypingBubble />}
       </div>
 
       {thread.canSend ? (
@@ -186,5 +218,18 @@ function Thread({ applicationId, onBack }: { applicationId: string; onBack: () =
         <p className="flex items-center justify-center gap-2 border-t border-border px-4 py-3 text-small text-ink-muted"><Lock className="h-4 w-4" aria-hidden />{t("This conversation is closed.")}</p>
       )}
     </section>
+  );
+}
+
+/** The other side is typing: three bouncing dots in a bubble, like WhatsApp. */
+function TypingBubble() {
+  return (
+    <div className="flex justify-start" aria-hidden>
+      <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-surface px-3.5 py-3 shadow-xs">
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-ink-muted" />
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-ink-muted" />
+        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-ink-muted" />
+      </div>
+    </div>
   );
 }

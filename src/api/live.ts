@@ -35,14 +35,16 @@ function liveUrl(): string {
   return api.toString();
 }
 
-// ── Small store the pages can watch ──
+// A small store the pages watch with useSyncExternalStore.
 let connected = false;
 /** Chats where the other side is typing right now, each with a timer to clear it. */
 const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const listeners = new Set<() => void>();
-const changed = () => {
-  listeners.forEach((listener) => listener()); };
-const subscribe = (listener: () => void) => { listeners.add(listener); return () => listeners.delete(listener); };
+const changed = () => listeners.forEach((listener) => listener());
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
 
 /** Shows "typing…" for this chat, or hides it. */
 function setTyping(applicationId: string, typing: boolean) {
@@ -54,6 +56,15 @@ function setTyping(applicationId: string, typing: boolean) {
 
 let socket: WebSocket | null = null;
 const lastTypingSent = new Map<string, number>();
+
+/** Closes the current connection; its close event is then ignored (no retry). */
+function closeSocket() {
+  const ws = socket;
+  socket = null;
+  connected = false;
+  changed();
+  ws?.close();
+}
 
 /**
  * Opens the live connection for the logged-in user. Returns a function that closes it
@@ -86,10 +97,9 @@ export function startLiveChat(qc: QueryClient): () => void {
       case "chat:read":
       case "chat:changed":
         return refreshChat(event.applicationId);
-      case "chat:typing": {
+      case "chat:typing":
         setTyping(event.applicationId, true);
         return;
-      }
       case "messaging:changed":
         qc.invalidateQueries({ queryKey: qk.messages.all });
     }
@@ -102,10 +112,15 @@ export function startLiveChat(qc: QueryClient): () => void {
     socket = ws;
     ws.onopen = () => ws.send(JSON.stringify({ type: "auth", token }));
     ws.onmessage = (message) => {
-      try { handle(JSON.parse(String(message.data)) as LiveEvent); } catch { /* ignore broken events */ }
+      try {
+        handle(JSON.parse(String(message.data)) as LiveEvent);
+      } catch {
+        // Ignore broken events.
+      }
     };
     ws.onclose = (close) => {
-      if (socket === ws) socket = null;
+      if (socket !== ws) return; // An older connection that was already replaced.
+      socket = null;
       connected = false;
       changed();
       if (stopped || NO_RETRY_CODES.includes(close.code)) return;
@@ -116,7 +131,12 @@ export function startLiveChat(qc: QueryClient): () => void {
   };
 
   // Reconnect at once when the computer wakes up or the network comes back.
-  const onOnline = () => { if (!socket && !stopped) { clearTimeout(retryTimer); attempt = 0; connect(); } };
+  const onOnline = () => {
+    if (socket || stopped) return;
+    clearTimeout(retryTimer);
+    attempt = 0;
+    connect();
+  };
   window.addEventListener("online", onOnline);
 
   connect();
@@ -124,9 +144,7 @@ export function startLiveChat(qc: QueryClient): () => void {
     stopped = true;
     clearTimeout(retryTimer);
     window.removeEventListener("online", onOnline);
-    socket?.close();
-    socket = null;
-    connected = false;
+    closeSocket();
     for (const timer of typingTimers.values()) clearTimeout(timer);
     typingTimers.clear();
     changed();
@@ -145,6 +163,19 @@ export function sendTyping(applicationId: string) {
 /** True while the live connection is up (pages can then refresh less often). */
 export function useLiveConnected(): boolean {
   return useSyncExternalStore(subscribe, () => connected);
+}
+
+const subscribeVisibility = (listener: () => void) => {
+  document.addEventListener("visibilitychange", listener);
+  return () => document.removeEventListener("visibilitychange", listener);
+};
+
+/**
+ * True while this browser tab is on screen. An open chat only loads (and so only counts
+ * as "seen") while it is, like WhatsApp: a chat left open in a hidden tab keeps its badge.
+ */
+export function usePageVisible(): boolean {
+  return useSyncExternalStore(subscribeVisibility, () => document.visibilityState === "visible");
 }
 
 /** True while the other side of this chat is typing. */

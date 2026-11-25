@@ -1,7 +1,7 @@
 /** Endpoints added after the gap review. See API_CONTRACT.md, section "Added". */
 import type {
   JobForWorker, JobSearchParams, Paginated,
-  Company, EmployerAnalytics, ExperienceBand, Job, JobReport, Message, MessageThread, PlatformSettings, ReportReason, ReportStatus, Sector,
+  Company, EmployerAnalytics, ExperienceBand, Job, JobReport, Message, MessagePage, MessageThread, PlatformSettings, ReportReason, ReportStatus, Sector,
   SupportTicket, TalentProfile, Trade, UserSettings, WorkerApplication,
 } from "@/types";
 import { get, patch, post } from "./client";
@@ -51,7 +51,9 @@ export const supportAdminApi = {
 
 export const messagesApi = {
   threads: () => get<MessageThread[]>("/messages"),
-  thread: (applicationId: string) => get<{ thread: MessageThread; messages: Message[] }>(`/messages/${applicationId}`),
+  /** The newest 50 messages (and marks the chat read), or with `before` the 50 before that message. */
+  thread: (applicationId: string, before?: string) =>
+    get<MessagePage>(`/messages/${applicationId}`, before ? { before } : undefined),
   /** clientId: made once per message, so a retry after a network error is saved only once. */
   send: (applicationId: string, text: string, clientId?: string) => post<Message>(`/messages/${applicationId}`, { text, clientId }),
 };

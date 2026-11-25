@@ -39,7 +39,7 @@ You can also sign up as a new worker or employer. Demo changes are saved in your
 
 **Colours:** default palette is **Deep Teal** (dark teal sidebar, teal buttons, amber highlights). Two alternatives, **Industrial Orange** and **Graphite**, can be tried from *Profile menu → Colour theme* or with `?palette=orange` / `?palette=graphite` in the URL. All values are tokens in `src/styles/index.css`. Once one is chosen, delete the other two blocks and the switcher (`src/lib/palette.ts`).
 
-Design follows the "Steel & Safety" theme from the dashboard plan (`my-notes/DASHBOARD_PLAN.md`, kept outside this repo): tokens are in `src/styles/index.css` and `tailwind.config.js`.
+Design tokens are in `src/styles/index.css` and `tailwind.config.js`.
 
 ## Folder structure
 

@@ -435,6 +435,7 @@ const dict: Record<string, string> = {
   "This application is closed.": "यह आवेदन बंद हो गया है।",
   "This company hasn't added a description yet.": "इस कंपनी ने अभी तक कोई विवरण नहीं जोड़ा है।",
   "This conversation is closed.": "यह बातचीत बंद हो गई है।",
+  "Load earlier messages": "पुराने संदेश देखें",
   "This employer contacts candidates directly. Keep your phone reachable.": "यह कंपनी ख़ुद संपर्क करती है। अपना फ़ोन चालू रखें।",
   "This job has been closed by the employer.": "कंपनी ने यह नौकरी बंद कर दी है।",
   "This job is closed": "यह नौकरी बंद है",

@@ -168,7 +168,14 @@ function ProfileMenu({ variant = "header" }: { variant?: "header" | "card" }) {
 function useUnread(enabled: boolean) {
   const live = useLiveConnected();
   const q = useQuery({ queryKey: qk.messages.all, queryFn: messagesApi.threads, enabled, refetchInterval: live ? 120_000 : 30_000 });
-  return q.data?.reduce((s, th) => s + th.unread, 0) ?? 0;
+  const unread = q.data?.reduce((s, th) => s + th.unread, 0) ?? 0;
+  // Show the count on the browser tab too, like "(2) IndustriaLink".
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\) /, "");
+    document.title = unread ? `(${unread}) ${base}` : base;
+    return () => { document.title = base; }; // e.g. after logout
+  }, [unread]);
+  return unread;
 }
 
 /** Live chat updates for workers and HR, while logged in (real backend only). */
