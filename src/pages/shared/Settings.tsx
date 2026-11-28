@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Eye, KeyRound, Languages, LifeBuoy, Monitor, Moon, Palette, ShieldAlert, SlidersHorizontal, Sun, Trash2 } from "lucide-react";
+import { Bell, Eye, KeyRound, Languages, LifeBuoy, Monitor, Moon, Palette, ShieldAlert, SlidersHorizontal, Smartphone, Sun, Trash2 } from "lucide-react";
 import { setThemeChoice, useThemeChoice, type ThemeChoice } from "@/lib/theme";
 import type { PlatformSettings, UserSettings } from "@/types";
 import { accountApi, passwordApi, platformApi } from "@/api/extra";
@@ -71,7 +71,8 @@ export default function Settings() {
 
           <AppearanceSection />
           {user.role === "admin" && <PlatformSection />}
-          {!worker && <PasswordSection />}
+          {worker && <PhoneSection />}
+          <PasswordSection />
 
           <Section icon={<LifeBuoy className="h-5 w-5" />} title={t("Help & support")}>
             <p className="text-body text-ink-secondary">{t("Questions, a new mobile number, or a problem with a job?")} <Link to="/help" className="font-medium text-primary hover:underline">{t("Open Help")}</Link></p>
@@ -131,30 +132,70 @@ function AppearanceSection() {
   );
 }
 
+/** Change the password, or set a first one on an account made with Google (then both work). */
 function PasswordSection() {
+  const user = useUser();
+  const { setUser } = useAuth();
+  const hasPassword = user.hasPassword !== false;
   const [cur, setCur] = useState("");
   const [next, setNext] = useState("");
   const [error, setError] = useState<string>();
   const toast = useToast();
   const change = useMutation({
-    mutationFn: () => passwordApi.change(cur, next),
-    onSuccess: () => { toast.success("Password changed"); setCur(""); setNext(""); },
+    mutationFn: () => passwordApi.change(hasPassword ? cur : undefined, next),
+    onSuccess: () => {
+      toast.success(hasPassword ? t("Password changed. Other devices are logged out.") : t("Password set."));
+      setCur(""); setNext("");
+      setUser({ ...user, hasPassword: true });
+    },
     onError: (e) => setError(errorMessage(e)),
   });
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
-    if (next.length < 8) return setError("Use at least 8 characters.");
+    if (next.length < 8) return setError(t("Use at least 8 characters for your password."));
     change.mutate();
   };
   return (
-    <Section icon={<KeyRound className="h-5 w-5" />} title="Password">
-      <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end" noValidate>
-        <Field label="Current password">{(id) => <Input id={id} type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} />}</Field>
-        <Field label="New password" error={error}>{(id, d) => <Input id={id} aria-describedby={d} type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} invalid={!!error} />}</Field>
-        <Button type="submit" variant="secondary" loading={change.isPending} disabled={!cur || !next}>Change</Button>
+    <Section icon={<KeyRound className="h-5 w-5" />} title={hasPassword ? t("Password") : t("Set a password")}
+      description={hasPassword ? undefined : t("You sign in with Google. Add a password to also log in with your email.")}>
+      <form onSubmit={submit} className={cn("grid gap-3 sm:items-end", hasPassword ? "sm:grid-cols-[1fr_1fr_auto]" : "sm:grid-cols-[1fr_auto]")} noValidate>
+        {hasPassword && <Field label={t("Current password")}>{(id) => <Input id={id} type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} />}</Field>}
+        <Field label={t("New password (8+ characters)")} error={error}>{(id, d) => <Input id={id} aria-describedby={d} type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} invalid={!!error} />}</Field>
+        <Button type="submit" variant="secondary" loading={change.isPending} disabled={(hasPassword && !cur) || !next}>{hasPassword ? t("Change") : t("Set password")}</Button>
       </form>
-      <p className="mt-2 text-small text-ink-muted">Forgot it? <Link to="/forgot-password" className="font-medium text-primary hover:underline">Reset by email</Link></p>
+      {hasPassword && <p className="mt-2 text-small text-ink-muted">{t("Forgot it?")} <Link to="/forgot-password" className="font-medium text-primary hover:underline">{t("Reset by email")}</Link></p>}
+    </Section>
+  );
+}
+
+/** Worker's mobile number: companies call it after shortlisting. */
+function PhoneSection() {
+  const user = useUser();
+  const { setUser } = useAuth();
+  const [phone, setPhone] = useState(user.phone ?? "");
+  const [error, setError] = useState<string>();
+  const toast = useToast();
+  const save = useMutation({
+    mutationFn: () => accountApi.savePhone(phone),
+    onSuccess: (saved) => { setUser(saved); toast.success(t("Mobile number saved.")); },
+    onError: (e) => setError(errorMessage(e)),
+  });
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    setError(undefined);
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError(t("Enter a 10-digit mobile number that starts with 6, 7, 8 or 9."));
+    save.mutate();
+  };
+  return (
+    <Section icon={<Smartphone className="h-5 w-5" />} title={t("Mobile number")} description={t("Companies call this number when they shortlist you.")}>
+      <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" noValidate>
+        <Field label={t("Mobile number")} error={error}>
+          {(id, d) => <Input id={id} aria-describedby={d} prefix="+91" inputMode="numeric" autoComplete="tel-national" maxLength={10}
+            value={phone} invalid={!!error} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} />}
+        </Field>
+        <Button type="submit" variant="secondary" loading={save.isPending} disabled={phone === (user.phone ?? "")}>{t("Save number")}</Button>
+      </form>
     </Section>
   );
 }

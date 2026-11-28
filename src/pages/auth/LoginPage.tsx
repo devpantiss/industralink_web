@@ -10,8 +10,8 @@ import { takeNext } from "@/lib/next";
 import { landingFor } from "@/app/guards";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
+import { GoogleSection } from "@/components/auth/GoogleAuth";
 import { AuthLayout } from "./AuthLayout";
-import { OtpForm } from "./OtpForm";
 import { audienceFromUrl, RolePicker, type Audience } from "./RolePicker";
 
 export function useFinishLogin() {
@@ -30,18 +30,14 @@ export default function LoginPage() {
   const [sp] = useSearchParams();
   const [as, setAs] = useState<Audience>(() => audienceFromUrl(sp));
   const done = useFinishLogin();
-  const navigate = useNavigate();
 
   return (
     <AuthLayout side={as} title={t("Welcome back")} subtitle={t("Log in to continue.")}>
       <RolePicker value={as} onChange={setAs} />
       <div key={as} className="animate-page mt-6">
-        {as === "worker" ? (
-          <OtpForm mode="login" initialPhone={sp.get("phone") ?? ""} onSuccess={done} submitLabel="Log in"
-            onWrongMode={(phone) => navigate(`/signup?as=worker&phone=${phone}`)} />
-        ) : (
-          <EmailLogin onSuccess={done} />
-        )}
+        {/* The same form on both tabs; the tab tells the server which kind of account to expect. */}
+        <GoogleSection mode="signin" role={as} onSuccess={done} />
+        <EmailLogin role={as} onSuccess={done} />
         <p className="mt-8 text-center text-body text-ink-secondary">
           {as === "worker" ? t("New here?") : "New company?"}{" "}
           <Link to={`/signup?as=${as}`} className="font-semibold text-primary hover:underline">
@@ -54,7 +50,8 @@ export default function LoginPage() {
   );
 }
 
-export function EmailLogin({ onSuccess, footer }: { onSuccess: (r: AuthResponse) => void; footer?: ReactNode }) {
+/** Email + password. `role` is the chosen tab; the admin page sends none. */
+export function EmailLogin({ role, onSuccess, footer }: { role?: Audience; onSuccess: (r: AuthResponse) => void; footer?: ReactNode }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
@@ -63,10 +60,10 @@ export function EmailLogin({ onSuccess, footer }: { onSuccess: (r: AuthResponse)
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
-    if (!email || !password) return setError("Enter your email and password.");
+    if (!email.trim() || !password) return setError(t("Enter your email and password."));
     setBusy(true);
     try {
-      onSuccess(await authApi.login(email, password));
+      onSuccess(await authApi.login(email.trim(), password, role));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -76,12 +73,12 @@ export function EmailLogin({ onSuccess, footer }: { onSuccess: (r: AuthResponse)
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-      <Field label="Work email">{(id) => <Input id={id} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} invalid={!!error} autoFocus />}</Field>
-      <Field label="Password" error={error}>
+      <Field label={role === "worker" ? t("Email") : "Work email"}>{(id) => <Input id={id} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} invalid={!!error} autoFocus />}</Field>
+      <Field label={t("Password")} error={error}>
         {(id, d) => <Input id={id} aria-describedby={d} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!error} />}
       </Field>
-      <Link to={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="-mt-2 self-end text-small font-medium text-primary hover:underline">Forgot password?</Link>
-      <Button type="submit" size="lg" loading={busy} loadingText="Logging in…">Log in</Button>
+      <Link to={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="-mt-2 self-end text-small font-medium text-primary hover:underline">{t("Forgot password?")}</Link>
+      <Button type="submit" size="lg" loading={busy} loadingText={t("Logging in…")}>{t("Log in")}</Button>
       {footer}
     </form>
   );

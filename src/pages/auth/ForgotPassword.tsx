@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { MailCheck } from "lucide-react";
@@ -40,7 +41,7 @@ export function ForgotPassword() {
   return (
     <AuthLayout side="employer" title="Reset your password" subtitle="Enter the email you log in with. We'll send you a reset link.">
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-        <Field label="Work email" error={error}>{(id, d) => <Input id={id} aria-describedby={d} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} invalid={!!error} autoFocus />}</Field>
+        <Field label={t("Email")} error={error}>{(id, d) => <Input id={id} aria-describedby={d} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} invalid={!!error} autoFocus />}</Field>
         <Button type="submit" size="lg" loading={busy} loadingText="Sending…">Send reset link</Button>
         <p className="text-center text-small text-ink-secondary">Workers log in with a mobile code, so they don't need a password.</p>
         <Link to="/login?as=employer" className="text-center text-body font-medium text-primary hover:underline">Back to log in</Link>

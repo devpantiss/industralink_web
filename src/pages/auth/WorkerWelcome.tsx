@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { t } from "@/lib/i18n";
 import { useNavigate } from "react-router-dom";
 import { takeNext } from "@/lib/next";
@@ -10,7 +10,8 @@ import { formatNumber } from "@/lib/format";
 import { workerApi } from "@/api/worker";
 import { authApi } from "@/api/auth";
 import { errorMessage } from "@/api/client";
-import { useAuth } from "@/app/AuthContext";
+import { useAuth, useUser } from "@/app/AuthContext";
+import { accountApi } from "@/api/extra";
 import { Button } from "@/components/ui/Button";
 import { Chip, Field, Input } from "@/components/ui/Field";
 import { Stepper } from "@/components/ui/Misc";
@@ -23,8 +24,52 @@ const TRADE_ICON: Record<Trade, LucideIcon> = {
   crane_operator: Construction, helper: HardHat, security: Shield, supervisor: UserCog, other: Hammer,
 };
 
-/** Tap-based onboarding, almost no typing (plan section 7). Every step can be skipped. */
+/**
+ * Tap-based onboarding, almost no typing (plan section 7). Every step can be skipped.
+ * After "Sign up with Google" there is no mobile number yet: that one is asked first and
+ * can't be skipped (companies call it; the server needs it before finishing or applying).
+ */
 export default function WorkerWelcome() {
+  const user = useUser();
+  if (!user.phone) return <PhoneStep />;
+  return <ProfileSteps />;
+}
+
+function PhoneStep() {
+  const user = useUser();
+  const { setUser } = useAuth();
+  const [phone, setPhone] = useState(getHandoff().phone ?? "");
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(undefined);
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError(t("Enter a 10-digit mobile number that starts with 6, 7, 8 or 9."));
+    setBusy(true);
+    try {
+      setUser({ ...user, ...(await accountApi.savePhone(phone)) });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <form onSubmit={save} className="mx-auto max-w-md" noValidate>
+      <h1 className="text-h1">{t("Your mobile number")}</h1>
+      <p className="mt-1 text-body-lg text-ink-secondary">{t("Companies call this number when they shortlist you. We never show it publicly.")}</p>
+      <div className="mt-6">
+        <Field label={t("Mobile number")} error={error}>
+          {(id, d) => <Input id={id} aria-describedby={d} prefix="+91" inputSize="lg" inputMode="numeric" autoComplete="tel-national" maxLength={10}
+            placeholder="98765 43210" value={phone} invalid={!!error} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} autoFocus />}
+        </Field>
+      </div>
+      <Button type="submit" size="lg" className="mt-6 w-full" loading={busy}>{t("Continue")}</Button>
+    </form>
+  );
+}
+
+function ProfileSteps() {
   const [step, setStep] = useState(0);
   // Trade and place picked on the landing site come pre-selected; the person can still change them.
   const [p, setP] = useState<Partial<WorkerProfile>>(() => {

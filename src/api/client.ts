@@ -48,4 +48,5 @@ export function errorCode(err: unknown): string | undefined {
 export const get = <T>(url: string, params?: object) => http.get<T>(url, { params }).then((r) => r.data);
 export const post = <T>(url: string, body?: unknown) => http.post<T>(url, body).then((r) => r.data);
 export const patch = <T>(url: string, body?: unknown) => http.patch<T>(url, body).then((r) => r.data);
+export const put = <T>(url: string, body?: unknown) => http.put<T>(url, body).then((r) => r.data);
 export const del = <T>(url: string) => http.delete<T>(url).then((r) => r.data);

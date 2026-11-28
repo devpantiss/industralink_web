@@ -2,9 +2,9 @@
 import type {
   JobForWorker, JobSearchParams, Paginated,
   Company, EmployerAnalytics, ExperienceBand, Job, JobReport, Message, MessagePage, MessageThread, PlatformSettings, ReportReason, ReportStatus, Sector,
-  SupportTicket, TalentProfile, Trade, UserSettings, WorkerApplication,
+  SupportTicket, TalentProfile, Trade, User, UserSettings, WorkerApplication,
 } from "@/types";
-import { get, patch, post } from "./client";
+import { get, patch, post, put } from "./client";
 
 export type AdminReportRow = JobReport & { jobStatus: Job["status"]; reportsForJob: number };
 
@@ -24,7 +24,8 @@ export const repliesApi = {
 export const passwordApi = {
   forgot: (email: string) => post<{ ok: boolean }>("/auth/password/forgot", { email }),
   reset: (token: string, password: string) => post<{ ok: boolean; role: string }>("/auth/password/reset", { token, password }),
-  change: (current: string, next: string) => post("/auth/password/change", { current, next }),
+  /** `current` is left out when the account has no password yet (made with Google). */
+  change: (current: string | undefined, next: string) => post("/auth/password/change", { current, next }),
 };
 
 export const publicApi = {
@@ -38,6 +39,8 @@ export const accountApi = {
   settings: () => get<UserSettings>("/me/settings"),
   updateSettings: (changes: Partial<UserSettings>) => patch<UserSettings>("/me/settings", changes),
   deleteAccount: () => post("/me/delete", { confirm: "DELETE" }),
+  /** Worker's mobile number (10 digits), for companies to call. 409 PHONE_TAKEN if another account has it. */
+  savePhone: (phone: string) => put<User>("/me/phone", { phone }),
 };
 
 export const companiesApi = {
